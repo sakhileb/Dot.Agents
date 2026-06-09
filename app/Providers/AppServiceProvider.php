@@ -34,8 +34,10 @@ use App\Services\AI\AgentSandboxService;
 use App\Services\AI\GraphWorkflowEngineService;
 use App\Services\AI\MemoryService;
 use App\Services\AI\ModelRouterService;
+use App\Services\AI\OutputModerationService;
 use App\Services\AI\SkillExecutionPipeline;
 use App\Services\AI\SkillRegistryService;
+use App\Services\AI\ToolPermissionService;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\DelusionDetectionService;
 use App\Services\Governance\DigitalImmuneSystem;
@@ -60,6 +62,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DelusionDetectionService::class);
         $this->app->singleton(ScorecardService::class);
         $this->app->singleton(CircuitBreakerService::class);
+        $this->app->singleton(ToolPermissionService::class);
+        $this->app->singleton(OutputModerationService::class);
+
+        $this->app->singleton(AgentSandboxService::class, function ($app) {
+            return new AgentSandboxService(
+                $app->make(ToolPermissionService::class)
+            );
+        });
 
         $this->app->singleton(AgentOrchestrationService::class, function ($app) {
             return new AgentOrchestrationService(
@@ -69,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(MemoryService::class),
                 $app->make(AgentSandboxService::class),
                 $app->make(CircuitBreakerService::class),
+                $app->make(OutputModerationService::class),
             );
         });
 

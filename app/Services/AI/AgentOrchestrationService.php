@@ -26,6 +26,7 @@ class AgentOrchestrationService
         private readonly MemoryService $memoryService,
         private readonly AgentSandboxService $sandbox,
         private readonly CircuitBreakerService $circuitBreaker,
+        private readonly OutputModerationService $outputModeration,
     ) {}
 
     /**
@@ -53,43 +54,37 @@ class AgentOrchestrationService
             fn () => $this->buildSystemPrompt($deployment, $memoryContext, $context)
         );
 
-        // Route to appropriate model — cached per deployment for 30 minutes
-        $modelConfig = Cache::remember(
-            "agent_model_config_{$deployment->id}",
-            1800,
-            fn () => $this->modelRouter->resolve($deployment)
+        // Execute inference with multi-level failover
+        $startTime = microtime(true);
+        $response = $this->callWithFailover($deployment, $systemPrompt, $history, $userMessage);
+        $latencyMs = (int) ((microtime(true) - $startTime) * 1000);
+
+        // Run output moderation — redact PII and block unsafe content
+        ['content' => $moderatedContent, 'scan' => $moderationScan] = $this->outputModeration->scanAndRedact(
+            $response['content'],
+            ['deployment_id' => $deployment->id, 'session_id' => $session->id]
         );
 
-        // Execute inference — protected by circuit breaker
-        $startTime = microtime(true);
-        try {
-            $response = $this->circuitBreaker->call(
-                'ai_inference',
-                fn () => $this->callModel($modelConfig, $systemPrompt, $history, $userMessage),
-                fn () => $this->fallbackResponse($userMessage)
-            );
-        } catch (\Throwable $e) {
-            Log::error('[AgentOrchestration] processMessage failed', [
-                'deployment_id' => $deployment->id,
-                'session_id' => $session->id,
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
+        if ($moderationScan['verdict'] === OutputModerationService::BLOCK) {
+            $moderatedContent = $this->outputModeration->blockedResponse();
         }
-        $latencyMs = (int) ((microtime(true) - $startTime) * 1000);
 
         // Store assistant message
         $assistantMessage = AgentMessage::create([
             'session_id' => $session->id,
             'role' => 'assistant',
-            'content' => $response['content'],
+            'content' => $moderatedContent,
             'token_count' => $response['usage']['total_tokens'] ?? 0,
             'cost' => $response['cost'] ?? 0,
-            'model_used' => $modelConfig['model'],
+            'model_used' => $response['model_used'] ?? 'gpt-4o',
             'latency_ms' => $latencyMs,
+            'flagged' => $moderationScan['flagged'],
+            'flag_reason' => $moderationScan['flag_reason'],
             'metadata' => [
                 'finish_reason' => $response['finish_reason'] ?? null,
                 'tool_calls' => $response['tool_calls'] ?? null,
+                'moderation_verdict' => $moderationScan['verdict'],
+                'provider' => $response['provider'] ?? null,
             ],
         ]);
 
@@ -132,13 +127,6 @@ class AgentOrchestrationService
             // Build task prompt
             $taskPrompt = $this->buildTaskPrompt($deployment, $task);
 
-            // Model config cached per deployment for 30 minutes
-            $modelConfig = Cache::remember(
-                "agent_model_config_{$deployment->id}",
-                1800,
-                fn () => $this->modelRouter->resolve($deployment)
-            );
-
             $persona = $deployment->agent->defaultPersona;
             $systemPrompt = Cache::remember(
                 "agent_system_prompt_{$deployment->id}",
@@ -147,11 +135,7 @@ class AgentOrchestrationService
             );
 
             $startTime = microtime(true);
-            $response = $this->circuitBreaker->call(
-                'ai_inference',
-                fn () => $this->callModel($modelConfig, $systemPrompt, [], $taskPrompt),
-                fn () => $this->fallbackResponse($taskPrompt)
-            );
+            $response = $this->callWithFailover($deployment, $systemPrompt, [], $taskPrompt);
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
 
             // Parse structured output
@@ -342,6 +326,75 @@ class AgentOrchestrationService
             'recommendations' => [],
             'impact_score' => 50,
         ];
+    }
+
+    /**
+     * Call the AI model with automatic multi-level failover.
+     *
+     * Attempts each provider in the failover chain in order. Records failures
+     * per provider so degraded providers can be skipped on subsequent requests.
+     * Falls back to a graceful stub response if all providers fail.
+     */
+    private function callWithFailover(
+        AgentDeployment $deployment,
+        string $systemPrompt,
+        array $history,
+        string $userMessage
+    ): array {
+        $chain = $this->modelRouter->buildFailoverChain($deployment);
+        $lastException = null;
+
+        foreach ($chain as $index => $modelConfig) {
+            $provider = $modelConfig['provider'];
+
+            // Skip providers that have exceeded their failure threshold
+            if ($this->modelRouter->isProviderDegraded($provider)) {
+                Log::info('[AgentOrchestration] Skipping degraded provider', [
+                    'provider' => $provider,
+                    'deployment_id' => $deployment->id,
+                ]);
+
+                continue;
+            }
+
+            try {
+                $response = $this->circuitBreaker->call(
+                    "ai_inference_{$provider}",
+                    fn () => $this->callModel($modelConfig, $systemPrompt, $history, $userMessage)
+                );
+
+                if ($index > 0) {
+                    Log::info('[AgentOrchestration] Failover succeeded', [
+                        'deployment_id' => $deployment->id,
+                        'provider' => $provider,
+                        'model' => $modelConfig['model'],
+                        'attempt' => $index + 1,
+                    ]);
+                }
+
+                return array_merge($response, ['model_used' => $modelConfig['model'], 'provider' => $provider]);
+
+            } catch (\Throwable $e) {
+                $lastException = $e;
+                $this->modelRouter->recordProviderFailure($provider);
+
+                Log::warning('[AgentOrchestration] Provider failed, trying next', [
+                    'deployment_id' => $deployment->id,
+                    'provider' => $provider,
+                    'model' => $modelConfig['model'],
+                    'error' => $e->getMessage(),
+                    'attempt' => $index + 1,
+                ]);
+            }
+        }
+
+        // All providers failed — return graceful degradation response
+        Log::error('[AgentOrchestration] All providers failed, using fallback', [
+            'deployment_id' => $deployment->id,
+            'last_error' => $lastException?->getMessage(),
+        ]);
+
+        return $this->fallbackResponse($userMessage);
     }
 
     private function callModel(array $modelConfig, string $systemPrompt, array $history, string $userMessage): array

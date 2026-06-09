@@ -38,7 +38,7 @@
 
         {{-- Messages --}}
         <div class="flex-1 overflow-y-auto p-5 space-y-4" id="chat-messages">
-            @if($this->messages->isEmpty())
+            @if($this->chatMessages->isEmpty())
                 <div class="flex flex-col items-center justify-center h-full text-center py-12">
                     <div class="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center mb-4">
                         <svg class="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@
                     </p>
                 </div>
             @else
-                @foreach($this->messages as $msg)
+                @foreach($this->chatMessages as $msg)
                     <div class="flex {{ $msg->role === 'user' ? 'justify-end' : 'justify-start' }} gap-3">
                         @if($msg->role !== 'user')
                             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-700 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">

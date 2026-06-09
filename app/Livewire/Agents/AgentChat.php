@@ -42,7 +42,7 @@ class AgentChat extends Component
     }
 
     #[Computed]
-    public function messages()
+    public function chatMessages()
     {
         if (! $this->sessionId) {
             return collect();

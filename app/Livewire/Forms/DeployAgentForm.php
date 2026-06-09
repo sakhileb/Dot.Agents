@@ -10,32 +10,32 @@ use Livewire\Form;
 class DeployAgentForm extends Form
 {
     #[Validate('required|string|max:100')]
-    public string $deploymentName = '';
+    public string $deployment_name = '';
 
     #[Validate('required|in:advisory,semi-autonomous,autonomous,executive_approval')]
-    public string $deploymentMode = 'advisory';
+    public string $deployment_mode = 'advisory';
 
     #[Validate('nullable|string|max:5000')]
-    public ?string $customInstructions = null;
+    public ?string $custom_instructions = null;
 
     #[Validate('nullable|integer|exists:departments,id')]
-    public ?int $departmentId = null;
+    public ?int $department_id = null;
 
     #[Validate('nullable|integer|exists:teams,id')]
-    public ?int $teamId = null;
+    public ?int $team_id = null;
 
     #[Validate('nullable|numeric|min:0|max:100')]
-    public ?float $confidenceThreshold = 75.0;
+    public ?float $confidence_threshold = 75.0;
 
     public function toArray(): array
     {
         return [
-            'deployment_name' => $this->deploymentName,
-            'deployment_mode' => $this->deploymentMode,
-            'custom_instructions' => $this->customInstructions,
-            'department_id' => $this->departmentId,
-            'team_id' => $this->teamId,
-            'confidence_threshold' => $this->confidenceThreshold,
+            'deployment_name' => $this->deployment_name,
+            'deployment_mode' => $this->deployment_mode,
+            'custom_instructions' => $this->custom_instructions,
+            'department_id' => $this->department_id,
+            'team_id' => $this->team_id,
+            'confidence_threshold' => $this->confidence_threshold,
         ];
     }
 }

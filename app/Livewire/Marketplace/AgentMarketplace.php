@@ -106,8 +106,8 @@ class AgentMarketplace extends Component
     {
         $agent = Agent::find($agentId);
         $this->deployingAgentId = $agentId;
-        $this->deployForm->deploymentName = $agent->name;
-        $this->deployForm->deploymentMode = $agent->default_deployment_mode ?? 'advisory';
+        $this->deployForm->deployment_name = $agent->name;
+        $this->deployForm->deployment_mode = $agent->default_deployment_mode ?? 'advisory';
         $this->showDeployModal = true;
         $this->previewAgent = null;
     }

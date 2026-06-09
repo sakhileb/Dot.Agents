@@ -19,7 +19,7 @@ class ApprovalResponseForm extends Form
     public ?array $conditions = null;
 
     #[Validate('required_if:decision,rejected|nullable|string|max:500')]
-    public ?string $rejectionReason = null;
+    public ?string $rejection_reason = null;
 
     public function toArray(): array
     {
@@ -27,7 +27,7 @@ class ApprovalResponseForm extends Form
             'decision' => $this->decision,
             'notes' => $this->notes,
             'conditions' => $this->conditions,
-            'rejection_reason' => $this->rejectionReason,
+            'rejection_reason' => $this->rejection_reason,
         ];
     }
 

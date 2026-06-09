@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  *  1. Tenant isolation — prevents cross-org data access
  *  2. Permission scope  — validates requested action against allowed_actions
  *  3. Memory isolation  — agent can only access its own deployment memory
- *  4. Tool restrictions — validates tool use against deployment config
+ *  4. Tool restrictions — validates tool use against deployment config + DB rules
  *  5. Token budget      — prevents runaway token spend per task
  */
 class AgentSandboxService
@@ -20,6 +20,10 @@ class AgentSandboxService
     private const MAX_TOKENS_PER_TASK = 32000;
 
     private const MAX_TOOL_CALLS_PER_TASK = 50;
+
+    public function __construct(
+        private readonly ToolPermissionService $toolPermissions,
+    ) {}
 
     /**
      * Validate that an agent action is permitted within its sandbox.
@@ -144,9 +148,10 @@ class AgentSandboxService
             return;
         }
 
+        // 1. Agent-level tool registration check (fast — in-memory)
         $agentTools = $deployment->agent?->tools ?? [];
 
-        if (! in_array($tool, $agentTools, true)) {
+        if (! empty($agentTools) && ! in_array($tool, $agentTools, true)) {
             Log::warning('AgentSandboxService: tool not registered for agent', [
                 'deployment_id' => $deployment->id,
                 'tool' => $tool,
@@ -156,5 +161,9 @@ class AgentSandboxService
                 "Tool [{$tool}] is not registered for agent in deployment [{$deployment->id}]."
             );
         }
+
+        // 2. Per-tool permission check (database-backed, cached 5 min)
+        $userRole = $context['user_role'] ?? null;
+        $this->toolPermissions->assertToolPermitted($deployment, $tool, $userRole);
     }
 }

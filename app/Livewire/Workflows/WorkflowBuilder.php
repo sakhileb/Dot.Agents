@@ -6,6 +6,7 @@ use App\Actions\Workflows\SaveWorkflowAction;
 use App\Models\Agent;
 use App\Models\AgentWorkflow;
 use App\Services\AI\GraphWorkflowEngineService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Lazy;
@@ -81,10 +82,12 @@ class WorkflowBuilder extends Component
     #[Computed]
     public function availableAgents()
     {
-        return Agent::active()
+        // Cache agent catalog for 5 minutes — used in canvas palette, rarely changes
+        return Cache::remember('workflow_available_agents', 300, fn () => Agent::active()
             ->orderBy('name')
             ->get(['id', 'key', 'name', 'category_id'])
-            ->toArray();
+            ->toArray()
+        );
     }
 
     // ──────────────────────────────────────────────
