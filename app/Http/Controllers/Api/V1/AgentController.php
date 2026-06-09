@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\Agent;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class AgentController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'category_id' => ['nullable', 'integer', 'min:1'],
+            'department_id' => ['nullable', 'integer', 'min:1'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+
+        $agents = Agent::query()
+            ->active()
+            ->when(isset($validated['category_id']), fn ($q) => $q->where('category_id', $validated['category_id']))
+            ->when(isset($validated['department_id']), fn ($q) => $q->where('department_id', $validated['department_id']))
+            ->when(isset($validated['search']), fn ($q) => $q->where(function ($sub) use ($validated) {
+                $term = $validated['search'];
+                $sub->where('name', 'like', '%'.$term.'%')
+                    ->orWhere('description', 'like', '%'.$term.'%');
+            }))
+            ->select([
+                'id', 'uuid', 'name', 'slug', 'tagline', 'avatar', 'version',
+                'agent_type', 'specialization', 'primary_model', 'status',
+                'accuracy_score', 'reliability_score', 'avg_rating', 'review_count',
+                'total_deployments', 'pricing_model', 'base_price', 'is_featured',
+            ])
+            ->paginate($validated['per_page'] ?? 20);
+
+        return response()->json($agents);
+    }
+
+    public function show(Agent $agent): JsonResponse
+    {
+        if ($agent->status !== 'active') {
+            return response()->json(['message' => 'Agent not found'], 404);
+        }
+
+        return response()->json($agent->load(['category', 'agentDepartment']));
+    }
+}

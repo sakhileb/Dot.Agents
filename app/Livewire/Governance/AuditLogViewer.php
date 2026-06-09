@@ -1,0 +1,74 @@
+<?php
+
+namespace App\Livewire\Governance;
+
+use App\Models\AgentDeployment;
+use App\Models\AuditLog;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Lazy;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+#[Lazy]
+class AuditLogViewer extends Component
+{
+    use WithPagination;
+
+    public string $search = '';
+
+    public string $filterCategory = '';
+
+    public string $filterRisk = '';
+
+    public string $filterAgent = '';
+
+    public string $dateFrom = '';
+
+    public string $dateTo = '';
+
+    public bool $showFlagged = false;
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    #[Computed]
+    public function logs()
+    {
+        return AuditLog::where('organization_id', session('current_organization_id'))
+            ->when($this->search, fn ($q) => $q->where('description', 'like', "%{$this->search}%")
+                ->orWhere('event', 'like', "%{$this->search}%")
+            )
+            ->when($this->filterCategory, fn ($q) => $q->where('event_category', $this->filterCategory))
+            ->when($this->filterRisk, fn ($q) => $q->where('risk_level', $this->filterRisk))
+            ->when($this->filterAgent, fn ($q) => $q->where('agent_deployment_id', $this->filterAgent))
+            ->when($this->showFlagged, fn ($q) => $q->where('flagged', true))
+            ->when($this->dateFrom, fn ($q) => $q->where('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->where('created_at', '<=', $this->dateTo.' 23:59:59'))
+            ->with(['user', 'deployment.agent'])
+            ->orderByDesc('created_at')
+            ->paginate(25);
+    }
+
+    #[Computed]
+    public function deployments()
+    {
+        return AgentDeployment::where('organization_id', session('current_organization_id'))
+            ->with('agent')
+            ->get();
+    }
+
+    #[Computed]
+    public function flaggedCount(): int
+    {
+        return AuditLog::where('organization_id', session('current_organization_id'))
+            ->where('flagged', true)
+            ->count();
+    }
+
+    public function render()
+    {
+        return view('livewire.governance.audit-log-viewer');
+    }
+}

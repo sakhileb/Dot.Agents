@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] { display: none; }
+
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────────────────────────── */
+@layer base {
+    :root {
+        --brand-yellow:       #f5be1c;
+        --brand-yellow-dark:  #c49614;
+        --brand-purple:       #3d2ea0;
+        --brand-purple-mid:   #5b48c8;
+        --brand-purple-dark:  #2d2178;
+        --brand-purple-deeper:#1e1660;
+
+        --surface:            #ffffff;
+        --surface-subtle:     #f9f9f7;
+        --surface-muted:      #f3f3ef;
+        --border:             #e8e8e2;
+        --border-strong:      #d0d0c8;
+
+        --text-primary:       #111111;
+        --text-secondary:     #555550;
+        --text-muted:         #909088;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        @apply font-sans antialiased text-[#111111] bg-[#f9f9f7];
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA BUTTON SYSTEM
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-btn {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-da
+               text-sm font-medium leading-none
+               transition-all duration-150 ease-in-out
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+               disabled:opacity-40 disabled:cursor-not-allowed select-none;
+    }
+    .da-btn-primary {
+        @apply da-btn bg-brand-purple text-white
+               hover:bg-brand-purple-dark active:bg-brand-purple-deeper
+               focus-visible:ring-brand-purple;
+    }
+    .da-btn-yellow {
+        @apply da-btn bg-brand-yellow text-[#1a1400] font-semibold
+               hover:bg-brand-yellow-dark active:bg-brand-yellow-dark
+               focus-visible:ring-brand-yellow;
+    }
+    .da-btn-secondary {
+        @apply da-btn bg-white text-[#111111] border border-[#e8e8e2]
+               hover:bg-[#f3f3ef] active:bg-[#e8e8e2]
+               focus-visible:ring-brand-purple shadow-da-sm;
+    }
+    .da-btn-ghost {
+        @apply da-btn bg-transparent text-[#555550]
+               hover:bg-[#f3f3ef] hover:text-[#111111]
+               focus-visible:ring-brand-purple;
+    }
+    .da-btn-danger {
+        @apply da-btn bg-red-600 text-white
+               hover:bg-red-700 active:bg-red-800
+               focus-visible:ring-red-500;
+    }
+    .da-btn-sm { @apply px-3 py-1.5 text-xs; }
+    .da-btn-lg { @apply px-6 py-3 text-base; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA CARD
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-card {
+        @apply bg-white border border-[#e8e8e2] rounded-lg shadow-da-sm;
+    }
+    .da-card-header {
+        @apply px-5 py-4 border-b border-[#e8e8e2] flex items-center justify-between;
+    }
+    .da-card-body { @apply px-5 py-4; }
+    .da-card-footer {
+        @apply px-5 py-3 border-t border-[#e8e8e2] bg-[#f9f9f7] rounded-b-lg;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA INPUT SYSTEM
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-input {
+        @apply w-full px-3 py-2.5 bg-white border border-[#e8e8e2] rounded-da
+               text-sm text-[#111111] placeholder-[#909088]
+               transition-colors duration-150
+               focus:outline-none focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/10
+               disabled:bg-[#f3f3ef] disabled:text-[#909088] disabled:cursor-not-allowed;
+    }
+    .da-label {
+        @apply block text-xs font-medium text-[#555550] mb-1.5 tracking-wide uppercase;
+    }
+    .da-input-error {
+        @apply border-red-400 focus:border-red-500 focus:ring-red-500/10;
+    }
+    .da-error-msg { @apply text-xs text-red-600 mt-1; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA BADGE / STATUS
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-badge {
+        @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-2xs font-semibold uppercase tracking-wide;
+    }
+    .da-badge-purple  { @apply da-badge bg-brand-purple-pale text-brand-purple; }
+    .da-badge-yellow  { @apply da-badge bg-brand-yellow-pale text-[#8a6900]; }
+    .da-badge-green   { @apply da-badge bg-green-50 text-green-700; }
+    .da-badge-red     { @apply da-badge bg-red-50 text-red-700; }
+    .da-badge-orange  { @apply da-badge bg-orange-50 text-orange-700; }
+    .da-badge-gray    { @apply da-badge bg-[#f3f3ef] text-[#555550]; }
+
+    /* Status dot + label */
+    .da-status {
+        @apply inline-flex items-center gap-1.5 text-xs font-medium;
+    }
+    .da-status-dot { @apply w-1.5 h-1.5 rounded-full flex-shrink-0; }
+    .da-status-active   .da-status-dot { @apply bg-green-500; }
+    .da-status-paused   .da-status-dot { @apply bg-amber-500; }
+    .da-status-failed   .da-status-dot { @apply bg-red-500; }
+    .da-status-pending  .da-status-dot { @apply bg-brand-purple-mid; }
+    .da-status-inactive .da-status-dot { @apply bg-gray-400; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA TABLE
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-table { @apply w-full text-sm; }
+    .da-table thead { @apply border-b border-[#e8e8e2]; }
+    .da-table thead th {
+        @apply px-4 py-3 text-left text-2xs font-semibold text-[#909088] uppercase tracking-wider;
+    }
+    .da-table tbody tr {
+        @apply border-b border-[#f3f3ef] transition-colors duration-100;
+    }
+    .da-table tbody tr:hover { @apply bg-[#f9f9f7]; }
+    .da-table tbody td { @apply px-4 py-3 text-[#111111]; }
+    .da-table tbody tr:last-child { @apply border-b-0; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA METRIC WIDGET
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-metric {
+        @apply da-card p-5;
+    }
+    .da-metric-label {
+        @apply text-xs font-medium text-[#909088] uppercase tracking-wide;
+    }
+    .da-metric-value {
+        @apply text-3xl font-bold text-[#111111] font-display mt-1;
+    }
+    .da-metric-delta-up   { @apply text-xs font-medium text-green-600; }
+    .da-metric-delta-down { @apply text-xs font-medium text-red-600; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA NAVIGATION (SIDEBAR)
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-nav-item {
+        @apply flex items-center gap-3 px-3 py-2.5 rounded-da text-sm font-medium
+               text-[#c8c0e8] transition-all duration-150 w-full;
+    }
+    .da-nav-item:hover {
+        @apply bg-white/10 text-white;
+    }
+    .da-nav-item.active {
+        @apply bg-white/15 text-white;
+    }
+    .da-nav-item .nav-icon {
+        @apply w-4 h-4 flex-shrink-0 opacity-70;
+    }
+    .da-nav-item:hover .nav-icon,
+    .da-nav-item.active .nav-icon { @apply opacity-100; }
+
+    .da-nav-section {
+        @apply px-3 pt-5 pb-1.5 text-2xs font-semibold uppercase tracking-widest text-white/30;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA MODAL
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-modal-overlay {
+        @apply fixed inset-0 z-50 flex items-center justify-center
+               bg-black/40 backdrop-blur-[2px] p-4;
+    }
+    .da-modal {
+        @apply bg-white rounded-lg shadow-da-lg w-full max-w-lg;
+    }
+    .da-modal-header {
+        @apply px-6 py-4 border-b border-[#e8e8e2] flex items-center justify-between;
+    }
+    .da-modal-body  { @apply px-6 py-5; }
+    .da-modal-footer {
+        @apply px-6 py-4 border-t border-[#e8e8e2] flex items-center justify-end gap-3;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA EMPTY STATE
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-empty {
+        @apply flex flex-col items-center justify-center py-16 px-8 text-center;
+    }
+    .da-empty-icon {
+        @apply w-12 h-12 text-[#d0d0c8] mb-4;
+    }
+    .da-empty-title {
+        @apply text-sm font-semibold text-[#111111] mb-1;
+    }
+    .da-empty-desc { @apply text-sm text-[#909088] max-w-xs; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA TIMELINE / ACTIVITY FEED
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-timeline { @apply space-y-0; }
+    .da-timeline-item {
+        @apply flex gap-3 relative pb-4;
+    }
+    .da-timeline-item::before {
+        @apply absolute left-3.5 top-7 bottom-0 w-px bg-[#e8e8e2];
+        content: '';
+    }
+    .da-timeline-item:last-child::before { display: none; }
+    .da-timeline-dot {
+        @apply w-7 h-7 rounded-full border-2 border-[#e8e8e2] bg-white
+               flex items-center justify-center flex-shrink-0 mt-0.5;
+    }
+    .da-timeline-content { @apply flex-1 min-w-0; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DA GOVERNANCE ALERTS
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .da-alert {
+        @apply flex gap-3 px-4 py-3 rounded-lg border text-sm;
+    }
+    .da-alert-critical { @apply da-alert bg-red-50 border-red-200 text-red-800; }
+    .da-alert-warning  { @apply da-alert bg-amber-50 border-amber-200 text-amber-800; }
+    .da-alert-info     { @apply da-alert bg-brand-purple-pale border-brand-purple/20 text-brand-purple; }
+    .da-alert-success  { @apply da-alert bg-green-50 border-green-200 text-green-800; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SCORE BANDS
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .score-excellent { @apply text-emerald-700 bg-emerald-50; }
+    .score-good      { @apply text-green-700 bg-green-50; }
+    .score-fair      { @apply text-amber-700 bg-amber-50; }
+    .score-poor      { @apply text-orange-700 bg-orange-50; }
+    .score-critical  { @apply text-red-700 bg-red-50; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DARK MODE OVERRIDES (Authenticated shell)
+───────────────────────────────────────────────────────────── */
+@layer components {
+    .dark .da-card       { @apply bg-gray-900 border-gray-800; }
+    .dark .da-card-header,
+    .dark .da-card-footer { @apply border-gray-800; }
+    .dark .da-input      { @apply bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500
+                                  focus:border-brand-purple-mid; }
+    .dark .da-table thead { @apply border-gray-800; }
+    .dark .da-table tbody tr { @apply border-gray-800; }
+    .dark .da-table tbody tr:hover { @apply bg-gray-800/50; }
+    .dark .da-metric     { @apply bg-gray-900 border-gray-800; }
+    .dark .da-metric-value { @apply text-white; }
+    .dark .da-metric-label { @apply text-gray-400; }
+}

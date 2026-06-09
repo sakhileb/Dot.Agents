@@ -1,0 +1,433 @@
+openapi: 3.1.0
+info:
+  title: Dot.Agents API
+  version: 1.0.0
+  description: |
+    Enterprise AI Workforce Platform API.
+    All endpoints require `auth:sanctum` + `org.context` middleware.
+    Responses are scoped to the authenticated user's current organization.
+  contact:
+    name: Dot.Agents Platform
+  license:
+    name: Proprietary
+
+servers:
+  - url: /api/v1
+    description: Production API v1
+
+security:
+  - bearerToken: []
+
+paths:
+
+  # ─── Authentication ─────────────────────────────────────────────────────────
+
+  /me:
+    get:
+      summary: Get authenticated user
+      operationId: getMe
+      tags: [Auth]
+      responses:
+        '200':
+          description: Authenticated user object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  # ─── Agent Catalog ──────────────────────────────────────────────────────────
+
+  /agents:
+    get:
+      summary: List agent marketplace catalog
+      operationId: listAgents
+      tags: [Agents]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: agent_type
+          in: query
+          schema:
+            type: string
+            enum: [advisory, semi-autonomous, autonomous, executive_approval]
+      responses:
+        '200':
+          description: Paginated agent list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAgents'
+
+  /agents/{agent}:
+    get:
+      summary: Get agent details
+      operationId: showAgent
+      tags: [Agents]
+      parameters:
+        - $ref: '#/components/parameters/AgentParam'
+      responses:
+        '200':
+          description: Agent detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── Deployments ────────────────────────────────────────────────────────────
+
+  /deployments:
+    get:
+      summary: List org deployments
+      operationId: listDeployments
+      tags: [Deployments]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+      responses:
+        '200':
+          description: Paginated deployment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeployments'
+
+    post:
+      summary: Deploy an agent
+      operationId: createDeployment
+      tags: [Deployments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployAgentRequest'
+      responses:
+        '201':
+          description: Deployment created
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AgentDeployment'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /deployments/{deployment}:
+    get:
+      summary: Get deployment
+      operationId: showDeployment
+      tags: [Deployments]
+      parameters:
+        - $ref: '#/components/parameters/DeploymentParam'
+      responses:
+        '200':
+          description: Deployment detail
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AgentDeployment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update deployment
+      operationId: updateDeployment
+      tags: [Deployments]
+      parameters:
+        - $ref: '#/components/parameters/DeploymentParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeploymentRequest'
+      responses:
+        '200':
+          description: Updated deployment
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AgentDeployment'
+
+    delete:
+      summary: Decommission deployment
+      operationId: decommissionDeployment
+      tags: [Deployments]
+      parameters:
+        - $ref: '#/components/parameters/DeploymentParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+      responses:
+        '200':
+          description: Deployment decommissioned
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /deployments/{deployment}/pause:
+    post:
+      summary: Pause deployment
+      operationId: pauseDeployment
+      tags: [Deployments]
+      parameters:
+        - $ref: '#/components/parameters/DeploymentParam'
+      responses:
+        '200':
+          description: Deployment paused
+
+components:
+
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    SearchParam:
+      name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+    AgentParam:
+      name: agent
+      in: path
+      required: true
+      schema:
+        type: integer
+    DeploymentParam:
+      name: deployment
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    Unauthenticated:
+      description: Unauthenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden — insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+
+  schemas:
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        email_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        tagline:
+          type: string
+        agent_type:
+          type: string
+          enum: [advisory, semi-autonomous, autonomous, executive_approval]
+        status:
+          type: string
+          enum: [active, beta, deprecated, archived]
+        is_enterprise_only:
+          type: boolean
+        base_price:
+          type: number
+          format: decimal
+        certification_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        trust_tier:
+          type: string
+          enum: [uncertified, bronze, silver, gold, platinum]
+        certified_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    AgentDeployment:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, paused, decommissioned, pending, failed]
+        deployment_mode:
+          type: string
+          enum: [advisory, semi-autonomous, autonomous, executive_approval]
+        organization_id:
+          type: integer
+        agent_id:
+          type: integer
+        confidence_threshold:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        created_at:
+          type: string
+          format: date-time
+
+    DeployAgentRequest:
+      type: object
+      required: [agent_id, name, deployment_mode]
+      properties:
+        agent_id:
+          type: integer
+        name:
+          type: string
+          maxLength: 100
+        deployment_mode:
+          type: string
+          enum: [advisory, semi-autonomous, autonomous, executive_approval]
+        custom_instructions:
+          type: string
+          maxLength: 5000
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+        confidence_threshold:
+          type: number
+          default: 75.0
+
+    UpdateDeploymentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        deployment_mode:
+          type: string
+          enum: [advisory, semi-autonomous, autonomous, executive_approval]
+        custom_instructions:
+          type: string
+          maxLength: 5000
+          nullable: true
+        confidence_threshold:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    PaginatedAgents:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedDeployments:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentDeployment'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
