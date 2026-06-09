@@ -33,6 +33,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'consent_records',
     ];
 
     /**
@@ -68,6 +69,11 @@ class User extends Authenticatable
     public function platformNotifications()
     {
         return $this->hasMany(PlatformNotification::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
     }
 
     public function unreadNotificationsCount(): int

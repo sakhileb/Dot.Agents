@@ -1,0 +1,65 @@
+<?php
+
+namespace Tests\Feature\Actions;
+
+use App\Actions\Organizations\UpdateOrganizationSettingsAction;
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
+use Tests\TestCase;
+
+class UpdateOrganizationSettingsActionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $user;
+
+    private Organization $organization;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->organization = Organization::factory()->create(['owner_id' => $this->user->id]);
+        session(['current_organization_id' => $this->organization->id]);
+    }
+
+    public function test_updates_organization_name_and_settings(): void
+    {
+        $this->actingAs($this->user);
+        Gate::before(fn () => true);
+
+        $result = app(UpdateOrganizationSettingsAction::class)->execute($this->organization, [
+            'name' => 'Acme Corp Updated',
+            'industry' => 'fintech',
+        ]);
+
+        $this->assertEquals('Acme Corp Updated', $result->name);
+        $this->assertDatabaseHas('organizations', [
+            'id' => $this->organization->id,
+            'name' => 'Acme Corp Updated',
+        ]);
+    }
+
+    public function test_requires_authorization(): void
+    {
+        $otherUser = User::factory()->create();
+        $this->actingAs($otherUser);
+
+        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        app(UpdateOrganizationSettingsAction::class)->execute($this->organization, ['name' => 'Hacked']);
+    }
+
+    public function test_creates_audit_log_on_settings_update(): void
+    {
+        $this->actingAs($this->user);
+        Gate::before(fn () => true);
+
+        app(UpdateOrganizationSettingsAction::class)->execute($this->organization, ['name' => 'New Name']);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'event' => 'organization.settings_updated',
+        ]);
+    }
+}

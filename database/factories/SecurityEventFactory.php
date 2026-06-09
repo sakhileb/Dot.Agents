@@ -22,8 +22,8 @@ class SecurityEventFactory extends Factory
             'agent_deployment_id' => AgentDeployment::factory(),
             'event_type' => $this->faker->randomElement(['prompt_injection', 'unauthorized_access', 'data_leak_attempt', 'policy_violation']),
             'severity' => $this->faker->randomElement(['low', 'medium', 'high', 'critical']),
+            'title' => $this->faker->sentence(4),
             'description' => $this->faker->sentence(),
-            'detected_at' => now(),
             'status' => 'open',
         ];
     }
