@@ -49,6 +49,7 @@ class SaveWorkflowAction
                 'position_x' => $node['x'] ?? 0,
                 'position_y' => $node['y'] ?? 0,
                 'config' => $node['config'] ?? [],
+                'organization_id' => $workflow->organization_id,
             ]);
         }
 
@@ -62,6 +63,7 @@ class SaveWorkflowAction
                 'to_node_uuid' => $conn['to'],
                 'condition' => $conn['condition'] ?? null,
                 'label' => $conn['label'] ?? null,
+                'organization_id' => $workflow->organization_id,
             ]);
         }
 

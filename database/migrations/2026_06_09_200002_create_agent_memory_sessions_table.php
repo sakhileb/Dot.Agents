@@ -28,6 +28,7 @@ return new class extends Migration
             $table->timestamp('last_accessed_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->boolean('is_verified')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
 

@@ -40,16 +40,3 @@ class UpdateDeploymentAction
         return $deployment->refresh();
     }
 }
-
-namespace App\Actions\Agents;
-
-class UpdateDeploymentAction
-{
-    /**
-     * Create a new class instance.
-     */
-    public function __construct()
-    {
-        //
-    }
-}

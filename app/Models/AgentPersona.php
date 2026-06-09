@@ -17,6 +17,7 @@ class AgentPersona extends Model
     ];
 
     protected $casts = [
+        'system_prompt' => 'encrypted',
         'personality_traits' => 'array',
         'response_format' => 'array',
         'is_default' => 'boolean',

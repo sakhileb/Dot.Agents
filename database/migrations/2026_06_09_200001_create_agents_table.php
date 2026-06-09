@@ -173,6 +173,8 @@ return new class extends Migration
 
             $table->timestamp('deployed_at')->nullable();
             $table->timestamp('last_active_at')->nullable();
+            $table->timestamp('paused_at')->nullable();
+            $table->timestamp('decommissioned_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

@@ -25,9 +25,11 @@ class AgentDeployment extends Model
         'risk_tolerance', 'allowed_actions', 'restricted_actions',
         'data_access_scope', 'custom_kpis', 'notification_config',
         'integration_config', 'metadata', 'deployed_at', 'last_active_at',
+        'decommissioned_at', 'paused_at',
     ];
 
     protected $casts = [
+        'custom_instructions' => 'encrypted',
         'requires_human_approval' => 'boolean',
         'enable_memory' => 'boolean',
         'enable_long_term_memory' => 'boolean',
@@ -44,6 +46,8 @@ class AgentDeployment extends Model
         'metadata' => 'array',
         'deployed_at' => 'datetime',
         'last_active_at' => 'datetime',
+        'decommissioned_at' => 'datetime',
+        'paused_at' => 'datetime',
     ];
 
     protected static function boot(): void

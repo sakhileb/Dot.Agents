@@ -17,10 +17,11 @@ class AgentMemory extends Model
         'uuid', 'agent_deployment_id', 'organization_id', 'user_id',
         'memory_type', 'memory_category', 'subject', 'content', 'context',
         'tags', 'importance_score', 'confidence_score', 'access_count',
-        'last_accessed_at', 'expires_at', 'is_verified',
+        'last_accessed_at', 'expires_at', 'is_verified', 'is_active',
     ];
 
     protected $casts = [
+        'content' => 'encrypted',
         'context' => 'array',
         'tags' => 'array',
         'importance_score' => 'decimal:2',

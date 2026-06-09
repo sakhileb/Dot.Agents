@@ -12,10 +12,10 @@ class OrganizationSubscription extends Model
     use HasFactory;
 
     protected $fillable = [
-        'organization_id', 'subscription_plan_id', 'status',
-        'billing_cycle', 'amount', 'currency',
-        'trial_ends_at', 'current_period_start', 'current_period_end',
-        'cancelled_at', 'external_subscription_id', 'metadata',
+        'organization_id', 'plan_id', 'stripe_subscription_id', 'stripe_customer_id',
+        'status', 'billing_cycle', 'amount', 'currency',
+        'current_period_start', 'current_period_end',
+        'trial_start', 'trial_end', 'cancelled_at', 'metadata',
     ];
 
     protected $casts = [
