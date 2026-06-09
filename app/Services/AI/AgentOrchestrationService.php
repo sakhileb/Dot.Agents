@@ -12,7 +12,9 @@ use App\Models\DecisionLog;
 use App\Models\UsageRecord;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\DelusionDetectionService;
+use App\Services\Resilience\CircuitBreakerService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AgentOrchestrationService
@@ -23,6 +25,7 @@ class AgentOrchestrationService
         private readonly AuditService $auditService,
         private readonly MemoryService $memoryService,
         private readonly AgentSandboxService $sandbox,
+        private readonly CircuitBreakerService $circuitBreaker,
     ) {}
 
     /**
@@ -57,9 +60,22 @@ class AgentOrchestrationService
             fn () => $this->modelRouter->resolve($deployment)
         );
 
-        // Execute inference
+        // Execute inference — protected by circuit breaker
         $startTime = microtime(true);
-        $response = $this->callModel($modelConfig, $systemPrompt, $history, $userMessage);
+        try {
+            $response = $this->circuitBreaker->call(
+                'ai_inference',
+                fn () => $this->callModel($modelConfig, $systemPrompt, $history, $userMessage),
+                fn () => $this->fallbackResponse($userMessage)
+            );
+        } catch (\Throwable $e) {
+            Log::error('[AgentOrchestration] processMessage failed', [
+                'deployment_id' => $deployment->id,
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
         $latencyMs = (int) ((microtime(true) - $startTime) * 1000);
 
         // Store assistant message
@@ -131,7 +147,11 @@ class AgentOrchestrationService
             );
 
             $startTime = microtime(true);
-            $response = $this->callModel($modelConfig, $systemPrompt, [], $taskPrompt);
+            $response = $this->circuitBreaker->call(
+                'ai_inference',
+                fn () => $this->callModel($modelConfig, $systemPrompt, [], $taskPrompt),
+                fn () => $this->fallbackResponse($taskPrompt)
+            );
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
 
             // Parse structured output
@@ -333,6 +353,22 @@ class AgentOrchestrationService
             'usage' => ['total_tokens' => 100, 'prompt_tokens' => 80, 'completion_tokens' => 20],
             'cost' => 0.002,
             'finish_reason' => 'stop',
+        ];
+    }
+
+    /**
+     * Graceful degradation response when the AI service is unavailable.
+     * Returned by the circuit breaker fallback to keep the application responsive.
+     */
+    private function fallbackResponse(string $userMessage): array
+    {
+        return [
+            'content' => 'I\'m temporarily unable to process your request — the AI service is '
+                .'undergoing maintenance. Please try again in a few minutes.',
+            'usage' => ['total_tokens' => 0, 'prompt_tokens' => 0, 'completion_tokens' => 0],
+            'cost' => 0,
+            'finish_reason' => 'service_unavailable',
+            'is_fallback' => true,
         ];
     }
 

@@ -8,6 +8,7 @@ use App\Livewire\Forms\DeployAgentForm;
 use App\Models\Agent;
 use App\Models\AgentCategory;
 use App\Models\AgentDepartment;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -77,13 +78,17 @@ class AgentMarketplace extends Component
     #[Computed]
     public function departments()
     {
-        return AgentDepartment::where('is_active', true)->orderBy('sort_order')->get();
+        // Cache department list for 10 minutes — changes infrequently
+        return Cache::remember('marketplace_departments', 600, fn () => AgentDepartment::where('is_active', true)->orderBy('sort_order')->get()
+        );
     }
 
     #[Computed]
     public function categories()
     {
-        return AgentCategory::where('is_active', true)->orderBy('sort_order')->get();
+        // Cache category list for 10 minutes — changes infrequently
+        return Cache::remember('marketplace_categories', 600, fn () => AgentCategory::where('is_active', true)->orderBy('sort_order')->get()
+        );
     }
 
     public function previewAgent(int $agentId): void

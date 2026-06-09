@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\SecurityThreatDetected;
 use App\Jobs\SendPlatformNotification;
+use App\Services\Infrastructure\AlertService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,8 @@ class LogSecurityThreat implements ShouldQueue
 
     public int $backoff = 5;
 
+    public function __construct(private readonly AlertService $alertService) {}
+
     public function handle(SecurityThreatDetected $event): void
     {
         $secEvent = $event->securityEvent;
@@ -30,6 +33,9 @@ class LogSecurityThreat implements ShouldQueue
             'severity' => $secEvent->severity,
             'source_ip' => $secEvent->source_ip,
         ]);
+
+        // Fire structured alert with deduplication
+        $this->alertService->fireForSecurityEvent($secEvent);
 
         // Escalate critical events to all admins immediately
         if (in_array($secEvent->severity, ['critical', 'error'])) {

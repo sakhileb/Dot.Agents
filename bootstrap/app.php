@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CorrelationIdMiddleware;
 use App\Http\Middleware\OrganizationContextMiddleware;
 use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\VerifyCsrfToken;
@@ -16,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Correlation ID on every request — must be first for log context
+        $middleware->prepend(CorrelationIdMiddleware::class);
+
         // Security headers on every response
         $middleware->append(SecurityHeadersMiddleware::class);
 

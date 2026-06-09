@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Agent;
 use App\Models\AgentApproval;
+use App\Models\AgentCategory;
+use App\Models\AgentDepartment;
 use App\Models\AgentDeployment;
 use App\Models\AgentScorecard;
 use App\Models\AgentTask;
@@ -38,8 +40,10 @@ use App\Services\Governance\AuditService;
 use App\Services\Governance\DelusionDetectionService;
 use App\Services\Governance\DigitalImmuneSystem;
 use App\Services\Governance\ScorecardService;
+use App\Services\Resilience\CircuitBreakerService;
 use App\Skills\Governance\AuditLoggingSkill;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -55,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AuditService::class);
         $this->app->singleton(DelusionDetectionService::class);
         $this->app->singleton(ScorecardService::class);
+        $this->app->singleton(CircuitBreakerService::class);
 
         $this->app->singleton(AgentOrchestrationService::class, function ($app) {
             return new AgentOrchestrationService(
@@ -63,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(AuditService::class),
                 $app->make(MemoryService::class),
                 $app->make(AgentSandboxService::class),
+                $app->make(CircuitBreakerService::class),
             );
         });
 
@@ -120,5 +126,11 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('mark', function ($text) {
             return "<?php echo e({$text}); ?>";
         });
+
+        // Invalidate marketplace caches when departments or categories change
+        AgentDepartment::saved(fn () => Cache::forget('marketplace_departments'));
+        AgentDepartment::deleted(fn () => Cache::forget('marketplace_departments'));
+        AgentCategory::saved(fn () => Cache::forget('marketplace_categories'));
+        AgentCategory::deleted(fn () => Cache::forget('marketplace_categories'));
     }
 }

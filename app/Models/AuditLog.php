@@ -78,7 +78,9 @@ class AuditLog extends Model
             'user_agent' => request()->userAgent(),
             'user_id' => auth()->id(),
             'session_id' => session()->getId(),
-            'request_id' => request()->header('X-Request-ID') ?? (string) Str::uuid(),
+            'request_id' => request()->header('X-Correlation-ID')
+                ?? request()->header('X-Request-ID')
+                ?? (string) Str::uuid(),
         ], $context));
     }
 
