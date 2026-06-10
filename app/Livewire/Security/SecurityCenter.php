@@ -59,7 +59,7 @@ class SecurityCenter extends Component
         $this->runningDIS = true;
         $org = Organization::find($this->organizationId);
         if ($org) {
-            $this->disReport = app(DigitalImmuneSystem::class)->runHealthCheck($org);
+            $this->disReport = app(DigitalImmuneSystem::class)->runHealthCheck($org->id);
         }
         $this->runningDIS = false;
     }
