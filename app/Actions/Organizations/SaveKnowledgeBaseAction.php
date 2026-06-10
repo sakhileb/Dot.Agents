@@ -4,7 +4,9 @@ namespace App\Actions\Organizations;
 
 use App\Models\KnowledgeBase;
 use App\Models\Organization;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 class SaveKnowledgeBaseAction
 {
@@ -14,11 +16,13 @@ class SaveKnowledgeBaseAction
 
         return KnowledgeBase::create([
             'organization_id' => $organization->id,
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'type' => 'general',
-            'access_level' => $data['access_level'] ?? 'internal',
-            'is_active' => true,
+            'name'            => $data['name'],
+            'slug'            => Str::slug($data['name']) . '-' . Str::random(6),
+            'description'     => $data['description'] ?? null,
+            'type'            => $data['type'] ?? 'general',
+            'access_level'    => $data['access_level'] ?? 'internal',
+            'is_active'       => true,
+            'created_by'      => Auth::id(),
         ]);
     }
 }
