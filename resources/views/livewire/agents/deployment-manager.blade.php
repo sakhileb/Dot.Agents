@@ -1,4 +1,18 @@
 <div class="space-y-5">
+    {{-- Flash messages --}}
+    @if (session('status'))
+        <div class="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            {{ session('status') }}
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ session('error') }}
+        </div>
+    @endif
+
     {{-- Filters --}}
     <div class="flex flex-wrap gap-3">
         <div class="flex-1 min-w-48">
@@ -61,30 +75,39 @@
 
                 {{-- Actions --}}
                 <div class="flex gap-2">
-                    <a href="{{ route('agents.chat', $dep) }}"
-                        class="flex-1 py-1.5 text-xs font-medium text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
-                        Chat
-                    </a>
+                    @if($dep->status === 'active')
+                        <a href="{{ route('agents.chat', $dep) }}"
+                            class="flex-1 py-1.5 text-xs font-medium text-center bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                            Chat
+                        </a>
+                    @else
+                        <span class="flex-1 py-1.5 text-xs font-medium text-center bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 rounded-lg cursor-not-allowed" title="Chat only available for active deployments">
+                            Chat
+                        </span>
+                    @endif
                     <a href="{{ route('agents.scorecard', $dep) }}"
                         class="flex-1 py-1.5 text-xs font-medium text-center border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                         Scorecard
                     </a>
-                    @if($dep->status === 'active')
-                        <button wire:click="pauseDeployment({{ $dep->id }})"
-                            class="p-1.5 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors" title="Pause">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </button>
-                    @elseif($dep->status === 'paused')
-                        <button wire:click="resumeDeployment({{ $dep->id }})"
-                            class="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title="Resume">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </button>
-                    @endif
+                    @can('update', $dep)
+                        @if($dep->status === 'active')
+                            <button wire:click="pauseDeployment({{ $dep->id }})"
+                                wire:confirm="Pause this deployment?"
+                                class="p-1.5 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors" title="Pause">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </button>
+                        @elseif($dep->status === 'paused')
+                            <button wire:click="resumeDeployment({{ $dep->id }})"
+                                class="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title="Resume">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </button>
+                        @endif
+                    @endcan
                 </div>
             </div>
         @empty

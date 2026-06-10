@@ -6,6 +6,7 @@ use App\Actions\Agents\DecommissionDeploymentAction;
 use App\Actions\Agents\PauseDeploymentAction;
 use App\Actions\Agents\ResumeDeploymentAction;
 use App\Models\AgentDeployment;
+use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -36,25 +37,37 @@ class DeploymentManager extends Component
 
     public function pauseDeployment(int $id): void
     {
-        $deployment = AgentDeployment::findOrFail($id);
-        app(PauseDeploymentAction::class)->execute($deployment);
-        $this->confirmingPause = null;
-        session()->flash('status', 'Deployment paused.');
+        try {
+            $deployment = AgentDeployment::findOrFail($id);
+            app(PauseDeploymentAction::class)->execute($deployment);
+            $this->confirmingPause = null;
+            session()->flash('status', 'Deployment paused.');
+        } catch (AuthorizationException) {
+            session()->flash('error', 'You do not have permission to pause this deployment.');
+        }
     }
 
     public function resumeDeployment(int $id): void
     {
-        $deployment = AgentDeployment::findOrFail($id);
-        app(ResumeDeploymentAction::class)->execute($deployment);
-        session()->flash('status', 'Deployment resumed.');
+        try {
+            $deployment = AgentDeployment::findOrFail($id);
+            app(ResumeDeploymentAction::class)->execute($deployment);
+            session()->flash('status', 'Deployment resumed.');
+        } catch (AuthorizationException) {
+            session()->flash('error', 'You do not have permission to resume this deployment.');
+        }
     }
 
     public function decommissionDeployment(int $id): void
     {
-        $deployment = AgentDeployment::findOrFail($id);
-        app(DecommissionDeploymentAction::class)->execute($deployment);
-        $this->confirmingDecommission = null;
-        session()->flash('status', 'Deployment decommissioned.');
+        try {
+            $deployment = AgentDeployment::findOrFail($id);
+            app(DecommissionDeploymentAction::class)->execute($deployment);
+            $this->confirmingDecommission = null;
+            session()->flash('status', 'Deployment decommissioned.');
+        } catch (AuthorizationException) {
+            session()->flash('error', 'Only the organization owner can decommission deployments.');
+        }
     }
 
     public function render()

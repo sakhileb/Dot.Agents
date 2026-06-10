@@ -1,45 +1,70 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+<x-layouts.platform>
+    <x-slot:header>Account Settings</x-slot:header>
 
-    <div>
-        <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
-            @if (Laravel\Fortify\Features::canUpdateProfileInformation())
-                @livewire('profile.update-profile-information-form')
+    <div class="max-w-4xl mx-auto space-y-6">
 
-                <x-section-border />
-            @endif
+        {{-- Profile Information --}}
+        @if (Laravel\Fortify\Features::canUpdateProfileInformation())
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Profile Information</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Update your name, email and profile photo.</p>
+                </div>
+                <div class="p-6">
+                    @livewire('profile.update-profile-information-form')
+                </div>
+            </div>
+        @endif
 
-            @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::updatePasswords()))
-                <div class="mt-10 sm:mt-0">
+        {{-- Update Password --}}
+        @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::updatePasswords()))
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Update Password</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Use a long, random password to keep your account secure.</p>
+                </div>
+                <div class="p-6">
                     @livewire('profile.update-password-form')
                 </div>
+            </div>
+        @endif
 
-                <x-section-border />
-            @endif
-
-            @if (Laravel\Fortify\Features::canManageTwoFactorAuthentication())
-                <div class="mt-10 sm:mt-0">
+        {{-- Two-Factor Authentication --}}
+        @if (Laravel\Fortify\Features::canManageTwoFactorAuthentication())
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Two-Factor Authentication</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Add a second layer of security to your account.</p>
+                </div>
+                <div class="p-6">
                     @livewire('profile.two-factor-authentication-form')
                 </div>
+            </div>
+        @endif
 
-                <x-section-border />
-            @endif
-
-            <div class="mt-10 sm:mt-0">
+        {{-- Browser Sessions --}}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Browser Sessions</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Manage and log out of your active sessions on other devices.</p>
+            </div>
+            <div class="p-6">
                 @livewire('profile.logout-other-browser-sessions-form')
             </div>
+        </div>
 
-            @if (Laravel\Jetstream\Jetstream::hasAccountDeletionFeatures())
-                <x-section-border />
-
-                <div class="mt-10 sm:mt-0">
+        {{-- Delete Account --}}
+        @if (Laravel\Jetstream\Jetstream::hasAccountDeletionFeatures())
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-red-100 dark:border-red-900/40 overflow-hidden">
+                <div class="px-6 py-4 border-b border-red-100 dark:border-red-900/40">
+                    <h3 class="text-sm font-semibold text-red-600 dark:text-red-400">Danger Zone</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Permanently delete your account and all associated data.</p>
+                </div>
+                <div class="p-6">
                     @livewire('profile.delete-user-form')
                 </div>
-            @endif
-        </div>
+            </div>
+        @endif
+
     </div>
-</x-app-layout>
+</x-layouts.platform>
