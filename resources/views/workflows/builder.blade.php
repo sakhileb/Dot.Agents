@@ -11,8 +11,8 @@
         </div>
     </x-slot:header>
 
-    {{-- Full-height canvas layout --}}
-    <div class="-mx-6 -my-4 h-[calc(100vh-7rem)]">
+    {{-- Full-height canvas layout — escape the p-6 main padding so canvas is edge-to-edge --}}
+    <div class="-mx-6 -my-6 h-[calc(100vh-3.5rem)]">
         <livewire:workflows.workflow-builder :workflow-id="$workflow->id" />
     </div>
 </x-layouts.platform>

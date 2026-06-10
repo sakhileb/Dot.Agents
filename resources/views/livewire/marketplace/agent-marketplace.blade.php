@@ -1,4 +1,4 @@
-<div class="flex h-full min-h-screen bg-gray-50 dark:bg-gray-950">
+<div class="flex bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[600px]">
 
     {{-- ── Filter Sidebar ─────────────────────────────────────────── --}}
     <aside class="w-64 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">

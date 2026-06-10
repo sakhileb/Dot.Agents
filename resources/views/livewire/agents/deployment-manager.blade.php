@@ -1,4 +1,4 @@
-<div class="space-y-5">
+<div class="space-y-6">
     {{-- Flash messages --}}
     @if (session('status'))
         <div class="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
@@ -14,14 +14,14 @@
     @endif
 
     {{-- Filters --}}
-    <div class="flex flex-wrap gap-3">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-wrap gap-3">
         <div class="flex-1 min-w-48">
             <input wire:model.live.debounce.300ms="search" type="search"
                 placeholder="Search deployments..."
-                class="w-full text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-purple-600">
+                class="w-full text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-purple-600">
         </div>
         <select wire:model.live="filterStatus"
-            class="text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-purple-600">
+            class="text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-purple-600">
             <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="paused">Paused</option>

@@ -1,4 +1,4 @@
-<div class="flex h-[calc(100vh-8rem)] gap-4" x-data="{ showInfo: true }">
+<div class="flex h-[calc(100vh-6.5rem)] gap-4" x-data="{ showInfo: true }">
     {{-- Chat Panel --}}
     <div class="flex-1 flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {{-- Header --}}

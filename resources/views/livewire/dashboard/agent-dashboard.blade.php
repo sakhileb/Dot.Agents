@@ -1,4 +1,4 @@
-<div class="p-6 space-y-6">
+<div class="space-y-6">
     {{-- Header Row --}}
     <div class="flex items-center justify-between">
         <div>
@@ -16,7 +16,7 @@
     </div>
 
     {{-- KPI Cards --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Active Agents</p>
             <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ $this->deploymentStats["active"] }}</p>

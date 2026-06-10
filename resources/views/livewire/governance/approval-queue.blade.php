@@ -1,6 +1,6 @@
 <div class="space-y-6">
     {{-- Filters --}}
-    <div class="flex flex-wrap gap-3 items-center">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-wrap gap-3 items-center">
         <select wire:model.live="filterStatus"
             class="text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-purple-600">
             <option value="">All Statuses</option>

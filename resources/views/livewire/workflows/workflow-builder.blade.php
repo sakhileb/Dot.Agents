@@ -3,7 +3,7 @@
     x-init="init()"
     @mousemove.window="onMouseMove($event)"
     @mouseup.window="onMouseUp($event)"
-    class="flex h-[calc(100vh-8rem)] bg-gray-50 dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 select-none"
+    class="flex h-full bg-gray-50 dark:bg-gray-950 overflow-hidden border border-gray-200 dark:border-gray-800 select-none"
 >
 
     {{-- ── LEFT PANEL: Agent Library ── --}}

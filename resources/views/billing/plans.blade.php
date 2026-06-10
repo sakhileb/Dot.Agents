@@ -1,7 +1,7 @@
 <x-layouts.platform>
     <x-slot:header>Billing Plans</x-slot:header>
 
-    <div class="p-6 space-y-6">
+    <div class="space-y-6">
 
         {{-- Header --}}
         <div class="text-center py-6">

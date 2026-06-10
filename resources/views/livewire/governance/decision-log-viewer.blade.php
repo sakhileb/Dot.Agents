@@ -16,7 +16,7 @@
     </div>
 
     {{-- Filters row --}}
-    <div class="flex flex-wrap gap-3">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-wrap gap-3">
         <select wire:model.live="filterRisk"
             class="text-sm rounded-xl border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-purple-600">
             <option value="">All Risk Levels</option>

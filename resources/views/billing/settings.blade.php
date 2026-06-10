@@ -1,7 +1,7 @@
 <x-layouts.platform>
     <x-slot:header>Billing Settings</x-slot:header>
 
-    <div class="p-6 max-w-3xl space-y-6">
+    <div class="max-w-3xl space-y-6">
 
         {{-- Current Plan --}}
         <div class="da-card">
