@@ -5,11 +5,9 @@ namespace App\Livewire\Governance;
 use App\Models\AgentDeployment;
 use App\Models\AuditLog;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Lazy]
 class AuditLogViewer extends Component
 {
     use WithPagination;

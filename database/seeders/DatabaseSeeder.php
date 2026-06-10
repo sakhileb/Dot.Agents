@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AgentPlatformSeeder::class,
+            EnterpriseSkillsSeeder::class,
+            ProductionDemoSeeder::class,
         ]);
     }
 }

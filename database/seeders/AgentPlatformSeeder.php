@@ -119,10 +119,10 @@ class AgentPlatformSeeder extends Seeder
             $personaSystemPrompt = $agentData['system_prompt'] ?? null;
             unset($agentData['system_prompt']);
 
-            $agent = Agent::firstOrCreate(
+            $agent = Agent::updateOrCreate(
                 ['slug' => $agentData['slug']],
                 array_merge($agentData, [
-                    'uuid' => (string) Str::uuid(),
+                    'uuid' => $agentData['uuid'] ?? (string) Str::uuid(),
                     'status' => 'active',
                     'avg_rating' => rand(42, 50) / 10,
                     'review_count' => rand(10, 500),
@@ -130,6 +130,10 @@ class AgentPlatformSeeder extends Seeder
                     'accuracy_score' => rand(75, 98),
                     'reliability_score' => rand(80, 99),
                     'satisfaction_score' => rand(78, 97),
+                    'trust_score' => $agentData['trust_score'] ?? rand(70, 95),
+                    'performance_score' => $agentData['performance_score'] ?? rand(72, 95),
+                    'cost_tier' => $agentData['cost_tier'] ?? $this->deriveCostTier($agentData['base_price'] ?? 0),
+                    'competencies' => $agentData['competencies'] ?? $this->deriveCompetencies($agentData),
                     'version' => '1.0.0',
                 ])
             );
@@ -146,6 +150,31 @@ class AgentPlatformSeeder extends Seeder
                 );
             }
         }
+    }
+
+    private function deriveCostTier(float $price): string
+    {
+        if ($price <= 0) {
+            return 'free';
+        }
+        if ($price < 100) {
+            return 'low';
+        }
+        if ($price < 250) {
+            return 'medium';
+        }
+
+        return 'high';
+    }
+
+    private function deriveCompetencies(array $agentData): array
+    {
+        $caps = $agentData['capabilities'] ?? [];
+
+        return array_map(fn ($cap) => [
+            'area' => $cap,
+            'level' => 'proficient',
+        ], array_slice((array) $caps, 0, 4));
     }
 
     private function getAgentDefinitions(): array
@@ -190,6 +219,8 @@ class AgentPlatformSeeder extends Seeder
                 'default_deployment_mode' => 'advisory',
                 'is_featured' => true,
                 'is_verified' => true,
+                'trust_score' => 92,
+                'performance_score' => 91.5,
                 'tags' => ['executive', 'strategy', 'leadership', 'C-suite'],
                 'system_prompt' => 'You are a world-class CEO-level AI advisor. Your role is to provide strategic guidance, analyze business situations with senior executive perspective, and help organizations make informed decisions. You focus on long-term value creation, stakeholder management, and organizational effectiveness. Always be transparent about confidence levels. Never make irreversible recommendations without explicit human approval.',
             ],
@@ -205,11 +236,20 @@ class AgentPlatformSeeder extends Seeder
                 'model_provider' => 'openai',
                 'capabilities' => ['Financial modeling', 'Budget analysis', 'Cash flow forecasting', 'Risk assessment', 'Investor reporting', 'Cost optimization'],
                 'limitations' => ['Cannot sign financial documents', 'Requires human approval for commitments'],
+                'skills' => ['Financial modeling', 'Budget analysis', 'Cash flow management', 'Investor relations', 'Cost optimization'],
+                'competencies' => [
+                    ['area' => 'Financial Strategy', 'level' => 'expert'],
+                    ['area' => 'Cash Flow Management', 'level' => 'expert'],
+                    ['area' => 'Risk Assessment', 'level' => 'advanced'],
+                    ['area' => 'Investor Reporting', 'level' => 'advanced'],
+                ],
                 'base_price' => 249.00,
                 'billing_cycle' => 'monthly',
                 'default_deployment_mode' => 'advisory',
                 'is_featured' => true,
                 'is_verified' => true,
+                'trust_score' => 90,
+                'performance_score' => 89.0,
                 'tags' => ['finance', 'CFO', 'executive', 'financial planning'],
             ],
             [
@@ -223,6 +263,13 @@ class AgentPlatformSeeder extends Seeder
                 'primary_model' => 'gpt-4o',
                 'model_provider' => 'openai',
                 'capabilities' => ['Tech stack evaluation', 'Architecture review', 'Digital transformation', 'Build vs buy analysis', 'Technology roadmap', 'Vendor assessment'],
+                'skills' => ['System architecture', 'Cloud strategy', 'Technology evaluation', 'Digital transformation', 'Engineering leadership'],
+                'competencies' => [
+                    ['area' => 'Cloud Architecture', 'level' => 'expert'],
+                    ['area' => 'Technology Strategy', 'level' => 'expert'],
+                    ['area' => 'Digital Transformation', 'level' => 'advanced'],
+                    ['area' => 'Vendor Management', 'level' => 'advanced'],
+                ],
                 'base_price' => 249.00,
                 'default_deployment_mode' => 'advisory',
                 'is_featured' => false,
@@ -240,6 +287,13 @@ class AgentPlatformSeeder extends Seeder
                 'agent_type' => 'analytical',
                 'primary_model' => 'gpt-4o',
                 'capabilities' => ['P&L analysis', 'Balance sheet review', 'Financial ratios', 'DCF modeling', 'Variance analysis', 'Report generation'],
+                'skills' => ['Financial analysis', 'DCF modeling', 'Variance analysis', 'Financial reporting', 'Data interpretation'],
+                'competencies' => [
+                    ['area' => 'Financial Statement Analysis', 'level' => 'expert'],
+                    ['area' => 'DCF & Valuation', 'level' => 'expert'],
+                    ['area' => 'Variance Analysis', 'level' => 'advanced'],
+                    ['area' => 'Report Generation', 'level' => 'advanced'],
+                ],
                 'base_price' => 79.00,
                 'default_deployment_mode' => 'semi-autonomous',
                 'is_featured' => true,
@@ -325,6 +379,12 @@ class AgentPlatformSeeder extends Seeder
                 'category_id' => $automationCat,
                 'agent_type' => 'operational',
                 'capabilities' => ['Ticket triage', 'Issue diagnosis', 'Self-service guidance', 'Escalation routing', 'Knowledge base search', 'Password reset workflows'],
+                'skills' => ['Ticket management', 'Technical troubleshooting', 'Knowledge base search', 'Escalation routing', 'ITIL practices'],
+                'competencies' => [
+                    ['area' => 'Tier-1 Support', 'level' => 'expert'],
+                    ['area' => 'Issue Diagnosis', 'level' => 'advanced'],
+                    ['area' => 'Self-Service Enablement', 'level' => 'advanced'],
+                ],
                 'base_price' => 39.00,
                 'default_deployment_mode' => 'semi-autonomous',
                 'is_featured' => true,

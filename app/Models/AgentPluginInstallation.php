@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AgentPluginInstallation extends Model
 {
-    use HasFactory;
+    use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
         'plugin_id',
@@ -19,7 +20,7 @@ class AgentPluginInstallation extends Model
     ];
 
     protected $casts = [
-        'config' => 'array',
+        'config' => 'encrypted:array', // Plugin configs may contain API keys / credentials
         'installed_at' => 'datetime',
     ];
 

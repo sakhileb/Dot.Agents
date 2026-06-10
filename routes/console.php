@@ -1,8 +1,13 @@
 <?php
 
+use App\Jobs\GenerateMegaV2PlatformScorecard;
 use App\Jobs\RunDigitalImmuneSystemCheck;
 use App\Models\AgentMessage;
+use App\Models\AgentSession;
+use App\Models\AgentSkillExecution;
+use App\Models\AgentTask;
 use App\Models\AuditLog;
+use App\Models\PlatformMegaScorecard;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -25,6 +30,10 @@ Schedule::command('model:prune', [
     '--model' => [
         AuditLog::class,
         AgentMessage::class,
+        AgentTask::class,
+        AgentSession::class,
+        AgentSkillExecution::class,
+        PlatformMegaScorecard::class,
     ],
 ])->dailyAt('02:00')->onOneServer();
 
@@ -33,3 +42,10 @@ Schedule::command('approvals:expire-overdue')
     ->everyThirtyMinutes()
     ->withoutOverlapping()
     ->onOneServer();
+
+// MEGA V2 Autonomous Enterprise Readiness Scorecard — generated daily at 03:15
+Schedule::job(new GenerateMegaV2PlatformScorecard)
+    ->dailyAt('03:15')
+    ->withoutOverlapping(60)
+    ->onOneServer()
+    ->name('mega-v2-scorecard');

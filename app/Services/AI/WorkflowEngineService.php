@@ -7,6 +7,7 @@ use App\Models\AgentDeployment;
 use App\Models\AgentTask;
 use App\Models\AgentWorkflow;
 use App\Models\WorkflowExecution;
+use App\Services\AI\Workflow\WorkflowStepExecutor;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -23,6 +24,7 @@ class WorkflowEngineService
     public function __construct(
         private readonly AgentOrchestrationService $orchestrator,
         private readonly AuditService $auditService,
+        private readonly WorkflowStepExecutor $stepExecutor,
     ) {}
 
     /**
@@ -121,7 +123,7 @@ class WorkflowEngineService
             $step = $steps[$i];
 
             // Evaluate conditional logic
-            if (! $this->evaluateCondition($step, $stepResults)) {
+            if (! $this->stepExecutor->evaluateCondition($step, $stepResults)) {
                 $stepResults[$i] = ['status' => 'skipped', 'reason' => 'condition_not_met'];
                 $execution->update(['step_results' => $stepResults, 'current_step' => $i + 1]);
 
@@ -140,7 +142,7 @@ class WorkflowEngineService
             }
 
             // Execute the step
-            $result = $this->executeStep($step, $execution, $stepResults);
+            $result = $this->stepExecutor->executeStep($step, $execution, $stepResults);
             $stepResults[$i] = $result;
 
             $execution->update([
@@ -159,7 +161,7 @@ class WorkflowEngineService
         // All steps complete
         $execution->update([
             'status' => 'completed',
-            'output_data' => $this->collectOutputs($stepResults),
+            'output_data' => $this->stepExecutor->collectOutputs($stepResults),
             'completed_at' => now(),
         ]);
 
@@ -174,141 +176,4 @@ class WorkflowEngineService
     /**
      * Execute a single workflow step.
      */
-    private function executeStep(array $step, WorkflowExecution $execution, array $previousResults): array
-    {
-        $type = $step['type'] ?? 'agent_task';
-
-        return match ($type) {
-            'agent_task' => $this->runAgentTaskStep($step, $execution),
-            'notification' => $this->runNotificationStep($step, $execution),
-            'data_transform' => $this->runDataTransformStep($step, $previousResults),
-            default => ['status' => 'skipped', 'reason' => "Unknown step type: {$type}"],
-        };
-    }
-
-    private function runAgentTaskStep(array $step, WorkflowExecution $execution): array
-    {
-        $deploymentId = $step['agent_deployment_id'] ?? null;
-        if (! $deploymentId) {
-            return ['status' => 'failed', 'error' => 'No agent_deployment_id configured for step'];
-        }
-
-        $deployment = AgentDeployment::find($deploymentId);
-        if (! $deployment || $deployment->status !== 'active') {
-            return ['status' => 'failed', 'error' => "Agent deployment #{$deploymentId} not active"];
-        }
-
-        $task = AgentTask::create([
-            'uuid' => (string) Str::uuid(),
-            'agent_deployment_id' => $deployment->id,
-            'organization_id' => $execution->organization_id,
-            'title' => $step['title'] ?? 'Workflow Step Task',
-            'description' => $step['description'] ?? '',
-            'task_type' => $step['task_type'] ?? 'workflow',
-            'priority' => $step['priority'] ?? 'medium',
-            'status' => 'pending',
-            'input_data' => array_merge($execution->input_data ?? [], $step['input_override'] ?? []),
-        ]);
-
-        try {
-            $completedTask = $this->orchestrator->executeTask($deployment, $task);
-
-            return [
-                'status' => $completedTask->status,
-                'task_id' => $completedTask->id,
-                'output' => $completedTask->output_data,
-                'confidence' => $completedTask->confidence_score,
-            ];
-        } catch (Throwable $e) {
-            return ['status' => 'failed', 'task_id' => $task->id, 'error' => $e->getMessage()];
-        }
-    }
-
-    private function runNotificationStep(array $step, WorkflowExecution $execution): array
-    {
-        SendPlatformNotification::toAdmins(
-            organizationId: $execution->organization_id,
-            type: 'workflow_notification',
-            title: $step['title'] ?? 'Workflow Update',
-            message: $step['message'] ?? 'A workflow step completed.',
-            severity: $step['severity'] ?? 'info',
-            data: ['execution_id' => $execution->id]
-        );
-
-        return ['status' => 'completed'];
-    }
-
-    private function runDataTransformStep(array $step, array $previousResults): array
-    {
-        // Simple pass-through with optional key mapping
-        $output = [];
-        $mapping = $step['output_mapping'] ?? [];
-
-        foreach ($mapping as $targetKey => $sourceExpression) {
-            // Support dot-notation like "step_0.output.summary"
-            $parts = explode('.', $sourceExpression);
-            $value = $previousResults;
-            foreach ($parts as $part) {
-                $value = is_array($value) ? ($value[$part] ?? null) : null;
-            }
-            $output[$targetKey] = $value;
-        }
-
-        return ['status' => 'completed', 'output' => $output];
-    }
-
-    private function evaluateCondition(array $step, array $previousResults): bool
-    {
-        $condition = $step['condition'] ?? null;
-        if (! $condition) {
-            return true; // no condition = always run
-        }
-
-        $field = $condition['field'] ?? null;
-        $operator = $condition['operator'] ?? '==';
-        $value = $condition['value'] ?? null;
-
-        if (! $field) {
-            return true;
-        }
-
-        // Resolve value from previous step results via dot notation
-        $parts = explode('.', $field);
-        $actual = $previousResults;
-        foreach ($parts as $part) {
-            $actual = is_array($actual) ? ($actual[$part] ?? null) : null;
-        }
-
-        return match ($operator) {
-            '==' => $actual == $value,
-            '!=' => $actual != $value,
-            '>' => $actual > $value,
-            '>=' => $actual >= $value,
-            '<' => $actual < $value,
-            '<=' => $actual <= $value,
-            'in' => in_array($actual, (array) $value),
-            default => true,
-        };
-    }
-
-    private function collectOutputs(array $stepResults): array
-    {
-        $outputs = [];
-        foreach ($stepResults as $i => $result) {
-            if (isset($result['output'])) {
-                $outputs["step_{$i}"] = $result['output'];
-            }
-        }
-
-        return $outputs;
-    }
-
-    private function failExecution(WorkflowExecution $execution, string $reason): void
-    {
-        $execution->update([
-            'status' => 'failed',
-            'error_message' => $reason,
-            'completed_at' => now(),
-        ]);
-    }
 }

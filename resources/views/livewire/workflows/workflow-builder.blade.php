@@ -253,7 +253,7 @@
 </div>
 
 {{-- ── Alpine.js Canvas Controller ── --}}
-<script>
+<script nonce="{{ \Illuminate\Support\Facades\Vite::cspNonce() }}">
 function workflowCanvas(nodesRef, connectionsRef) {
     return {
         nodes: [],

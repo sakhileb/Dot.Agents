@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasOrganizationScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -11,7 +13,7 @@ use Illuminate\Support\Str;
 
 class AuditLog extends Model
 {
-    use HasFactory, HasOrganizationScope;
+    use HasFactory, HasOrganizationScope, MassPrunable;
 
     public $timestamps = false;
 
@@ -34,6 +36,7 @@ class AuditLog extends Model
     protected static function boot(): void
     {
         parent::boot();
+
         static::creating(function (self $log) {
             if (empty($log->uuid)) {
                 $log->uuid = (string) Str::uuid();
@@ -42,11 +45,34 @@ class AuditLog extends Model
                 $log->created_at = now();
             }
         });
+
+        // ── Immutability enforcement ──────────────────────────────────────────
+        // Audit logs are append-only governance records. Preventing updates and
+        // deletes ensures a tamper-evident audit trail (SOC2 CC7, ISO27001 A.12.4).
+        static::updating(function () {
+            throw new \RuntimeException('AuditLog records are immutable and cannot be updated.');
+        });
+
+        static::deleting(function () {
+            throw new \RuntimeException('AuditLog records are immutable and cannot be deleted. Use model:prune for scheduled retention.');
+        });
     }
 
     public function auditable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Define the prunable query — keep 90 days of audit logs by default.
+     * Override AUDIT_LOG_RETENTION_DAYS env var to adjust per deployment.
+     */
+    public function prunable(): Builder
+    {
+        $days = (int) env('AUDIT_LOG_RETENTION_DAYS', 90);
+
+        return static::withoutGlobalScope('organization')
+            ->where('created_at', '<', now()->subDays($days));
     }
 
     public function organization(): BelongsTo

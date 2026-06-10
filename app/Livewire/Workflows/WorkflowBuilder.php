@@ -9,7 +9,6 @@ use App\Services\AI\GraphWorkflowEngineService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
 /**
@@ -21,7 +20,6 @@ use Livewire\Component;
  *  – Trigger graph execution
  *  – Remain thin: no business logic beyond CRUD of canvas state
  */
-#[Lazy]
 class WorkflowBuilder extends Component
 {
     public AgentWorkflow $workflow;

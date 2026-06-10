@@ -1,19 +1,51 @@
 <?php
 
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\HealthCheckController;
 use App\Models\AgentDeployment;
 use App\Models\AgentWorkflow;
 use Illuminate\Support\Facades\Route;
+
+// ── Health Checks ─────────────────────────────────────────────────────────────
+// Public ping — used by load balancers and uptime monitors
+Route::get('/health', [HealthCheckController::class, 'ping'])->name('health.ping');
+
+// Authenticated detailed health report — for internal monitoring dashboards
+Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(function () {
+    Route::get('/health/detailed', [HealthCheckController::class, 'detailed'])->name('health.detailed');
+});
 
 // Landing page
 Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : view('welcome');
 });
 
+// Consent routes — accessible to authenticated users regardless of consent status
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
+    ->prefix('consent')
+    ->name('consent.')
+    ->group(function () {
+        Route::get('/', fn () => view('consent.show'))->name('show');
+        Route::post('/', function () {
+            $user = auth()->user();
+            $records = $user->consent_records ?? [];
+            $records['platform_terms'] = [
+                'accepted_at' => now()->toIso8601String(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ];
+            $user->update(['consent_records' => $records]);
+
+            return redirect()->intended(route('dashboard'))
+                ->with('success', 'Thank you for accepting the platform terms.');
+        })->name('accept');
+    });
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
+    'consent.required',
     'org.context',
 ])->group(function () {
 
@@ -26,9 +58,21 @@ Route::middleware([
     // Agents
     Route::prefix('agents')->name('agents.')->group(function () {
         Route::get('/', fn () => view('agents.index'))->name('deployments');
-        Route::get('/{deployment}', fn (AgentDeployment $deployment) => view('agents.show', compact('deployment')))->name('show');
-        Route::get('/{deployment}/chat', fn (AgentDeployment $deployment) => view('agents.chat', compact('deployment')))->name('chat');
-        Route::get('/{deployment}/scorecard', fn (AgentDeployment $deployment) => view('agents.scorecard', compact('deployment')))->name('scorecard');
+        Route::get('/{deployment}', function (AgentDeployment $deployment) {
+            abort_unless(auth()->user()->can('view', $deployment), 403);
+
+            return view('agents.show', compact('deployment'));
+        })->name('show');
+        Route::get('/{deployment}/chat', function (AgentDeployment $deployment) {
+            abort_unless(auth()->user()->can('chat', $deployment), 403);
+
+            return view('agents.chat', compact('deployment'));
+        })->name('chat');
+        Route::get('/{deployment}/scorecard', function (AgentDeployment $deployment) {
+            abort_unless(auth()->user()->can('view', $deployment), 403);
+
+            return view('agents.scorecard', compact('deployment'));
+        })->name('scorecard');
     });
 
     // Workflows

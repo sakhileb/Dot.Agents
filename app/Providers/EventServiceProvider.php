@@ -10,11 +10,16 @@ use App\Events\ApprovalProcessed;
 use App\Events\ApprovalRequested;
 use App\Events\OrganizationCreated;
 use App\Events\SecurityThreatDetected;
+use App\Events\SkillApprovalRequested;
+use App\Events\SkillExecuted;
+use App\Events\SkillExecutionBlocked;
 use App\Listeners\HandleAgentTaskFailed;
 use App\Listeners\LogDeploymentAudit;
 use App\Listeners\LogSecurityThreat;
+use App\Listeners\LogSkillBlockedEvent;
 use App\Listeners\NotifyOnAgentDrift;
 use App\Listeners\NotifyOnApprovalProcessed;
+use App\Listeners\RecordSkillScoreOnExecution;
 use App\Listeners\SendApprovalNotification;
 use App\Listeners\SetupOrganizationDefaults;
 use App\Listeners\UpdateScorecardOnTaskComplete;
@@ -61,6 +66,18 @@ class EventServiceProvider extends ServiceProvider
 
         OrganizationCreated::class => [
             SetupOrganizationDefaults::class,
+        ],
+
+        SkillExecuted::class => [
+            RecordSkillScoreOnExecution::class,
+        ],
+
+        SkillExecutionBlocked::class => [
+            LogSkillBlockedEvent::class,
+        ],
+
+        SkillApprovalRequested::class => [
+            SendApprovalNotification::class,
         ],
     ];
 

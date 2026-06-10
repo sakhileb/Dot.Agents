@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AgentToolPermission extends Model
 {
+    use HasOrganizationScope;
+
     protected $fillable = [
         'organization_id',
         'agent_deployment_id',

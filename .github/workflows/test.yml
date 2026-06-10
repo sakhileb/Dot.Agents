@@ -65,7 +65,7 @@ jobs:
           echo "SESSION_DRIVER=array" >> .env
 
       - name: Run PHPUnit tests with coverage
-        run: php artisan test --compact --coverage --min=70
+        run: php artisan test --compact --coverage --min=80
         env:
           XDEBUG_MODE: coverage
 

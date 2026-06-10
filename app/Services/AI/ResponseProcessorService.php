@@ -2,6 +2,7 @@
 
 namespace App\Services\AI;
 
+use App\Events\ApprovalRequested;
 use App\Models\AgentApproval;
 use App\Models\AgentDeployment;
 use App\Models\AgentSession;
@@ -104,5 +105,7 @@ class ResponseProcessorService
             'status' => 'pending',
             'expires_at' => now()->addHours(48),
         ]);
+
+        event(new ApprovalRequested($approval));
     }
 }

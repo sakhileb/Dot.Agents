@@ -8,9 +8,9 @@ use App\Models\AgentSession;
 use App\Models\AgentTask;
 use App\Models\AgentWorkflow;
 use App\Models\DecisionLog;
+use App\Models\Organization;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\DelusionDetectionService;
-use App\Services\Resilience\CircuitBreakerService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -32,10 +32,11 @@ class AgentOrchestrationService
         private readonly AuditService $auditService,
         private readonly MemoryService $memoryService,
         private readonly AgentSandboxService $sandbox,
-        private readonly CircuitBreakerService $circuitBreaker,
         private readonly OutputModerationService $outputModeration,
         private readonly PromptBuilderService $promptBuilder,
         private readonly ResponseProcessorService $responseProcessor,
+        private readonly AgentModelCaller $modelCaller,
+        private readonly AgentQuotaGuard $quotaGuard,
     ) {}
 
     /**
@@ -59,7 +60,13 @@ class AgentOrchestrationService
         );
 
         $startTime = microtime(true);
-        $response = $this->callWithFailover($deployment, $systemPrompt, $history, $userMessage);
+        $response = $this->modelCaller->callWithFailover(
+            $deployment->id,
+            $this->modelRouter->buildFailoverChain($deployment),
+            $systemPrompt,
+            $history,
+            $userMessage
+        );
         $latencyMs = (int) ((microtime(true) - $startTime) * 1000);
 
         ['content' => $moderatedContent, 'scan' => $moderationScan] = $this->outputModeration->scanAndRedact(
@@ -117,6 +124,10 @@ class AgentOrchestrationService
             'organization_id' => $deployment->organization_id,
         ]);
 
+        // ── Plan quota check: max_tasks_per_month ───────────────────────────
+        $org = Organization::find($deployment->organization_id);
+        $this->quotaGuard->assertQuotaAvailable($deployment->organization_id, $org?->plan);
+
         $task->update(['status' => 'in_progress', 'started_at' => now()]);
 
         try {
@@ -130,7 +141,13 @@ class AgentOrchestrationService
             );
 
             $startTime = microtime(true);
-            $response = $this->callWithFailover($deployment, $systemPrompt, [], $taskPrompt);
+            $response = $this->modelCaller->callWithFailover(
+                $deployment->id,
+                $this->modelRouter->buildFailoverChain($deployment),
+                $systemPrompt,
+                [],
+                $taskPrompt
+            );
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
 
             $output = $this->responseProcessor->parseTaskOutput($response['content']);
@@ -271,88 +288,4 @@ class AgentOrchestrationService
     /**
      * Call the AI model with automatic multi-provider failover.
      */
-    private function callWithFailover(
-        AgentDeployment $deployment,
-        string $systemPrompt,
-        array $history,
-        string $userMessage
-    ): array {
-        $chain = $this->modelRouter->buildFailoverChain($deployment);
-        $lastException = null;
-
-        foreach ($chain as $index => $modelConfig) {
-            $provider = $modelConfig['provider'];
-
-            if ($this->modelRouter->isProviderDegraded($provider)) {
-                Log::info('[AgentOrchestration] Skipping degraded provider', [
-                    'provider' => $provider,
-                    'deployment_id' => $deployment->id,
-                ]);
-
-                continue;
-            }
-
-            try {
-                $response = $this->circuitBreaker->call(
-                    "ai_inference_{$provider}",
-                    fn () => $this->callModel($modelConfig, $systemPrompt, $history, $userMessage)
-                );
-
-                if ($index > 0) {
-                    Log::info('[AgentOrchestration] Failover succeeded', [
-                        'deployment_id' => $deployment->id,
-                        'provider' => $provider,
-                        'model' => $modelConfig['model'],
-                        'attempt' => $index + 1,
-                    ]);
-                }
-
-                return array_merge($response, ['model_used' => $modelConfig['model'], 'provider' => $provider]);
-
-            } catch (\Throwable $e) {
-                $lastException = $e;
-                $this->modelRouter->recordProviderFailure($provider);
-
-                Log::warning('[AgentOrchestration] Provider failed, trying next', [
-                    'deployment_id' => $deployment->id,
-                    'provider' => $provider,
-                    'model' => $modelConfig['model'],
-                    'error' => $e->getMessage(),
-                    'attempt' => $index + 1,
-                ]);
-            }
-        }
-
-        Log::error('[AgentOrchestration] All providers failed, using fallback', [
-            'deployment_id' => $deployment->id,
-            'last_error' => $lastException?->getMessage(),
-        ]);
-
-        return $this->fallbackResponse($userMessage);
-    }
-
-    private function callModel(array $modelConfig, string $systemPrompt, array $history, string $userMessage): array
-    {
-        return [
-            'content' => 'Agent response placeholder — model integration active in production.',
-            'usage' => ['total_tokens' => 100, 'prompt_tokens' => 80, 'completion_tokens' => 20],
-            'cost' => 0.002,
-            'finish_reason' => 'stop',
-        ];
-    }
-
-    /**
-     * Graceful degradation response when all AI providers are unavailable.
-     */
-    private function fallbackResponse(string $userMessage): array
-    {
-        return [
-            'content' => 'I\'m temporarily unable to process your request — the AI service is '
-                .'undergoing maintenance. Please try again in a few minutes.',
-            'usage' => ['total_tokens' => 0, 'prompt_tokens' => 0, 'completion_tokens' => 0],
-            'cost' => 0,
-            'finish_reason' => 'service_unavailable',
-            'is_fallback' => true,
-        ];
-    }
 }

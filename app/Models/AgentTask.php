@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasOrganizationScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +14,7 @@ use Illuminate\Support\Str;
 
 class AgentTask extends Model
 {
-    use HasFactory, HasOrganizationScope;
+    use HasFactory, HasOrganizationScope, MassPrunable;
     use SoftDeletes;
 
     protected $fillable = [
@@ -23,6 +25,7 @@ class AgentTask extends Model
         'delusion_risk_score', 'reality_alignment_score',
         'estimated_duration_minutes', 'actual_duration_minutes',
         'token_count', 'cost', 'due_at', 'started_at', 'completed_at', 'metadata',
+        'user_rating', 'user_feedback', 'rated_at',
     ];
 
     protected $casts = [
@@ -39,6 +42,8 @@ class AgentTask extends Model
         'due_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'rated_at' => 'datetime',
+        'user_rating' => 'integer',
     ];
 
     protected static function boot(): void
@@ -49,6 +54,17 @@ class AgentTask extends Model
                 $task->uuid = (string) Str::uuid();
             }
         });
+    }
+
+    /**
+     * Prune completed/failed tasks older than 90 days.
+     * Bypasses the organization global scope to prune across all tenants.
+     */
+    public function prunable(): Builder
+    {
+        return static::withoutGlobalScope('organization')
+            ->whereIn('status', ['completed', 'failed', 'cancelled'])
+            ->where('created_at', '<=', now()->subDays(90));
     }
 
     public function deployment(): BelongsTo

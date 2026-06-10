@@ -17,23 +17,40 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('agent_tasks', function (Blueprint $table) {
-            $table->index(['organization_id', 'created_at'], 'agent_tasks_org_created_at_idx');
+        $indexes = DB::select("SELECT name FROM sqlite_master WHERE type='index'");
+        $existingIndexes = array_column($indexes, 'name');
+
+        Schema::table('agent_tasks', function (Blueprint $table) use ($existingIndexes) {
+            if (! in_array('agent_tasks_org_created_at_idx', $existingIndexes)) {
+                $table->index(['organization_id', 'created_at'], 'agent_tasks_org_created_at_idx');
+            }
         });
 
-        Schema::table('security_events', function (Blueprint $table) {
-            $table->index(['organization_id', 'created_at'], 'security_events_org_created_at_idx');
-            $table->index(['organization_id', 'event_type', 'status'], 'security_events_org_type_status_idx');
+        Schema::table('security_events', function (Blueprint $table) use ($existingIndexes) {
+            if (! in_array('security_events_org_created_at_idx', $existingIndexes)) {
+                $table->index(['organization_id', 'created_at'], 'security_events_org_created_at_idx');
+            }
+            if (! in_array('security_events_org_type_status_idx', $existingIndexes)) {
+                $table->index(['organization_id', 'event_type', 'status'], 'security_events_org_type_status_idx');
+            }
         });
 
-        Schema::table('decision_logs', function (Blueprint $table) {
-            $table->index(['organization_id', 'created_at'], 'decision_logs_org_created_at_idx');
-            $table->index(['agent_deployment_id', 'created_at'], 'decision_logs_deployment_created_at_idx');
+        Schema::table('decision_logs', function (Blueprint $table) use ($existingIndexes) {
+            if (! in_array('decision_logs_org_created_at_idx', $existingIndexes)) {
+                $table->index(['organization_id', 'created_at'], 'decision_logs_org_created_at_idx');
+            }
+            if (! in_array('decision_logs_deployment_created_at_idx', $existingIndexes)) {
+                $table->index(['agent_deployment_id', 'created_at'], 'decision_logs_deployment_created_at_idx');
+            }
         });
 
-        Schema::table('audit_logs', function (Blueprint $table) {
-            $table->index(['organization_id', 'created_at'], 'audit_logs_org_created_at_idx');
-            $table->index(['organization_id', 'event'], 'audit_logs_org_event_idx');
+        Schema::table('audit_logs', function (Blueprint $table) use ($existingIndexes) {
+            if (! in_array('audit_logs_org_created_at_idx', $existingIndexes)) {
+                $table->index(['organization_id', 'created_at'], 'audit_logs_org_created_at_idx');
+            }
+            if (! in_array('audit_logs_org_event_idx', $existingIndexes)) {
+                $table->index(['organization_id', 'event'], 'audit_logs_org_event_idx');
+            }
         });
     }
 

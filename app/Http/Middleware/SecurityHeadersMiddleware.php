@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Vite;
 use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeadersMiddleware
@@ -14,6 +15,11 @@ class SecurityHeadersMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Generate nonce BEFORE the view renders so Vite can inject it into its
+        // generated <script> tags (module-preload polyfill, dynamic imports, etc.).
+        $nonce = $this->nonce();
+        Vite::useCspNonce($nonce);
+
         $response = $next($request);
 
         // Strict Transport Security — force HTTPS for 1 year including subdomains
@@ -22,10 +28,13 @@ class SecurityHeadersMiddleware
             'max-age=31536000; includeSubDomains; preload'
         );
 
-        // Content Security Policy — restrictive default, allow same-origin, Google Fonts, Vite HMR
+        // Content Security Policy
+        // - 'unsafe-eval' is required by Alpine.js v3 (uses new Function() to evaluate expressions)
+        // - 'unsafe-inline' in style-src is required by Alpine.js x-show (injects style="display:none")
+        // - Livewire 3 uses Alpine internally; removing either will break all wire:click / x-data
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'nonce-".$this->nonce()."' https://cdn.jsdelivr.net",
+            "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval' https://cdn.jsdelivr.net",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' https://fonts.gstatic.com data:",
             "img-src 'self' data: blob: https:",

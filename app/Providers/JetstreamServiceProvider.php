@@ -9,8 +9,10 @@ use App\Actions\Jetstream\DeleteUser;
 use App\Actions\Jetstream\InviteTeamMember;
 use App\Actions\Jetstream\RemoveTeamMember;
 use App\Actions\Jetstream\UpdateTeamName;
+use App\Livewire\NavigationMenu;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Jetstream\Jetstream;
+use Livewire\Livewire;
 
 class JetstreamServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,9 @@ class JetstreamServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configurePermissions();
+
+        // Override Jetstream's NavigationMenu to guard against the $wire toJSON proxy bug.
+        Livewire::component('navigation-menu', NavigationMenu::class);
 
         Jetstream::createTeamsUsing(CreateTeam::class);
         Jetstream::updateTeamNamesUsing(UpdateTeamName::class);

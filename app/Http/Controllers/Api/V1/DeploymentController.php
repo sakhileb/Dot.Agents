@@ -31,10 +31,15 @@ class DeploymentController extends Controller
 
     public function store(DeployAgentRequest $request, DeployAgentAction $action): JsonResponse
     {
+        $orgId = session('current_organization_id');
+        if (! $orgId) {
+            return response()->json(['error' => 'No active organization context.'], 403);
+        }
+
         $data = DeployAgentData::fromArray(array_merge(
             $request->validated(),
             [
-                'organization_id' => session('current_organization_id'),
+                'organization_id' => $orgId,
                 'deployed_by' => $request->user()->id,
             ]
         ));
@@ -82,7 +87,8 @@ class DeploymentController extends Controller
 
     private function authorizeOrgAccess(AgentDeployment $deployment): void
     {
-        if ($deployment->organization_id !== session('current_organization_id')) {
+        $orgId = session('current_organization_id');
+        if (! $orgId || $deployment->organization_id !== (int) $orgId) {
             abort(403, 'Access denied.');
         }
     }

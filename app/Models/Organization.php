@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class Organization extends Model
 {
@@ -99,5 +100,27 @@ class Organization extends Model
     public function isSubscriptionActive(): bool
     {
         return $this->subscription_ends_at && $this->subscription_ends_at->isFuture();
+    }
+
+    /**
+     * Return cached organization settings — avoids repeated DB lookups per request.
+     * Cache TTL: 5 minutes; invalidated on save.
+     */
+    public function cachedSettings(): array
+    {
+        return Cache::tags(['org_settings'])->remember(
+            "org_settings:{$this->id}",
+            300,
+            fn () => $this->settings ?? []
+        );
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        // Invalidate org settings cache when org is updated
+        static::saved(function (self $org) {
+            Cache::tags(['org_settings'])->forget("org_settings:{$org->id}");
+        });
     }
 }

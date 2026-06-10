@@ -1,0 +1,1 @@
+../../layouts/platform.blade.php

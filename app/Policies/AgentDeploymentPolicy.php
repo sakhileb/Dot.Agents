@@ -3,6 +3,8 @@
 namespace App\Policies;
 
 use App\Models\AgentDeployment;
+use App\Models\Organization;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 
 class AgentDeploymentPolicy
@@ -19,10 +21,33 @@ class AgentDeploymentPolicy
         return auth()->check();
     }
 
-    /** Org members can create deployments in their org. */
+    /**
+     * Org members can create deployments — subject to plan limit on max_agents.
+     * Returns false (403) when the org is already at or above its plan's agent cap.
+     */
     public function create(User $user, int $organizationId): bool
     {
-        return $user->organizations()->where('organizations.id', $organizationId)->exists();
+        $isMember = $user->organizations()->where('organizations.id', $organizationId)->exists();
+        if (! $isMember) {
+            return false;
+        }
+
+        $org = Organization::find($organizationId);
+        if (! $org) {
+            return false;
+        }
+
+        // Resolve the plan limit from the subscription plan table
+        $plan = SubscriptionPlan::where('slug', $org->plan)->first();
+        $maxAgents = $plan?->max_agents ?? PHP_INT_MAX; // no limit if plan not found
+
+        // Count active + paused deployments (not decommissioned)
+        $currentCount = AgentDeployment::withoutGlobalScope('organization')
+            ->where('organization_id', $organizationId)
+            ->whereIn('status', ['active', 'paused'])
+            ->count();
+
+        return $currentCount < $maxAgents;
     }
 
     /** Only org owners/admins can update deployments. */

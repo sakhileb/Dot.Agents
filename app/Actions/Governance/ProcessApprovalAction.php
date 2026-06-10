@@ -4,12 +4,17 @@ namespace App\Actions\Governance;
 
 use App\Events\ApprovalProcessed;
 use App\Models\AgentApproval;
+use App\Models\DecisionLog;
 use App\Services\Governance\AuditService;
+use App\Services\Governance\PredictionAccuracyTrackingService;
 use Illuminate\Support\Facades\Gate;
 
 class ProcessApprovalAction
 {
-    public function __construct(private readonly AuditService $auditService) {}
+    public function __construct(
+        private readonly AuditService $auditService,
+        private readonly PredictionAccuracyTrackingService $predictionAccuracy,
+    ) {}
 
     public function execute(AgentApproval $approval, string $decision, ?string $notes = null): AgentApproval
     {
@@ -38,6 +43,10 @@ class ProcessApprovalAction
                 default => 'pending',
             };
             $approval->task?->update(['status' => $newTaskStatus]);
+
+            // Record the outcome on the linked DecisionLog so prediction accuracy
+            // and data-trust dimensions receive real data.
+            $this->recordDecisionOutcome($approval->task_id, $decision);
         }
 
         $this->auditService->logUserAction(
@@ -50,5 +59,32 @@ class ProcessApprovalAction
         event(new ApprovalProcessed($approval));
 
         return $approval->refresh();
+    }
+
+    private function recordDecisionOutcome(int $taskId, string $approvalDecision): void
+    {
+        $finalOutcome = match ($approvalDecision) {
+            'approved' => 'implemented',
+            'rejected' => 'rejected',
+            'escalated' => 'escalated',
+            default => null,
+        };
+
+        if ($finalOutcome === null) {
+            return;
+        }
+
+        $decisionLog = DecisionLog::where('task_id', $taskId)
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($decisionLog && $decisionLog->final_outcome === null) {
+            $decisionLog->update([
+                'final_outcome' => $finalOutcome,
+                'human_verdict' => $approvalDecision === 'approved' ? 'correct' : 'incorrect',
+            ]);
+
+            $this->predictionAccuracy->recordOutcome($decisionLog);
+        }
     }
 }

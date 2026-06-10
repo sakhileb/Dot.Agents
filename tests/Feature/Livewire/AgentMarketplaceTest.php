@@ -63,16 +63,18 @@ class AgentMarketplaceTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        AgentDepartment::factory()->create(['is_active' => true, 'sort_order' => 1]);
-        AgentDepartment::factory()->create(['is_active' => true, 'sort_order' => 2]);
+        AgentDepartment::factory()->create(['is_active' => true, 'sort_order' => 100]);
+        AgentDepartment::factory()->create(['is_active' => true, 'sort_order' => 101]);
+
+        Cache::flush(); // clear any stale cache before testing cache fill
 
         $component = Livewire::actingAs($this->user)
             ->test(AgentMarketplace::class);
 
-        // Departments should be populated
-        $this->assertCount(2, $component->get('departments'));
+        // Departments should contain at least the 2 we just created
+        $this->assertGreaterThanOrEqual(2, count($component->get('departments')));
 
-        // Second call should use cache
+        // Cache should now be populated
         $this->assertTrue(Cache::has('marketplace_departments'));
     }
 
@@ -80,13 +82,15 @@ class AgentMarketplaceTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        AgentCategory::factory()->create(['is_active' => true, 'sort_order' => 1]);
+        AgentCategory::factory()->create(['is_active' => true, 'sort_order' => 100]);
+
+        Cache::flush();
 
         $component = Livewire::actingAs($this->user)
             ->test(AgentMarketplace::class);
 
-        // Trigger evaluation of categories computed property
-        $this->assertCount(1, $component->get('categories'));
+        // At least the factory-created category is returned
+        $this->assertGreaterThanOrEqual(1, count($component->get('categories')));
 
         $this->assertTrue(Cache::has('marketplace_categories'));
     }

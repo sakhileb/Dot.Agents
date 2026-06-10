@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invoice extends Model
 {
-    use HasFactory;
+    use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
         'organization_id', 'organization_subscription_id',

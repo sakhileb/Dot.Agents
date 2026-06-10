@@ -51,14 +51,18 @@ class AgentCertificationService
             'security' => $this->scoreSecurity($agent),
             'governance' => $this->scoreGovernance($agent),
             'performance' => $this->scorePerformance($agent, $organizationId),
+            'risk' => $this->scoreRisk($agent),
+            'compliance' => $this->scoreCompliance($agent),
         ];
 
         $certificationScore = (int) round(
-            ($scores['accuracy'] * 0.30) +
-            ($scores['reliability'] * 0.25) +
-            ($scores['security'] * 0.20) +
-            ($scores['governance'] * 0.15) +
-            ($scores['performance'] * 0.10)
+            ($scores['accuracy'] * 0.25) +
+            ($scores['reliability'] * 0.20) +
+            ($scores['security'] * 0.18) +
+            ($scores['governance'] * 0.12) +
+            ($scores['performance'] * 0.10) +
+            ($scores['risk'] * 0.10) +
+            ($scores['compliance'] * 0.05)
         );
 
         $tier = $this->resolveTier($certificationScore);
@@ -197,6 +201,68 @@ class AgentCertificationService
             $avgLatency < 10000 => 40,
             default => 20,
         };
+    }
+
+    /**
+     * Risk Score — evaluates if the agent has defined risk management controls.
+     * Higher score = lower operational risk.
+     */
+    private function scoreRisk(Agent $agent): int
+    {
+        $score = 40; // baseline
+
+        // Risk controls documented
+        if (! empty($agent->risk_controls)) {
+            $score += 20;
+        }
+
+        // Limitations clearly documented
+        if (! empty($agent->limitations)) {
+            $score += 15;
+        }
+
+        // Confidence threshold set (prevents unchecked autonomous actions)
+        if (! empty($agent->model_config['confidence_threshold'])) {
+            $score += 15;
+        }
+
+        // Low-risk tier deployment mode
+        if ($agent->default_deployment_mode === 'advisory') {
+            $score += 10;
+        }
+
+        return min($score, 100);
+    }
+
+    /**
+     * Compliance Score — evaluates regulatory/audit readiness.
+     * Higher score = more audit-ready for enterprise procurement.
+     */
+    private function scoreCompliance(Agent $agent): int
+    {
+        $score = 30; // baseline
+
+        // Certifications provided
+        if (! empty($agent->certifications)) {
+            $score += 25;
+        }
+
+        // Required permissions declared
+        if (! empty($agent->knowledge_areas)) {
+            $score += 15;
+        }
+
+        // Decision framework documented (SOX, GDPR, etc.)
+        if (! empty($agent->decision_framework)) {
+            $score += 20;
+        }
+
+        // Is verified by platform
+        if ($agent->is_verified) {
+            $score += 10;
+        }
+
+        return min($score, 100);
     }
 
     private function resolveTier(int $score): string

@@ -4,7 +4,6 @@ namespace App\Livewire\Dashboard;
 
 use App\Services\Infrastructure\PlatformMetricsService;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
 /**
@@ -20,7 +19,6 @@ use Livewire\Component;
  * Refreshes every 30 seconds via Livewire polling.
  * All data is cached for 60s by PlatformMetricsService.
  */
-#[Lazy]
 class OperationsDashboard extends Component
 {
     public string $timeframe = '24h';

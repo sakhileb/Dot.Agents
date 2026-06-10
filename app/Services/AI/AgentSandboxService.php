@@ -21,6 +21,15 @@ class AgentSandboxService
 
     private const MAX_TOOL_CALLS_PER_TASK = 50;
 
+    /**
+     * Maximum number of nested agent delegations allowed.
+     *
+     * Prevents runaway agent delegation chains (A → B → C → D → ...).
+     * Exceeding this limit raises a RuntimeException and is audit-logged.
+     * CVE mitigation: prevents recursive delegation amplification attacks.
+     */
+    private const MAX_DELEGATION_DEPTH = 3;
+
     public function __construct(
         private readonly ToolPermissionService $toolPermissions,
     ) {}
@@ -88,6 +97,39 @@ class AgentSandboxService
     public function namespaceMemoryKey(AgentDeployment $deployment, string $key): string
     {
         return "deployment:{$deployment->id}:{$key}";
+    }
+
+    /**
+     * Enforce the maximum delegation depth for nested agent-to-agent calls.
+     *
+     * Call this before an agent delegates a subtask to another agent.
+     * The $currentDepth is the number of delegation hops already taken.
+     *
+     * @param  AgentDeployment  $delegation  The agent being delegated TO
+     * @param  int  $currentDepth  Current delegation chain depth (0 = root)
+     *
+     * @throws \RuntimeException if the depth limit would be exceeded
+     */
+    public function enforceDelegationDepth(AgentDeployment $delegation, int $currentDepth): void
+    {
+        if ($currentDepth >= self::MAX_DELEGATION_DEPTH) {
+            Log::error('AgentSandboxService: delegation depth limit exceeded', [
+                'delegation_deployment_id' => $delegation->id,
+                'current_depth' => $currentDepth,
+                'max_depth' => self::MAX_DELEGATION_DEPTH,
+            ]);
+
+            throw new \RuntimeException(
+                "Delegation depth limit exceeded ({$currentDepth}/".self::MAX_DELEGATION_DEPTH.'). '
+                ."Deployment [{$delegation->id}] cannot accept further nested delegations."
+            );
+        }
+
+        Log::debug('AgentSandboxService: delegation depth check passed', [
+            'delegation_deployment_id' => $delegation->id,
+            'depth' => $currentDepth + 1,
+            'max_depth' => self::MAX_DELEGATION_DEPTH,
+        ]);
     }
 
     // ─── Private enforcement methods ────────────────────────────────────────────

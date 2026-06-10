@@ -6,10 +6,8 @@ use App\Models\AgentDeployment;
 use App\Services\Governance\ScorecardService;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
-#[Lazy]
 class ScorecardViewer extends Component
 {
     public int $deploymentId;

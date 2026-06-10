@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class AgentSkillExecution extends Model
 {
-    use HasFactory;
+    use HasFactory, HasOrganizationScope, MassPrunable;
 
     protected $fillable = [
         'uuid',
@@ -44,6 +47,17 @@ class AgentSkillExecution extends Model
                 $exec->uuid = (string) Str::uuid();
             }
         });
+    }
+
+    /**
+     * Prune completed/failed skill executions older than 60 days.
+     * Bypasses the organization global scope to prune across all tenants.
+     */
+    public function prunable(): Builder
+    {
+        return static::withoutGlobalScope('organization')
+            ->whereIn('status', ['completed', 'failed', 'skipped'])
+            ->where('created_at', '<=', now()->subDays(60));
     }
 
     // ── Relationships ────────────────────────────────────

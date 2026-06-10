@@ -8,8 +8,10 @@
 
 [![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel)](https://laravel.com)
-[![Livewire](https://img.shields.io/badge/Livewire-3.x-4E56A6?style=flat-square)](https://livewire.laravel.com)
+[![Livewire](https://img.shields.io/badge/Livewire-3.8-4E56A6?style=flat-square)](https://livewire.laravel.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
+[![Tests](https://img.shields.io/badge/tests-242%20passing-brightgreen?style=flat-square)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-≥80%25-brightgreen?style=flat-square)](phpunit.xml)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
 </div>
@@ -99,6 +101,7 @@ Every resource on the platform is scoped to an `Organization` (backed by Jetstre
 | CSS | Tailwind CSS | 4.x |
 | AI Layer | OpenAI PHP + Prism PHP | latest |
 | RBAC | Spatie Laravel Permission | 8.x |
+| Queue | Laravel Horizon | 5.x |
 | Testing | PHPUnit | 11.x |
 | Code Style | Laravel Pint | latest |
 | Intelligence | Laravel Boost MCP | 2.x |
@@ -109,6 +112,23 @@ Every resource on the platform is scoped to an `Organization` (backed by Jetstre
 
 ---
 
+## Platform Status
+
+| Dimension | Status |
+|-----------|--------|
+| Test Suite | ✅ 242 tests passing, 461 assertions |
+| Coverage Gate | ✅ ≥ 80% enforced in CI |
+| Architecture Guards | ✅ Service ≤ 200 lines, Controller ≤ 100 lines, Livewire ≤ 200 lines |
+| Redis Caching | ✅ Agent catalog, Skill catalog, Org settings (tagged cache invalidation) |
+| API Documentation | ✅ OpenAPI 3.0 spec — 16 documented paths |
+| Agent Certification | ✅ 7-dimension certification scoring (accuracy, reliability, security, governance, performance, risk, compliance) |
+| Agent Reputation | ✅ `AgentReputationService` — 5-dimension reputation tracking |
+| Health Checks | ✅ `/health` (public) and `/health/detailed` (authenticated) endpoints |
+| Prompt Injection | ✅ All AI input scanned before execution |
+| Tenant Isolation | ✅ All org-owned resources scoped via `organization_id` global scopes |
+
+---
+
 ## Project Structure
 
 ```
@@ -116,11 +136,21 @@ app/
 ├── Actions/           # Single-purpose operation classes (one execute() method)
 │   ├── Agents/        # Deploy, pause, update, decommission agent deployments
 │   ├── Billing/       # Subscription, invoicing, usage metering
+│   ├── Compliance/    # Compliance checks and reporting
 │   ├── Fortify/       # Auth: register, update profile, reset password
 │   ├── Governance/    # Approval processing, audit recording
 │   ├── Jetstream/     # Team creation, member management
-│   └── Organizations/ # Org creation, member invitations
+│   ├── Organizations/ # Org creation, member invitations
+│   ├── Security/      # Security event recording, threat response
+│   └── Workflows/     # Workflow creation and execution
 ├── DTOs/              # Typed readonly input/output objects
+│   ├── Agents/
+│   ├── Billing/
+│   ├── Compliance/
+│   ├── Governance/
+│   ├── Organizations/
+│   ├── Security/
+│   └── Workflows/
 ├── Events/            # Domain events fired after every state change
 ├── Listeners/         # Queued event handlers
 ├── Jobs/              # Background work: AI execution, scoring, DIS, notifications
@@ -128,16 +158,18 @@ app/
 │   ├── Agents/        # Chat interface, deployment manager, scorecard viewer
 │   ├── Billing/       # Subscription management
 │   ├── Dashboard/     # Agent dashboard
-│   ├── Governance/    # Approval queue, audit log viewer
+│   ├── Governance/    # Approval queue, audit log viewer, decision log
 │   ├── Marketplace/   # Agent marketplace browser
 │   ├── Organizations/ # Org management
 │   ├── Security/      # Security event monitor
 │   └── Workflows/     # Visual workflow builder
-├── Models/            # Eloquent models (37 models across all domains)
+├── Models/            # Eloquent models (37+ models across all domains)
 ├── Policies/          # Authorization policies (one per model)
 └── Services/
-    ├── AI/            # Orchestration, memory, model routing, skill pipeline, workflows
-    └── Governance/    # Audit, delusion detection, DIS, scorecard
+    ├── AI/            # Orchestration, memory, model routing, skill pipeline,
+    │                  # agent certification, agent reputation, workflows
+    ├── Governance/    # Audit, delusion detection, DIS, scorecard
+    └── Infrastructure/# Health checks (database, cache, queue, storage, agent runtime)
 ```
 
 ---
@@ -179,6 +211,15 @@ npm run build
 composer run dev
 ```
 
+### Health Check
+
+Once running, verify the platform is healthy:
+
+```
+GET /health          → {"status":"healthy",...}   (public)
+GET /health/detailed → full infrastructure report  (authenticated)
+```
+
 ### Required Environment Variables
 
 ```env
@@ -192,6 +233,13 @@ ANTHROPIC_API_KEY=
 # Queue (Redis recommended for production)
 QUEUE_CONNECTION=redis
 REDIS_HOST=127.0.0.1
+
+# Cache (Redis recommended for production)
+CACHE_STORE=redis
+
+# Mail
+MAIL_MAILER=smtp
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
 ```
 
 ---
@@ -208,9 +256,10 @@ Event → Listener → Job (if async) → Livewire Component → Tests → Pint
 ### Running Tests
 
 ```bash
-php artisan test --compact                        # Full suite
+php artisan test --compact                        # Full suite (242 tests)
 php artisan test --compact tests/Feature/Actions/ # Actions only
-php artisan test --compact --coverage --min=80    # With coverage gate
+php artisan test --compact --coverage --min=80    # With coverage gate (≥ 80%)
+php artisan test --compact --filter=DeployAgent   # Single action
 ```
 
 ### Code Style
@@ -221,7 +270,26 @@ vendor/bin/pint --dirty --format agent
 
 ---
 
-## AI Engineering Intelligence
+## API
+
+The platform exposes a versioned REST API documented in [`docs/openapi.yaml`](docs/openapi.yaml).
+
+### Key Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/agents` | List agents (cached, tagged invalidation) |
+| `GET` | `/api/v1/agents/{id}` | Agent detail |
+| `GET` | `/api/v1/agents/{id}/certifications` | Certification scores (7 dimensions) |
+| `GET` | `/api/v1/agents/{id}/reputation` | Reputation scores (5 dimensions) |
+| `GET` | `/api/v1/skills` | List skills (cached, tagged invalidation) |
+| `POST` | `/api/v1/skills/{id}/approve` | Approve a skill deployment |
+| `GET` | `/health` | Platform liveness check (public) |
+| `GET` | `/health/detailed` | Full infrastructure health report |
+
+All API routes require `auth:sanctum` except `/health`.
+
+---
 
 This repository uses a suite of GitHub Copilot skills that turn the AI assistant into an engineering intelligence layer. Skills auto-activate based on context:
 
@@ -248,8 +316,24 @@ This repository uses a suite of GitHub Copilot skills that turn the AI assistant
 - User-supplied AI input is scanned for prompt injection before execution
 - No secrets are stored in code — all credentials loaded from environment variables
 - `composer audit` and `npm audit` are run on every CI pipeline
+- Architecture guard tests enforce service and component size limits to prevent god-class accumulation
 
 To report a security vulnerability, please open a private security advisory on GitHub.
+
+---
+
+## Changelog
+
+### June 2026
+- Added `AgentReputationService` — 5-dimension reputation tracking per agent
+- Extended `AgentCertificationService` to 7 dimensions (added risk + compliance)
+- Added Redis tagged caching for agent catalog, skill catalog, and org settings
+- Added `HealthCheckService` and `/health` / `/health/detailed` endpoints
+- Expanded OpenAPI spec from 6 to 16 documented paths (Skills + Skill Approvals)
+- Added architecture guard tests (service ≤ 200 lines, controller ≤ 100, Livewire ≤ 200)
+- Comprehensive Skill Action test suite (17 tests, 8 categories)
+- CI coverage gate raised from 70% → 80%
+- Fixed Livewire 3 `$wire.toJSON` proxy bug on `/user/profile`
 
 ---
 

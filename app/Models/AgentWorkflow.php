@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Support\Str;
 
 class AgentWorkflow extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasOrganizationScope, SoftDeletes;
 
     protected $fillable = [
         'uuid', 'organization_id', 'created_by', 'name', 'description',

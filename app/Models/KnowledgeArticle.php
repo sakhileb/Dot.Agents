@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class KnowledgeArticle extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasOrganizationScope, SoftDeletes;
 
     protected $fillable = [
         'knowledge_base_id', 'organization_id', 'author_id',

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrganizationSubscription extends Model
 {
-    use HasFactory;
+    use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
         'organization_id', 'plan_id', 'stripe_subscription_id', 'stripe_customer_id',

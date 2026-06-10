@@ -48,7 +48,12 @@ class OrganizationSettings extends Component
     #[Computed]
     public function currentOrganization(): Organization
     {
-        return Organization::findOrFail(session('current_organization_id'));
+        $orgId = session('current_organization_id');
+        if (! $orgId) {
+            abort(403, 'No active organization context.');
+        }
+
+        return Organization::findOrFail($orgId);
     }
 
     public function save(UpdateOrganizationSettingsAction $action): void

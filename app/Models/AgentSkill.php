@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class AgentSkill extends Model
 {
@@ -16,8 +17,20 @@ class AgentSkill extends Model
         'description',
         'layer',
         'category',
+        'department',
+        'agent_type',
         'class',
         'manifest',
+        'required_permissions',
+        'required_data_sources',
+        'governance_rules',
+        'confidence_score',
+        'sla_target',
+        'output_type',
+        'risk_level',
+        'approval_required',
+        'audit_required',
+        'delegation_capable',
         'is_active',
         'is_built_in',
         'requires_ai',
@@ -26,10 +39,41 @@ class AgentSkill extends Model
 
     protected $casts = [
         'manifest' => 'array',
+        'required_permissions' => 'array',
+        'required_data_sources' => 'array',
+        'governance_rules' => 'array',
         'is_active' => 'boolean',
         'is_built_in' => 'boolean',
         'requires_ai' => 'boolean',
+        'approval_required' => 'boolean',
+        'audit_required' => 'boolean',
+        'delegation_capable' => 'boolean',
+        'confidence_score' => 'integer',
     ];
+
+    // ── Risk levels ──────────────────────────────────────
+
+    public const RISK_LOW = 'low';
+
+    public const RISK_MEDIUM = 'medium';
+
+    public const RISK_HIGH = 'high';
+
+    public const RISK_CRITICAL = 'critical';
+
+    // ── Output types ─────────────────────────────────────
+
+    public const OUTPUT_REPORT = 'report';
+
+    public const OUTPUT_ACTION = 'action';
+
+    public const OUTPUT_NOTIFICATION = 'notification';
+
+    public const OUTPUT_RECORD = 'record';
+
+    public const OUTPUT_APPROVAL_REQUEST = 'approval_request';
+
+    public const OUTPUT_DATA = 'data';
 
     // ── Scopes ──────────────────────────────────────────
 
@@ -41,6 +85,21 @@ class AgentSkill extends Model
     public function scopeForLayer($query, string $layer)
     {
         return $query->where('layer', $layer);
+    }
+
+    public function scopeForDepartment($query, string $department)
+    {
+        return $query->where('department', $department);
+    }
+
+    public function scopeByRisk($query, string $riskLevel)
+    {
+        return $query->where('risk_level', $riskLevel);
+    }
+
+    public function scopeRequiresApproval($query)
+    {
+        return $query->where('approval_required', true);
     }
 
     public function scopeBuiltIn($query)
@@ -60,12 +119,44 @@ class AgentSkill extends Model
         return $this->hasMany(AgentSkillExecution::class, 'skill_id');
     }
 
+    public function permissions(): HasMany
+    {
+        return $this->hasMany(AgentSkillPermission::class, 'skill_id');
+    }
+
+    public function requirements(): HasMany
+    {
+        return $this->hasMany(AgentSkillRequirement::class, 'skill_id');
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(AgentSkillApproval::class, 'skill_id');
+    }
+
+    public function audits(): HasMany
+    {
+        return $this->hasMany(AgentSkillAudit::class, 'skill_id');
+    }
+
+    public function scores(): HasMany
+    {
+        return $this->hasMany(AgentSkillScore::class, 'skill_id');
+    }
+
     // ── Helpers ──────────────────────────────────────────
 
     /** True when this skill has a PHP implementation class. */
     public function hasImplementation(): bool
     {
         return ! empty($this->class) && class_exists($this->class);
+    }
+
+    /** Whether this skill can execute given a risk level and approval state. */
+    public function canExecuteWithoutApproval(): bool
+    {
+        return ! $this->approval_required
+            || in_array($this->risk_level, [self::RISK_LOW]);
     }
 
     /** Layer display label. */
@@ -94,5 +185,37 @@ class AgentSkill extends Model
             'meta' => 'red',
             default => 'gray',
         };
+    }
+
+    /** Risk badge color. */
+    public function riskColor(): string
+    {
+        return match ($this->risk_level) {
+            self::RISK_LOW => 'green',
+            self::RISK_MEDIUM => 'yellow',
+            self::RISK_HIGH => 'orange',
+            self::RISK_CRITICAL => 'red',
+            default => 'gray',
+        };
+    }
+
+    /** Risk badge label. */
+    public function riskLabel(): string
+    {
+        return match ($this->risk_level) {
+            self::RISK_LOW => 'Low Risk',
+            self::RISK_MEDIUM => 'Medium Risk',
+            self::RISK_HIGH => 'High Risk',
+            self::RISK_CRITICAL => 'Critical Risk',
+            default => ucfirst($this->risk_level),
+        };
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        // Invalidate skill catalog cache when skills change
+        static::saved(fn () => Cache::tags(['skills', 'catalog'])->flush());
+        static::deleted(fn () => Cache::tags(['skills', 'catalog'])->flush());
     }
 }

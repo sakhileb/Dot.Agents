@@ -26,7 +26,9 @@ class BillingController extends Controller
      */
     public function checkout(Request $request, SubscriptionPlan $plan): RedirectResponse
     {
-        $organization = Organization::findOrFail(session('current_organization_id'));
+        $orgId = session('current_organization_id');
+        abort_if(! $orgId, 403, 'No active organization context.');
+        $organization = Organization::findOrFail($orgId);
 
         $session = $this->createCheckoutSession->execute(
             organization: $organization,
@@ -52,7 +54,9 @@ class BillingController extends Controller
      */
     public function portal(Request $request): RedirectResponse
     {
-        $organization = Organization::findOrFail(session('current_organization_id'));
+        $orgId = session('current_organization_id');
+        abort_if(! $orgId, 403, 'No active organization context.');
+        $organization = Organization::findOrFail($orgId);
 
         $session = $this->stripe->createBillingPortalSession(
             organization: $organization,

@@ -15,6 +15,7 @@
         "livewire/livewire": "^3.6.4",
         "openai-php/laravel": "^0.19.1",
         "prism-php/prism": "^0.100.1",
+        "sentry/sentry-laravel": "^4.25",
         "spatie/laravel-permission": "^8.0"
     },
     "require-dev": {

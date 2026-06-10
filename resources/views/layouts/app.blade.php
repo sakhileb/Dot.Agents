@@ -35,5 +35,19 @@
         @stack('modals')
 
         @livewireScripts
+
+        <script>
+            // Guard against Alpine.js $wire proxy forwarding `toJSON` as a Livewire server call.
+            // When JSON.stringify() runs on an Alpine data context that contains a $wire proxy,
+            // JavaScript calls proxy.toJSON(key). Livewire 3's $wire fallback forwards unknown
+            // property accesses as server method calls — this filter removes them before dispatch.
+            document.addEventListener('livewire:init', () => {
+                Livewire.hook('commit', ({ component, commit, respond, succeed, fail }) => {
+                    if (commit.calls) {
+                        commit.calls = commit.calls.filter(call => call.method !== 'toJSON');
+                    }
+                });
+            });
+        </script>
     </body>
 </html>

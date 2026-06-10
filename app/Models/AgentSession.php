@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasOrganizationScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,7 +13,7 @@ use Illuminate\Support\Str;
 
 class AgentSession extends Model
 {
-    use HasFactory, HasOrganizationScope;
+    use HasFactory, HasOrganizationScope, MassPrunable;
 
     protected $fillable = [
         'uuid', 'agent_deployment_id', 'organization_id', 'user_id',
@@ -35,6 +37,17 @@ class AgentSession extends Model
                 $session->uuid = (string) Str::uuid();
             }
         });
+    }
+
+    /**
+     * Prune ended/abandoned sessions older than 60 days.
+     * Bypasses the organization global scope to prune across all tenants.
+     */
+    public function prunable(): Builder
+    {
+        return static::withoutGlobalScope('organization')
+            ->whereIn('status', ['ended', 'abandoned', 'expired'])
+            ->where('ended_at', '<=', now()->subDays(60));
     }
 
     public function deployment(): BelongsTo

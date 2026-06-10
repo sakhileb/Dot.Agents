@@ -5,6 +5,7 @@ namespace App\Services\AI;
 use App\Models\AgentWorkflow;
 use App\Models\WorkflowExecution;
 use App\Models\WorkflowNode;
+use App\Services\AI\Workflow\WorkflowGraphResolver;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -20,15 +21,25 @@ use Throwable;
  *  – Multi-agent chaining (output of node A flows into node B)
  *  – Cycle detection (guards against infinite loops)
  *  – Parallel fan-out when multiple edges leave a node
+ *  – Max-node circuit breaker (prevents workflow bombs)
+ *  – Per-org execution rate limiting (prevents DoS via workflow flooding)
  *
  * Node output is merged into a shared execution context keyed by node UUID,
  * so downstream nodes can reference results from any upstream node.
  */
 class GraphWorkflowEngineService
 {
+    /** Hard cap on nodes executed per workflow run — prevents workflow bombs. */
+    private const MAX_NODES_PER_EXECUTION = 100;
+
+    /** Max concurrent workflow executions per organization per minute. */
+    private const MAX_EXECUTIONS_PER_ORG_PER_MINUTE = 20;
+
     public function __construct(
         private readonly AgentOrchestrationService $orchestrator,
         private readonly AuditService $auditService,
+        private readonly WorkflowRiskScoringService $riskScorer,
+        private readonly WorkflowGraphResolver $graphResolver,
     ) {}
 
     // ──────────────────────────────────────────────
@@ -37,9 +48,22 @@ class GraphWorkflowEngineService
 
     /**
      * Execute a workflow graph and return the final merged context.
+     *
+     * @throws \RuntimeException if the org has exceeded the per-minute execution rate limit
      */
     public function execute(AgentWorkflow $workflow, array $initialInput = [], ?int $triggeredBy = null): WorkflowExecution
     {
+        // ── Per-org execution rate limit ─────────────────────────────────────
+        $this->graphResolver->enforceExecutionRateLimit($workflow->organization_id);
+
+        // ── Pre-execution risk assessment ────────────────────────────────────
+        $risk = $this->riskScorer->assess($workflow);
+        if ($risk['is_blocked']) {
+            throw new \RuntimeException(
+                "Workflow [{$workflow->id}] blocked by risk scoring engine. Risk score: {$risk['score']}/100 (level: {$risk['level']}). Review workflow configuration before execution."
+            );
+        }
+
         $execution = WorkflowExecution::create([
             'uuid' => (string) Str::uuid(),
             'workflow_id' => $workflow->id,
@@ -110,9 +134,10 @@ class GraphWorkflowEngineService
 
         $context = ['__input' => $initialInput];
         $visited = [];
-        $queue = $this->resolveStartNodes($nodes, $connections);
+        $queue = $this->graphResolver->resolveStartNodes($nodes, $connections);
         $stepResults = [];
         $stepIndex = 0;
+        $nodesExecuted = 0;
 
         while ($queue->isNotEmpty()) {
             /** @var WorkflowNode $node */
@@ -120,6 +145,17 @@ class GraphWorkflowEngineService
 
             if (isset($visited[$node->uuid])) {
                 continue;
+            }
+
+            // ── Circuit Breaker: max-node cap ─────────────────────────────────
+            if (++$nodesExecuted > self::MAX_NODES_PER_EXECUTION) {
+                $msg = "Workflow [{$workflow->id}] exceeded MAX_NODES_PER_EXECUTION (".self::MAX_NODES_PER_EXECUTION.'). Execution halted to prevent workflow bomb.';
+                Log::error('[GraphWorkflowEngine] Circuit breaker tripped — max node cap', [
+                    'workflow_id' => $workflow->id,
+                    'execution_id' => $execution->id,
+                    'nodes_executed' => $nodesExecuted,
+                ]);
+                throw new \RuntimeException($msg);
             }
 
             $visited[$node->uuid] = true;
@@ -147,7 +183,7 @@ class GraphWorkflowEngineService
             ]);
 
             // Resolve which nodes come next, respecting edge conditions
-            $nextNodes = $this->resolveNextNodes($connections, $nodes, $node, $result);
+            $nextNodes = $this->graphResolver->resolveNextNodes($connections, $nodes, $node, $result);
             foreach ($nextNodes as $next) {
                 $queue->push($next);
             }
@@ -195,73 +231,5 @@ class GraphWorkflowEngineService
 
     /**
      * Find start nodes — nodes that have no incoming edges.
-     */
-    private function resolveStartNodes(Collection $nodes, Collection $connections): Collection
-    {
-        $targetUuids = $connections->pluck('to_node_uuid')->unique()->toArray();
 
-        return $nodes->filter(fn (WorkflowNode $n) => ! in_array($n->uuid, $targetUuids, true))
-            ->values();
-    }
-
-    /**
-     * Resolve which nodes should run after the given node, based on edge conditions.
-     */
-    private function resolveNextNodes(
-        Collection $connections,
-        Collection $nodes,
-        WorkflowNode $currentNode,
-        array $result
-    ): Collection {
-        return $connections
-            ->where('from_node_uuid', $currentNode->uuid)
-            ->filter(fn ($edge) => $this->evaluateCondition($edge->condition, $result))
-            ->map(fn ($edge) => $nodes->get($edge->to_node_uuid))
-            ->filter() // remove nulls (dangling edges)
-            ->values();
-    }
-
-    /**
-     * Evaluate an edge condition against a node's output.
-     *
-     * Supported condition shapes:
-     *   null                         → always pass
-     *   { "status": "completed" }    → match status string
-     *   { "min_confidence": 0.7 }    → confidence >= threshold
-     *   { "field": "x", "op": ">=", "value": 5 } → generic comparison
-     */
-    private function evaluateCondition(?array $condition, array $result): bool
-    {
-        if (empty($condition)) {
-            return true;
-        }
-
-        // Status match
-        if (isset($condition['status'])) {
-            return ($result['status'] ?? null) === $condition['status'];
-        }
-
-        // Confidence threshold
-        if (isset($condition['min_confidence'])) {
-            return (float) ($result['confidence'] ?? 0) >= (float) $condition['min_confidence'];
-        }
-
-        // Generic comparison via dot-notation field path
-        if (isset($condition['field'], $condition['op'], $condition['value'])) {
-            $actual = data_get($result, $condition['field']);
-
-            return match ($condition['op']) {
-                '==' => $actual == $condition['value'],
-                '!=' => $actual != $condition['value'],
-                '>' => $actual > $condition['value'],
-                '>=' => $actual >= $condition['value'],
-                '<' => $actual < $condition['value'],
-                '<=' => $actual <= $condition['value'],
-                'in' => in_array($actual, (array) $condition['value']),
-                default => true,
-            };
-        }
-
-        return true;
-    }
 }

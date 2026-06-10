@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AgentScorecard extends Model
 {
-    use HasFactory;
+    use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
         'agent_deployment_id', 'organization_id', 'period', 'period_start', 'period_end',

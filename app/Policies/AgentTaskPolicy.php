@@ -70,4 +70,16 @@ class AgentTaskPolicy
     {
         return false;
     }
+
+    /**
+     * User can rate a task if they belong to the org and the task is completed.
+     * A task can only be rated once (checked by RateAgentTaskAction, not here).
+     */
+    public function rate(User $user, AgentTask $agentTask): bool
+    {
+        return $agentTask->status === 'completed'
+            && $user->organizations()
+                ->where('organizations.id', $agentTask->organization_id)
+                ->exists();
+    }
 }

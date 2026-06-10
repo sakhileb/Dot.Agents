@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\AgentReview;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Agent extends Model
@@ -29,6 +29,7 @@ class Agent extends Model
         'is_enterprise_only', 'is_beta', 'required_plan', 'tags',
         'meta_title', 'meta_description',
         'certification_score', 'trust_score', 'trust_tier', 'certified_at',
+        'performance_score', 'competencies', 'cost_tier',
     ];
 
     protected $casts = [
@@ -57,10 +58,12 @@ class Agent extends Model
         'reliability_score' => 'decimal:2',
         'satisfaction_score' => 'decimal:2',
         'avg_rating' => 'decimal:2',
+        'performance_score' => 'decimal:2',
         'is_featured' => 'boolean',
         'is_verified' => 'boolean',
         'is_enterprise_only' => 'boolean',
         'is_beta' => 'boolean',
+        'competencies' => 'array',
     ];
 
     protected static function boot(): void
@@ -71,6 +74,9 @@ class Agent extends Model
                 $agent->uuid = (string) Str::uuid();
             }
         });
+        // Invalidate catalog cache when agents change
+        static::saved(fn () => Cache::tags(['agents', 'catalog'])->flush());
+        static::deleted(fn () => Cache::tags(['agents', 'catalog'])->flush());
     }
 
     public function category(): BelongsTo
@@ -133,5 +139,20 @@ class Agent extends Model
             ($this->accuracy_score + $this->reliability_score + $this->satisfaction_score) / 3,
             1
         );
+    }
+
+    public function scopeTrustAbove($query, int $min)
+    {
+        return $query->where('trust_score', '>=', $min);
+    }
+
+    public function scopeByCostTier($query, string $tier)
+    {
+        return $query->where('cost_tier', $tier);
+    }
+
+    public function scopeHasSkill($query, string $skill)
+    {
+        return $query->whereJsonContains('skills', $skill);
     }
 }

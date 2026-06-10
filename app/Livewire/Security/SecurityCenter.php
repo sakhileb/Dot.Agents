@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Security;
 
+use App\Actions\Security\EmergencyKillSwitchAction;
 use App\Actions\Security\ResolveSecurityEventAction;
 use App\Models\AgentDeployment;
 use App\Models\Organization;
 use App\Models\SecurityEvent;
 use App\Services\Governance\DigitalImmuneSystem;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -21,6 +23,10 @@ class SecurityCenter extends Component
     public ?array $disReport = null;
 
     public bool $runningDIS = false;
+
+    /** Confirmation string required before executing org-level kill switch. */
+    #[Validate('nullable|string|max:100')]
+    public string $killSwitchConfirmation = '';
 
     public function getOrganizationIdProperty(): ?int
     {
@@ -61,6 +67,41 @@ class SecurityCenter extends Component
     public function resolveEvent(int $id): void
     {
         app(ResolveSecurityEventAction::class)->execute($id);
+    }
+
+    /** Kill a single agent deployment immediately. */
+    public function killDeployment(int $deploymentId): void
+    {
+        $deployment = AgentDeployment::findOrFail($deploymentId);
+        app(EmergencyKillSwitchAction::class)->killDeployment(
+            $deployment,
+            'Manual kill switch activated from Security Center'
+        );
+        session()->flash('status', "Agent '{$deployment->name}' has been suspended.");
+    }
+
+    /**
+     * Kill all active workflows for the current org.
+     * Requires the confirmation string to match 'HALT WORKFLOWS'.
+     */
+    public function killAllWorkflows(): void
+    {
+        if ($this->killSwitchConfirmation !== 'HALT WORKFLOWS') {
+            $this->addError('killSwitchConfirmation', 'Type HALT WORKFLOWS to confirm.');
+
+            return;
+        }
+
+        $org = Organization::find($this->organizationId);
+        abort_if(! $org, 403);
+
+        $count = app(EmergencyKillSwitchAction::class)->killAllWorkflows(
+            $org,
+            'Emergency halt via Security Center'
+        );
+
+        $this->killSwitchConfirmation = '';
+        session()->flash('status', "All workflows halted. {$count} running executions aborted.");
     }
 
     public function render()

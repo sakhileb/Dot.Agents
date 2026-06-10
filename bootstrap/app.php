@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ConsentRequiredMiddleware;
 use App\Http\Middleware\CorrelationIdMiddleware;
 use App\Http\Middleware\OrganizationContextMiddleware;
 use App\Http\Middleware\SecurityHeadersMiddleware;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Custom aliases
         $middleware->alias([
             'org.context' => OrganizationContextMiddleware::class,
+            'consent.required' => ConsentRequiredMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

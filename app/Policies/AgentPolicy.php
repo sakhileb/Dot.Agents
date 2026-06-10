@@ -26,9 +26,12 @@ class AgentPolicy
         }
 
         $orgId = session('current_organization_id');
+        if (! $orgId) {
+            return false;
+        }
 
         return $user->organizations()
-            ->where('organizations.id', $orgId)
+            ->where('organizations.id', (int) $orgId)
             ->whereIn('organizations.plan', ['enterprise', 'enterprise_plus'])
             ->exists();
     }

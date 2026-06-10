@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\DTOs\Agents\DeployAgentData;
 use App\Models\AgentDeployment;
+use App\Services\Governance\AuditService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DeployAgentRequest extends FormRequest
@@ -24,6 +25,16 @@ class DeployAgentRequest extends FormRequest
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
             'custom_instructions' => ['nullable', 'string', 'max:5000'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $instructions = $this->input('custom_instructions');
+            if ($instructions && app(AuditService::class)->detectPromptInjection($instructions)) {
+                $validator->errors()->add('custom_instructions', 'Custom instructions contain disallowed content.');
+            }
+        });
     }
 
     public function toDeployData(): DeployAgentData

@@ -1,4 +1,39 @@
 <div class="space-y-6">
+    {{-- Flash message --}}
+    @if(session('status'))
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-4 text-green-800 dark:text-green-300 text-sm font-medium">
+            {{ session('status') }}
+        </div>
+    @endif
+
+    {{-- Emergency Kill Switches --}}
+    <div class="bg-red-950 border border-red-700/40 rounded-2xl p-6 text-white">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 rounded-xl bg-red-700/50 flex items-center justify-center">
+                <svg class="w-5 h-5 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            </div>
+            <div>
+                <h2 class="font-bold text-base text-red-200">Emergency Kill Switches</h2>
+                <p class="text-red-400 text-xs">Use only in active incidents. All actions are permanently logged.</p>
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4">
+            {{-- Halt all workflows --}}
+            <div class="flex-1 bg-red-900/40 rounded-xl p-4 border border-red-700/30">
+                <p class="text-xs text-red-300 mb-3 font-medium uppercase tracking-wide">Halt All Workflows</p>
+                <input wire:model="killSwitchConfirmation"
+                    type="text" placeholder="Type: HALT WORKFLOWS"
+                    class="w-full bg-red-950 border border-red-600 text-white text-sm rounded-lg px-3 py-2 mb-3 placeholder-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+                @error('killSwitchConfirmation')<p class="text-red-400 text-xs mb-2">{{ $message }}</p>@enderror
+                <button wire:click="killAllWorkflows" wire:loading.attr="disabled" wire:confirm="This will immediately halt all running workflows. Confirm?"
+                    class="w-full py-2 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
+                    <span wire:loading.remove wire:target="killAllWorkflows">⛔ Halt All Workflows</span>
+                    <span wire:loading wire:target="killAllWorkflows">Halting...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- DIS Control Panel --}}
     <div class="bg-gradient-to-br from-gray-900 to-purple-950 dark:from-gray-950 dark:to-purple-950 rounded-2xl border border-purple-800/30 p-6 text-white">
         <div class="flex items-center justify-between mb-5">
@@ -142,10 +177,19 @@
                             </td>
                             <td class="px-5 py-3">
                                 @if($event->status === 'open')
-                                    <button wire:click="resolveEvent({{ $event->id }})"
-                                        class="text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400 font-medium">
-                                        Resolve
-                                    </button>
+                                    <div class="flex gap-2 items-center">
+                                        <button wire:click="resolveEvent({{ $event->id }})"
+                                            class="text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400 font-medium">
+                                            Resolve
+                                        </button>
+                                        @if($event->agent_deployment_id)
+                                            <button wire:click="killDeployment({{ $event->agent_deployment_id }})"
+                                                wire:confirm="Immediately suspend this agent? This cannot be undone without manual reactivation."
+                                                class="text-xs text-red-600 hover:text-red-700 dark:text-red-400 font-medium">
+                                                Kill Agent
+                                            </button>
+                                        @endif
+                                    </div>
                                 @endif
                             </td>
                         </tr>

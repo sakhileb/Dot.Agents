@@ -171,7 +171,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ \Illuminate\Support\Facades\Vite::cspNonce() }}">
 document.addEventListener('livewire:updated', () => {
     const el = document.getElementById('chat-messages');
     if (el) el.scrollTop = el.scrollHeight;
