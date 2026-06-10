@@ -2,9 +2,10 @@
 
 namespace App\Services\Infrastructure;
 
+use App\Models\AgentDeployment;
+use App\Models\AgentTask;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
@@ -87,7 +88,7 @@ class HealthCheckService
             return [
                 'status' => self::UNHEALTHY,
                 'latency_ms' => null,
-                'message' => 'Database connection failed: ' . $e->getMessage(),
+                'message' => 'Database connection failed: '.$e->getMessage(),
             ];
         }
     }
@@ -95,7 +96,7 @@ class HealthCheckService
     private function checkCache(): array
     {
         $start = microtime(true);
-        $testKey = 'health_check_' . now()->timestamp;
+        $testKey = 'health_check_'.now()->timestamp;
         try {
             Cache::put($testKey, 'ok', 10);
             $value = Cache::get($testKey);
@@ -121,7 +122,7 @@ class HealthCheckService
             return [
                 'status' => self::UNHEALTHY,
                 'latency_ms' => null,
-                'message' => 'Cache connection failed: ' . $e->getMessage(),
+                'message' => 'Cache connection failed: '.$e->getMessage(),
             ];
         }
     }
@@ -153,7 +154,7 @@ class HealthCheckService
             return [
                 'status' => self::UNHEALTHY,
                 'pending_jobs' => null,
-                'message' => 'Queue check failed: ' . $e->getMessage(),
+                'message' => 'Queue check failed: '.$e->getMessage(),
             ];
         }
     }
@@ -161,7 +162,7 @@ class HealthCheckService
     private function checkStorage(): array
     {
         try {
-            $testPath = 'health_check/' . now()->timestamp . '.txt';
+            $testPath = 'health_check/'.now()->timestamp.'.txt';
             Storage::put($testPath, 'ok');
             $content = Storage::get($testPath);
             Storage::delete($testPath);
@@ -182,7 +183,7 @@ class HealthCheckService
             return [
                 'status' => self::UNHEALTHY,
                 'driver' => config('filesystems.default'),
-                'message' => 'Storage check failed: ' . $e->getMessage(),
+                'message' => 'Storage check failed: '.$e->getMessage(),
             ];
         }
     }
@@ -190,11 +191,11 @@ class HealthCheckService
     private function checkAgentRuntime(): array
     {
         try {
-            $activeDeployments = \App\Models\AgentDeployment::where('status', 'active')->count();
-            $recentFailures = \App\Models\AgentTask::where('status', 'failed')
+            $activeDeployments = AgentDeployment::where('status', 'active')->count();
+            $recentFailures = AgentTask::where('status', 'failed')
                 ->where('updated_at', '>=', now()->subMinutes(15))
                 ->count();
-            $recentTotal = \App\Models\AgentTask::where('updated_at', '>=', now()->subMinutes(15))->count();
+            $recentTotal = AgentTask::where('updated_at', '>=', now()->subMinutes(15))->count();
 
             $failureRate = $recentTotal > 0
                 ? ($recentFailures / $recentTotal) * 100
@@ -217,7 +218,7 @@ class HealthCheckService
         } catch (\Exception $e) {
             return [
                 'status' => self::UNHEALTHY,
-                'message' => 'Agent runtime check failed: ' . $e->getMessage(),
+                'message' => 'Agent runtime check failed: '.$e->getMessage(),
             ];
         }
     }

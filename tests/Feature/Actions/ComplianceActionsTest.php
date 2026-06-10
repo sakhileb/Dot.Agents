@@ -2,10 +2,9 @@
 
 namespace Tests\Feature\Actions;
 
-use App\Actions\Compliance\RecordConsentAction;
 use App\Actions\Compliance\EraseUserDataAction;
 use App\Actions\Compliance\ExportUserDataAction;
-use App\Models\AuditLog;
+use App\Actions\Compliance\RecordConsentAction;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

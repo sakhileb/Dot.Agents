@@ -10,6 +10,8 @@ use App\DTOs\Skills\AssignSkillData;
 use App\DTOs\Skills\ExecuteSkillData;
 use App\Events\SkillApprovalRequested;
 use App\Events\SkillExecuted;
+use App\Events\SkillExecutionBlocked;
+use App\Models\Agent;
 use App\Models\AgentDeployment;
 use App\Models\AgentSkill;
 use App\Models\AgentSkillApproval;
@@ -22,6 +24,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
@@ -42,8 +45,11 @@ class SkillActionTestSuite extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Organization $organization;
+
     private AgentDeployment $deployment;
+
     private AgentSkill $skill;
 
     protected function setUp(): void
@@ -59,7 +65,7 @@ class SkillActionTestSuite extends TestCase
         $this->actingAs($this->user);
         Gate::before(fn () => true);
 
-        $agent = \App\Models\Agent::factory()->create();
+        $agent = Agent::factory()->create();
 
         $this->deployment = AgentDeployment::factory()->create([
             'organization_id' => $this->organization->id,
@@ -131,7 +137,7 @@ class SkillActionTestSuite extends TestCase
             organizationId: $this->organization->id,
         );
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
 
         app(AssignSkillToDeploymentAction::class)->execute($data);
     }
@@ -144,7 +150,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         $approvalSkill = AgentSkill::factory()->create([
@@ -186,7 +192,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         $execution = AgentSkillExecution::factory()->create([
@@ -218,7 +224,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         $execution = AgentSkillExecution::factory()->create([
@@ -254,7 +260,7 @@ class SkillActionTestSuite extends TestCase
             'expires_at' => now()->addDay(),
         ]);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
 
         app(ProcessSkillApprovalAction::class)->execute($approval, 'approved', $this->user->id);
     }
@@ -267,7 +273,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         AgentSkillAssignment::factory()->create([
@@ -300,7 +306,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         $execution = AgentSkillExecution::factory()->create([
@@ -417,7 +423,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         AgentSkillAssignment::factory()->create([
@@ -456,7 +462,7 @@ class SkillActionTestSuite extends TestCase
             trigger: 'manual',
         );
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
 
         app(ExecuteSkillAction::class)->execute($data);
     }
@@ -469,7 +475,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         AgentSkillAssignment::factory()->create([
@@ -508,7 +514,7 @@ class SkillActionTestSuite extends TestCase
         Event::fake([
             SkillApprovalRequested::class,
             SkillExecuted::class,
-            \App\Events\SkillExecutionBlocked::class,
+            SkillExecutionBlocked::class,
         ]);
 
         $approvalSkill = AgentSkill::factory()->create([

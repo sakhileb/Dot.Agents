@@ -65,7 +65,7 @@ class ServiceSizeLimitsTest extends TestCase
                 15,
                 count($violations),
                 "More than 15 service files exceed 200 lines. New violations added:\n"
-                . implode("\n", $violations)
+                .implode("\n", $violations)
             );
         } else {
             $this->assertTrue(true); // All services within limit
@@ -108,7 +108,7 @@ class ServiceSizeLimitsTest extends TestCase
             1,
             count($violations),
             "Controller files exceeding 100-line limit (max 1 tracked backlog item allowed):\n"
-            . implode("\n", $violations)
+            .implode("\n", $violations)
         );
     }
 
@@ -143,7 +143,7 @@ class ServiceSizeLimitsTest extends TestCase
             2,
             count($violations),
             "Livewire components exceeding 200-line limit (max 2 tracked backlog items allowed):\n"
-            . implode("\n", $violations)
+            .implode("\n", $violations)
         );
     }
 
@@ -186,7 +186,7 @@ class ServiceSizeLimitsTest extends TestCase
         $this->assertEmpty(
             $violations,
             "Livewire components with complex Eloquent writes (use Action classes instead):\n"
-            . implode("\n", $violations)
+            .implode("\n", $violations)
         );
     }
 
@@ -215,7 +215,7 @@ class ServiceSizeLimitsTest extends TestCase
 
         $this->assertEmpty(
             $violations,
-            "Action classes exceeding 200-line limit:\n" . implode("\n", $violations)
+            "Action classes exceeding 200-line limit:\n".implode("\n", $violations)
         );
     }
 
@@ -223,6 +223,6 @@ class ServiceSizeLimitsTest extends TestCase
 
     private function relativePath(string $absolutePath): string
     {
-        return str_replace(base_path() . '/', '', $absolutePath);
+        return str_replace(base_path().'/', '', $absolutePath);
     }
 }

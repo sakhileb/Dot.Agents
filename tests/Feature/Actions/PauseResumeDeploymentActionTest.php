@@ -7,6 +7,7 @@ use App\Actions\Agents\ResumeDeploymentAction;
 use App\Models\AgentDeployment;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -72,7 +73,7 @@ class PauseResumeDeploymentActionTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
         app(PauseDeploymentAction::class)->execute($otherDeployment);
     }
 
@@ -85,7 +86,7 @@ class PauseResumeDeploymentActionTest extends TestCase
             'status' => 'paused',
         ]);
 
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
         app(ResumeDeploymentAction::class)->execute($otherDeployment);
     }
 }

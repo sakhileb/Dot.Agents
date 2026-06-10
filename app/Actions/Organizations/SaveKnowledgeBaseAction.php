@@ -16,13 +16,13 @@ class SaveKnowledgeBaseAction
 
         return KnowledgeBase::create([
             'organization_id' => $organization->id,
-            'name'            => $data['name'],
-            'slug'            => Str::slug($data['name']) . '-' . Str::random(6),
-            'description'     => $data['description'] ?? null,
-            'type'            => $data['type'] ?? 'general',
-            'access_level'    => $data['access_level'] ?? 'internal',
-            'is_active'       => true,
-            'created_by'      => Auth::id(),
+            'name' => $data['name'],
+            'slug' => Str::slug($data['name']).'-'.Str::random(6),
+            'description' => $data['description'] ?? null,
+            'type' => $data['type'] ?? 'general',
+            'access_level' => $data['access_level'] ?? 'internal',
+            'is_active' => true,
+            'created_by' => Auth::id(),
         ]);
     }
 }

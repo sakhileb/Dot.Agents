@@ -10,7 +10,7 @@ class AgentSkillFactory extends Factory
     public function definition(): array
     {
         return [
-            'key' => 'skill.' . Str::slug($this->faker->words(3, true)),
+            'key' => 'skill.'.Str::slug($this->faker->words(3, true)),
             'name' => $this->faker->words(3, true),
             'description' => $this->faker->sentence(),
             'layer' => $this->faker->randomElement(['core', 'domain', 'extended']),

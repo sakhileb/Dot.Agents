@@ -20,7 +20,6 @@ class FinancialTrendAnalyzer
      * Build a monthly cost/savings trend array for the given deployment IDs.
      * Groups AgentScorecard records by month over the last N months.
      *
-     * @param  Collection  $deploymentIds
      * @return array<array{month: string, cost: float, savings: float, records: int}>
      */
     public function compute(Collection $deploymentIds): array

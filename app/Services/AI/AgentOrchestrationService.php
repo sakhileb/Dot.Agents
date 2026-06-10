@@ -12,7 +12,6 @@ use App\Models\Organization;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\DelusionDetectionService;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**

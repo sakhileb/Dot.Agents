@@ -231,5 +231,10 @@ class GraphWorkflowEngineService
 
     /**
      * Find start nodes — nodes that have no incoming edges.
-
+     * Delegates to WorkflowGraphResolver for cycle-detection and ordering.
+     */
+    private function findStartNodes(Collection $nodes, Collection $connections): Collection
+    {
+        return $this->graphResolver->resolveStartNodes($nodes, $connections);
+    }
 }

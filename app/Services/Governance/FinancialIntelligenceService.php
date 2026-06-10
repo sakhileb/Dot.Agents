@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Cache;
 class FinancialIntelligenceService
 {
     private const CACHE_TTL = 1800;
+
     private const LOOKBACK_MONTHS = 3;
 
     public function __construct(
@@ -49,9 +50,9 @@ class FinancialIntelligenceService
             ->selectRaw('SUM(total_cost) as total_cost, SUM(estimated_savings) as total_savings, SUM(estimated_revenue_impact) as total_revenue_impact, COUNT(*) as scorecard_count')
             ->first();
 
-        $totalCost     = (float) ($scorecardTotals->total_cost ?? 0);
-        $totalSavings  = (float) ($scorecardTotals->total_savings ?? 0);
-        $totalRevenue  = (float) ($scorecardTotals->total_revenue_impact ?? 0);
+        $totalCost = (float) ($scorecardTotals->total_cost ?? 0);
+        $totalSavings = (float) ($scorecardTotals->total_savings ?? 0);
+        $totalRevenue = (float) ($scorecardTotals->total_revenue_impact ?? 0);
         $scorecardCount = (int) ($scorecardTotals->scorecard_count ?? 0);
 
         $deploymentIds = AgentDeployment::withoutGlobalScope('organization')
@@ -67,7 +68,7 @@ class FinancialIntelligenceService
         $monthlyTrend = $this->trendAnalyzer->compute($deploymentIds);
 
         $dimensions = [];
-        $score  = $this->scorer->scoreROI($totalCost, $totalSavings, $dimensions);
+        $score = $this->scorer->scoreROI($totalCost, $totalSavings, $dimensions);
         $score += $this->scorer->scoreCostEfficiency($totalCost, $completedTasks, $dimensions);
         $score += $this->scorer->scoreRevenueImpact($totalRevenue, $totalCost, $dimensions);
         $score += $this->scorer->scoreCostTrend($monthlyTrend, $dimensions);

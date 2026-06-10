@@ -5,6 +5,7 @@ namespace Tests\Feature\Actions;
 use App\Actions\Organizations\UpdateOrganizationSettingsAction;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -47,7 +48,7 @@ class UpdateOrganizationSettingsActionTest extends TestCase
         $otherUser = User::factory()->create();
         $this->actingAs($otherUser);
 
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
         app(UpdateOrganizationSettingsAction::class)->execute($this->organization, ['name' => 'Hacked']);
     }
 

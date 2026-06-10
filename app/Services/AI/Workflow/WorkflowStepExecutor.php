@@ -38,10 +38,10 @@ class WorkflowStepExecutor
         $type = $step['type'] ?? 'agent_task';
 
         return match ($type) {
-            'agent_task'     => $this->runAgentTaskStep($step, $execution),
-            'notification'   => $this->runNotificationStep($step, $execution),
+            'agent_task' => $this->runAgentTaskStep($step, $execution),
+            'notification' => $this->runNotificationStep($step, $execution),
             'data_transform' => $this->runDataTransformStep($step, $previousResults),
-            default          => ['status' => 'skipped', 'reason' => "Unknown step type: {$type}"],
+            default => ['status' => 'skipped', 'reason' => "Unknown step type: {$type}"],
         };
     }
 
@@ -73,9 +73,9 @@ class WorkflowStepExecutor
         return match ($operator) {
             '==' => $actual == $value,
             '!=' => $actual != $value,
-            '>'  => $actual > $value,
+            '>' => $actual > $value,
             '>=' => $actual >= $value,
-            '<'  => $actual < $value,
+            '<' => $actual < $value,
             '<=' => $actual <= $value,
             'in' => in_array($actual, (array) $value),
             default => true,

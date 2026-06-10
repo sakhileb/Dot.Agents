@@ -41,10 +41,10 @@ class DataTrustScoreService
         $orgId = $organization->id;
 
         $completeness = $this->qualityScorer->scoreCompleteness($orgId);
-        $integrity    = $this->qualityScorer->scoreIntegrity($orgId);
-        $freshness    = $this->qualityScorer->scoreFreshness($orgId);
-        $memory       = $this->governanceScorer->scoreMemoryQuality($orgId);
-        $decisions    = $this->governanceScorer->scoreDecisionQuality($orgId);
+        $integrity = $this->qualityScorer->scoreIntegrity($orgId);
+        $freshness = $this->qualityScorer->scoreFreshness($orgId);
+        $memory = $this->governanceScorer->scoreMemoryQuality($orgId);
+        $decisions = $this->governanceScorer->scoreDecisionQuality($orgId);
 
         $total = round(
             $completeness['score'] + $integrity['score'] + $freshness['score']

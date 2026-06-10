@@ -16,7 +16,7 @@ class EnterpriseSkillsSeeder extends Seeder
             );
         }
 
-        $this->command->info('[EnterpriseSkillsSeeder] ' . count($this->skills()) . ' enterprise skills seeded.');
+        $this->command->info('[EnterpriseSkillsSeeder] '.count($this->skills()).' enterprise skills seeded.');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -365,41 +365,41 @@ class EnterpriseSkillsSeeder extends Seeder
         array $governanceRules = [],
     ): array {
         return [
-            'key'                   => $key,
-            'name'                  => $name,
-            'description'           => "Enterprise executable skill: {$name}",
-            'layer'                 => 'enterprise',
-            'category'              => $this->categoryForDepartment($department),
-            'department'            => $department,
-            'agent_type'            => $agentType,
-            'output_type'           => $outputType,
-            'risk_level'            => $riskLevel,
-            'approval_required'     => $approvalRequired,
-            'audit_required'        => true,
-            'delegation_capable'    => ! $approvalRequired,
-            'required_permissions'  => $requiredPermissions,
+            'key' => $key,
+            'name' => $name,
+            'description' => "Enterprise executable skill: {$name}",
+            'layer' => 'enterprise',
+            'category' => $this->categoryForDepartment($department),
+            'department' => $department,
+            'agent_type' => $agentType,
+            'output_type' => $outputType,
+            'risk_level' => $riskLevel,
+            'approval_required' => $approvalRequired,
+            'audit_required' => true,
+            'delegation_capable' => ! $approvalRequired,
+            'required_permissions' => $requiredPermissions,
             'required_data_sources' => $requiredDataSources,
-            'governance_rules'      => $governanceRules ?: null,
-            'confidence_score'      => $riskLevel === 'low' ? 85 : ($riskLevel === 'medium' ? 75 : ($riskLevel === 'high' ? 65 : 55)),
-            'requires_ai'           => true,
-            'is_built_in'           => true,
-            'is_active'             => true,
-            'sort_order'            => 0,
+            'governance_rules' => $governanceRules ?: null,
+            'confidence_score' => $riskLevel === 'low' ? 85 : ($riskLevel === 'medium' ? 75 : ($riskLevel === 'high' ? 65 : 55)),
+            'requires_ai' => true,
+            'is_built_in' => true,
+            'is_active' => true,
+            'sort_order' => 0,
         ];
     }
 
     private function categoryForDepartment(string $department): string
     {
         return match ($department) {
-            'finance'    => 'financial',
-            'hr'         => 'workforce',
-            'it'         => 'technical',
-            'sales'      => 'commercial',
-            'marketing'  => 'marketing',
+            'finance' => 'financial',
+            'hr' => 'workforce',
+            'it' => 'technical',
+            'sales' => 'commercial',
+            'marketing' => 'marketing',
             'operations' => 'operational',
-            'executive'  => 'strategic',
-            'platform'   => 'governance',
-            default      => 'general',
+            'executive' => 'strategic',
+            'platform' => 'governance',
+            default => 'general',
         };
     }
 }

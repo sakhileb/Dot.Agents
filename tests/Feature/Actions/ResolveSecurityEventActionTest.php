@@ -6,6 +6,7 @@ use App\Actions\Security\ResolveSecurityEventAction;
 use App\Models\Organization;
 use App\Models\SecurityEvent;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -79,7 +80,7 @@ class ResolveSecurityEventActionTest extends TestCase
         $this->actingAs($this->user);
         Gate::before(fn () => true);
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
         app(ResolveSecurityEventAction::class)->execute(999999);
     }
 }

@@ -4,12 +4,12 @@ namespace Database\Seeders;
 
 use App\Models\Agent;
 use App\Models\AgentDeployment;
-use App\Models\AgentDepartment;
 use App\Models\AgentSkill;
 use App\Models\AgentSkillAssignment;
 use App\Models\AgentTask;
 use App\Models\Department;
 use App\Models\Organization;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -49,7 +49,7 @@ class ProductionDemoSeeder extends Seeder
 
         // Admin user must exist before org (owner_id FK constraint)
         $admin = $this->ensureAdminUser();
-        $org   = $this->seedOrganization($admin);
+        $org = $this->seedOrganization($admin);
         $this->seedRemainingUsers($org, $admin);
         $depts = $this->seedDepartments($org, $admin);
         $this->seedDeployments($org, $admin, $depts);
@@ -58,9 +58,9 @@ class ProductionDemoSeeder extends Seeder
         $this->command->info('✅  Demo environment ready.');
         $this->command->newLine();
         $this->command->line('  <fg=yellow>Login:</> demo@dotagents.com / DemoAdmin2026!');
-        $this->command->line('  <fg=yellow>Org:</>   ' . $org->name . ' (plan: enterprise)');
-        $this->command->line('  <fg=yellow>Agents deployed:</> ' . AgentDeployment::withoutGlobalScopes()->where('organization_id', $org->id)->count());
-        $this->command->line('  <fg=yellow>Tasks seeded:</> ' . AgentTask::withoutGlobalScopes()->where('organization_id', $org->id)->count());
+        $this->command->line('  <fg=yellow>Org:</>   '.$org->name.' (plan: enterprise)');
+        $this->command->line('  <fg=yellow>Agents deployed:</> '.AgentDeployment::withoutGlobalScopes()->where('organization_id', $org->id)->count());
+        $this->command->line('  <fg=yellow>Tasks seeded:</> '.AgentTask::withoutGlobalScopes()->where('organization_id', $org->id)->count());
         $this->command->newLine();
     }
 
@@ -73,8 +73,8 @@ class ProductionDemoSeeder extends Seeder
         return User::firstOrCreate(
             ['email' => 'demo@dotagents.com'],
             [
-                'name'              => 'Demo Admin',
-                'password'          => Hash::make('DemoAdmin2026!'),
+                'name' => 'Demo Admin',
+                'password' => Hash::make('DemoAdmin2026!'),
                 'email_verified_at' => now(),
             ]
         );
@@ -89,32 +89,32 @@ class ProductionDemoSeeder extends Seeder
         $org = Organization::firstOrCreate(
             ['slug' => 'dot-ventures'],
             [
-                'name'      => 'Dot Ventures Inc.',
-                'owner_id'  => $admin->id,
-                'domain'    => 'dotventures.com',
-                'industry'  => 'Technology',
-                'size'      => '201-500',
-                'country'   => 'US',
-                'timezone'  => 'America/New_York',
-                'currency'  => 'USD',
-                'plan'      => 'enterprise',
-                'status'    => 'active',
-                'settings'  => [
-                    'max_skill_risk_level'    => 'critical',
-                    'require_2fa'             => false,
+                'name' => 'Dot Ventures Inc.',
+                'owner_id' => $admin->id,
+                'domain' => 'dotventures.com',
+                'industry' => 'Technology',
+                'size' => '201-500',
+                'country' => 'US',
+                'timezone' => 'America/New_York',
+                'currency' => 'USD',
+                'plan' => 'enterprise',
+                'status' => 'active',
+                'settings' => [
+                    'max_skill_risk_level' => 'critical',
+                    'require_2fa' => false,
                     'allow_autonomous_agents' => true,
-                    'demo_mode'               => true,
+                    'demo_mode' => true,
                 ],
-                'trial_ends_at'        => null,
+                'trial_ends_at' => null,
                 'subscription_ends_at' => now()->addYear(),
             ]
         );
 
         // Ensure it has a Jetstream team so session context works
-        \App\Models\Team::firstOrCreate(
+        Team::firstOrCreate(
             ['name' => $org->name],
             [
-                'user_id'       => $admin->id,
+                'user_id' => $admin->id,
                 'personal_team' => false,
             ]
         );
@@ -122,15 +122,15 @@ class ProductionDemoSeeder extends Seeder
         // Attach admin to org if not already a member
         if (! $org->users()->where('users.id', $admin->id)->exists()) {
             $org->users()->attach($admin->id, [
-                'role'       => 'owner',
+                'role' => 'owner',
                 'department' => 'executive',
-                'job_title'  => 'Platform Administrator',
+                'job_title' => 'Platform Administrator',
                 'is_primary' => true,
-                'joined_at'  => now(),
+                'joined_at' => now(),
             ]);
         }
 
-        $this->command->info('  [1/5] Organization: ' . $org->name);
+        $this->command->info('  [1/5] Organization: '.$org->name);
 
         return $org;
     }
@@ -143,35 +143,35 @@ class ProductionDemoSeeder extends Seeder
     {
         $usersData = [
             [
-                'name'       => 'Sarah Chen',
-                'email'      => 'sarah.chen@dotventures.com',
-                'password'   => Hash::make('Finance2026!'),
-                'role'       => 'admin',
-                'job_title'  => 'Finance Director',
+                'name' => 'Sarah Chen',
+                'email' => 'sarah.chen@dotventures.com',
+                'password' => Hash::make('Finance2026!'),
+                'role' => 'admin',
+                'job_title' => 'Finance Director',
                 'department' => 'finance',
             ],
             [
-                'name'       => 'Marcus Williams',
-                'email'      => 'marcus.williams@dotventures.com',
-                'password'   => Hash::make('HRLead2026!'),
-                'role'       => 'member',
-                'job_title'  => 'HR Director',
+                'name' => 'Marcus Williams',
+                'email' => 'marcus.williams@dotventures.com',
+                'password' => Hash::make('HRLead2026!'),
+                'role' => 'member',
+                'job_title' => 'HR Director',
                 'department' => 'hr',
             ],
             [
-                'name'       => 'Priya Sharma',
-                'email'      => 'priya.sharma@dotventures.com',
-                'password'   => Hash::make('ITLead2026!'),
-                'role'       => 'admin',
-                'job_title'  => 'Head of IT',
+                'name' => 'Priya Sharma',
+                'email' => 'priya.sharma@dotventures.com',
+                'password' => Hash::make('ITLead2026!'),
+                'role' => 'admin',
+                'job_title' => 'Head of IT',
                 'department' => 'it',
             ],
             [
-                'name'       => 'James Okafor',
-                'email'      => 'james.okafor@dotventures.com',
-                'password'   => Hash::make('SalesLead2026!'),
-                'role'       => 'member',
-                'job_title'  => 'VP Sales',
+                'name' => 'James Okafor',
+                'email' => 'james.okafor@dotventures.com',
+                'password' => Hash::make('SalesLead2026!'),
+                'role' => 'member',
+                'job_title' => 'VP Sales',
                 'department' => 'sales',
             ],
         ];
@@ -180,24 +180,24 @@ class ProductionDemoSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name'              => $data['name'],
-                    'password'          => $data['password'],
+                    'name' => $data['name'],
+                    'password' => $data['password'],
                     'email_verified_at' => now(),
                 ]
             );
 
             if (! $org->users()->where('users.id', $user->id)->exists()) {
                 $org->users()->attach($user->id, [
-                    'role'       => $data['role'],
+                    'role' => $data['role'],
                     'department' => $data['department'],
-                    'job_title'  => $data['job_title'],
+                    'job_title' => $data['job_title'],
                     'is_primary' => true,
-                    'joined_at'  => now(),
+                    'joined_at' => now(),
                 ]);
             }
         }
 
-        $this->command->info('  [2/5] Users seeded: ' . (count($usersData) + 1) . ' total');
+        $this->command->info('  [2/5] Users seeded: '.(count($usersData) + 1).' total');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -207,13 +207,13 @@ class ProductionDemoSeeder extends Seeder
     private function seedDepartments(Organization $org, User $admin): array
     {
         $deptDefs = [
-            'finance'    => ['name' => 'Finance',         'type' => 'finance',    'budget' => 500000,  'cost_center' => 'CC-FIN-001'],
-            'hr'         => ['name' => 'Human Resources',  'type' => 'hr',         'budget' => 250000,  'cost_center' => 'CC-HR-001'],
-            'it'         => ['name' => 'Information Tech', 'type' => 'it',         'budget' => 750000,  'cost_center' => 'CC-IT-001'],
-            'sales'      => ['name' => 'Sales',            'type' => 'sales',      'budget' => 300000,  'cost_center' => 'CC-SAL-001'],
-            'marketing'  => ['name' => 'Marketing',        'type' => 'marketing',  'budget' => 200000,  'cost_center' => 'CC-MKT-001'],
+            'finance' => ['name' => 'Finance',         'type' => 'finance',    'budget' => 500000,  'cost_center' => 'CC-FIN-001'],
+            'hr' => ['name' => 'Human Resources',  'type' => 'hr',         'budget' => 250000,  'cost_center' => 'CC-HR-001'],
+            'it' => ['name' => 'Information Tech', 'type' => 'it',         'budget' => 750000,  'cost_center' => 'CC-IT-001'],
+            'sales' => ['name' => 'Sales',            'type' => 'sales',      'budget' => 300000,  'cost_center' => 'CC-SAL-001'],
+            'marketing' => ['name' => 'Marketing',        'type' => 'marketing',  'budget' => 200000,  'cost_center' => 'CC-MKT-001'],
             'operations' => ['name' => 'Operations',       'type' => 'operations', 'budget' => 400000,  'cost_center' => 'CC-OPS-001'],
-            'executive'  => ['name' => 'Executive',        'type' => 'executive',  'budget' => 1000000, 'cost_center' => 'CC-EXEC-001'],
+            'executive' => ['name' => 'Executive',        'type' => 'executive',  'budget' => 1000000, 'cost_center' => 'CC-EXEC-001'],
         ];
 
         $depts = [];
@@ -223,20 +223,21 @@ class ProductionDemoSeeder extends Seeder
                 ['organization_id' => $org->id, 'slug' => $key],
                 [
                     'organization_id' => $org->id,
-                    'name'            => $def['name'],
-                    'slug'            => $key,
-                    'type'            => $def['type'],
-                    'budget'          => $def['budget'],
-                    'cost_center'     => $def['cost_center'],
-                    'head_user_id'    => $admin->id,
-                    'is_active'       => true,
+                    'name' => $def['name'],
+                    'slug' => $key,
+                    'type' => $def['type'],
+                    'budget' => $def['budget'],
+                    'cost_center' => $def['cost_center'],
+                    'head_user_id' => $admin->id,
+                    'is_active' => true,
                 ]
             );
 
             $depts[$key] = $dept;
         }
 
-        $this->command->info('  [3/5] Departments seeded: ' . count($depts));
+        $this->command->info('  [3/5] Departments seeded: '.count($depts));
+
         return $depts;
     }
 
@@ -250,7 +251,7 @@ class ProductionDemoSeeder extends Seeder
 
         $totalDeployments = 0;
         $totalAssignments = 0;
-        $totalTasks       = 0;
+        $totalTasks = 0;
 
         foreach ($deploymentMap as $config) {
             $agent = Agent::where('slug', $config['agent_slug'])->first();
@@ -268,23 +269,23 @@ class ProductionDemoSeeder extends Seeder
 
             if (! $deployment) {
                 $deployment = AgentDeployment::create([
-                    'uuid'                    => (string) Str::uuid(),
-                    'organization_id'         => $org->id,
-                    'agent_id'                => $agent->id,
-                    'department_id'           => $dept?->id,
-                    'deployed_by'             => $admin->id,
-                    'name'                    => $config['name'],
-                    'custom_instructions'     => $config['instructions'],
-                    'deployment_mode'         => $config['mode'],
-                    'status'                  => 'active',
+                    'uuid' => (string) Str::uuid(),
+                    'organization_id' => $org->id,
+                    'agent_id' => $agent->id,
+                    'department_id' => $dept?->id,
+                    'deployed_by' => $admin->id,
+                    'name' => $config['name'],
+                    'custom_instructions' => $config['instructions'],
+                    'deployment_mode' => $config['mode'],
+                    'status' => 'active',
                     'requires_human_approval' => $config['mode'] !== 'autonomous',
-                    'confidence_threshold'    => $config['confidence'] ?? 75.0,
-                    'enable_memory'           => true,
+                    'confidence_threshold' => $config['confidence'] ?? 75.0,
+                    'enable_memory' => true,
                     'enable_long_term_memory' => in_array($config['mode'], ['autonomous', 'executive_approval']),
-                    'memory_retention_days'   => 90,
-                    'risk_tolerance'          => 50.0,
-                    'deployed_at'             => now()->subDays(rand(1, 30)),
-                    'last_active_at'          => now()->subMinutes(rand(1, 480)),
+                    'memory_retention_days' => 90,
+                    'risk_tolerance' => 50.0,
+                    'deployed_at' => now()->subDays(rand(1, 30)),
+                    'last_active_at' => now()->subMinutes(rand(1, 480)),
                 ]);
 
                 $totalDeployments++;
@@ -326,10 +327,10 @@ class ProductionDemoSeeder extends Seeder
             if (! $exists) {
                 AgentSkillAssignment::create([
                     'agent_deployment_id' => $deployment->id,
-                    'skill_id'            => $skill->id,
-                    'organization_id'     => $orgId,
-                    'is_enabled'          => true,
-                    'config'              => null,
+                    'skill_id' => $skill->id,
+                    'organization_id' => $orgId,
+                    'is_enabled' => true,
+                    'config' => null,
                 ]);
                 $count++;
             }
@@ -357,37 +358,37 @@ class ProductionDemoSeeder extends Seeder
             }
 
             $isCompleted = $taskDef['status'] === 'completed';
-            $isFailed    = $taskDef['status'] === 'failed';
+            $isFailed = $taskDef['status'] === 'failed';
 
             AgentTask::create([
-                'uuid'                    => (string) Str::uuid(),
-                'organization_id'         => $org->id,
-                'agent_deployment_id'     => $deployment->id,
-                'assigned_by'             => $admin->id,
-                'title'                   => $taskDef['title'],
-                'description'             => $taskDef['description'],
-                'task_type'               => $taskDef['type'],
-                'priority'                => $taskDef['priority'],
-                'status'                  => $taskDef['status'],
-                'input_data'              => ['query' => $taskDef['description']],
-                'output_data'             => $isCompleted ? [
-                    'summary'     => 'Analysis completed successfully. Key findings: ' . $taskDef['description'],
-                    'confidence'  => rand(78, 97),
-                    'actions'     => [],
+                'uuid' => (string) Str::uuid(),
+                'organization_id' => $org->id,
+                'agent_deployment_id' => $deployment->id,
+                'assigned_by' => $admin->id,
+                'title' => $taskDef['title'],
+                'description' => $taskDef['description'],
+                'task_type' => $taskDef['type'],
+                'priority' => $taskDef['priority'],
+                'status' => $taskDef['status'],
+                'input_data' => ['query' => $taskDef['description']],
+                'output_data' => $isCompleted ? [
+                    'summary' => 'Analysis completed successfully. Key findings: '.$taskDef['description'],
+                    'confidence' => rand(78, 97),
+                    'actions' => [],
                 ] : null,
-                'result_summary'          => $isCompleted ? 'Task completed with high confidence.' : null,
-                'confidence_score'        => $isCompleted ? rand(78, 97) : null,
-                'accuracy_score'          => $isCompleted ? rand(80, 98) : null,
-                'risk_score'              => rand(0, 30),
-                'delusion_risk_score'     => rand(0, 15),
+                'result_summary' => $isCompleted ? 'Task completed with high confidence.' : null,
+                'confidence_score' => $isCompleted ? rand(78, 97) : null,
+                'accuracy_score' => $isCompleted ? rand(80, 98) : null,
+                'risk_score' => rand(0, 30),
+                'delusion_risk_score' => rand(0, 15),
                 'reality_alignment_score' => rand(85, 100),
                 'estimated_duration_minutes' => rand(2, 45),
-                'actual_duration_minutes'    => $isCompleted ? rand(1, 30) : null,
-                'token_count'             => $isCompleted ? rand(500, 8000) : 0,
-                'cost'                    => $isCompleted ? rand(1, 200) / 100 : 0,
-                'due_at'                  => now()->addHours(rand(1, 72)),
-                'started_at'              => ($isCompleted || $isFailed) ? now()->subHours(rand(1, 12)) : null,
-                'completed_at'            => $isCompleted ? now()->subMinutes(rand(5, 300)) : null,
+                'actual_duration_minutes' => $isCompleted ? rand(1, 30) : null,
+                'token_count' => $isCompleted ? rand(500, 8000) : 0,
+                'cost' => $isCompleted ? rand(1, 200) / 100 : 0,
+                'due_at' => now()->addHours(rand(1, 72)),
+                'started_at' => ($isCompleted || $isFailed) ? now()->subHours(rand(1, 12)) : null,
+                'completed_at' => $isCompleted ? now()->subMinutes(rand(5, 300)) : null,
             ]);
 
             $count++;
@@ -403,7 +404,7 @@ class ProductionDemoSeeder extends Seeder
     private function upgradeToEnterprise(Organization $org): void
     {
         $org->update([
-            'plan'                 => 'enterprise',
+            'plan' => 'enterprise',
             'subscription_ends_at' => now()->addYear(),
         ]);
 
@@ -421,11 +422,11 @@ class ProductionDemoSeeder extends Seeder
             // ── EXECUTIVE ────────────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'ceo-agent',
-                'name'         => 'CEO Strategic Advisor',
-                'department'   => 'executive',
-                'mode'         => 'advisory',
-                'confidence'   => 80.0,
+                'agent_slug' => 'ceo-agent',
+                'name' => 'CEO Strategic Advisor',
+                'department' => 'executive',
+                'mode' => 'advisory',
+                'confidence' => 80.0,
                 'instructions' => 'You are the strategic AI advisor for Dot Ventures Inc. Focus on identifying growth opportunities, monitoring organizational KPIs, and supporting executive decision-making. Always recommend human review for major strategic decisions.',
                 'sample_tasks' => [
                     ['title' => 'Q2 Strategic Performance Review', 'description' => 'Analyze Q2 organizational performance across all departments and highlight strategic risks and opportunities.', 'type' => 'analysis', 'priority' => 'high', 'status' => 'completed'],
@@ -435,11 +436,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'cfo-agent',
-                'name'         => 'CFO Financial Advisor',
-                'department'   => 'executive',
-                'mode'         => 'advisory',
-                'confidence'   => 82.0,
+                'agent_slug' => 'cfo-agent',
+                'name' => 'CFO Financial Advisor',
+                'department' => 'executive',
+                'mode' => 'advisory',
+                'confidence' => 82.0,
                 'instructions' => 'You are the CFO-level AI advisor for Dot Ventures. Focus on financial performance monitoring, budget compliance, cash flow, and financial risk identification. All financial commitments require human CFO approval.',
                 'sample_tasks' => [
                     ['title' => 'Monthly Financial Dashboard — June 2026', 'description' => 'Generate monthly financial dashboard including P&L summary, cash flow, and budget variance.', 'type' => 'report', 'priority' => 'high', 'status' => 'completed'],
@@ -448,11 +449,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'cto-agent',
-                'name'         => 'CTO Technology Advisor',
-                'department'   => 'executive',
-                'mode'         => 'advisory',
-                'confidence'   => 80.0,
+                'agent_slug' => 'cto-agent',
+                'name' => 'CTO Technology Advisor',
+                'department' => 'executive',
+                'mode' => 'advisory',
+                'confidence' => 80.0,
                 'instructions' => 'You are the CTO-level technology advisor. Focus on technology stack evaluation, digital transformation roadmap, security posture, and cloud cost optimization.',
                 'sample_tasks' => [
                     ['title' => 'Technology Stack Modernization Review', 'description' => 'Review current technology stack and identify modernization opportunities for H2 2026.', 'type' => 'analysis', 'priority' => 'high', 'status' => 'in_progress'],
@@ -463,11 +464,11 @@ class ProductionDemoSeeder extends Seeder
             // ── FINANCE ─────────────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'financial-analyst',
-                'name'         => 'Finance Controller Agent',
-                'department'   => 'finance',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 78.0,
+                'agent_slug' => 'financial-analyst',
+                'name' => 'Finance Controller Agent',
+                'department' => 'finance',
+                'mode' => 'semi-autonomous',
+                'confidence' => 78.0,
                 'instructions' => 'You are the finance controller AI for Dot Ventures. Perform financial analysis, generate budget reports, detect cost overruns, and validate expense claims. Flag anything above $10,000 for human approval.',
                 'sample_tasks' => [
                     ['title' => 'June 2026 Expense Report Validation', 'description' => 'Validate all department expense reports for June 2026 against approved budgets.', 'type' => 'review', 'priority' => 'high', 'status' => 'completed'],
@@ -477,11 +478,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'budget-planner',
-                'name'         => 'Accounts Payable Agent',
-                'department'   => 'finance',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 76.0,
+                'agent_slug' => 'budget-planner',
+                'name' => 'Accounts Payable Agent',
+                'department' => 'finance',
+                'mode' => 'semi-autonomous',
+                'confidence' => 76.0,
                 'instructions' => 'You handle accounts payable operations. Validate vendor invoices, detect duplicates, match purchase orders, and schedule payments. All payments above $5,000 require human approval before processing.',
                 'sample_tasks' => [
                     ['title' => 'Validate 12 Pending Vendor Invoices', 'description' => 'Validate pending vendor invoices from AWS, Salesforce, and 10 other suppliers. Flag any anomalies.', 'type' => 'review', 'priority' => 'high', 'status' => 'completed'],
@@ -491,11 +492,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'risk-analyst',
-                'name'         => 'Accounts Receivable Agent',
-                'department'   => 'finance',
-                'mode'         => 'advisory',
-                'confidence'   => 77.0,
+                'agent_slug' => 'risk-analyst',
+                'name' => 'Accounts Receivable Agent',
+                'department' => 'finance',
+                'mode' => 'advisory',
+                'confidence' => 77.0,
                 'instructions' => 'You manage accounts receivable. Monitor outstanding payments, predict late payments, send reminders, and flag collection risks. Generate customer aging reports weekly.',
                 'sample_tasks' => [
                     ['title' => 'Debtor Aging Analysis — June 2026', 'description' => 'Generate debtor aging analysis and identify accounts overdue by 60+ days.', 'type' => 'report', 'priority' => 'high', 'status' => 'completed'],
@@ -507,11 +508,11 @@ class ProductionDemoSeeder extends Seeder
             // ── HR ───────────────────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'recruiter-agent',
-                'name'         => 'Recruitment Agent',
-                'department'   => 'hr',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 75.0,
+                'agent_slug' => 'recruiter-agent',
+                'name' => 'Recruitment Agent',
+                'department' => 'hr',
+                'mode' => 'semi-autonomous',
+                'confidence' => 75.0,
                 'instructions' => 'You handle recruitment for Dot Ventures. Screen CVs, rank candidates, generate job descriptions, and schedule interviews. Never make final hiring decisions without HR director approval.',
                 'sample_tasks' => [
                     ['title' => 'Screen 47 Applications: Senior Engineer Role', 'description' => 'Screen and rank 47 applications for the Senior Backend Engineer position. Top 5 move to phone screen.', 'type' => 'review', 'priority' => 'high', 'status' => 'completed'],
@@ -521,11 +522,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'performance-agent',
-                'name'         => 'HR Manager Agent',
-                'department'   => 'hr',
-                'mode'         => 'advisory',
-                'confidence'   => 76.0,
+                'agent_slug' => 'performance-agent',
+                'name' => 'HR Manager Agent',
+                'department' => 'hr',
+                'mode' => 'advisory',
+                'confidence' => 76.0,
                 'instructions' => 'You support HR operations. Monitor workforce health, track leave balances, analyze turnover trends, and generate HR reports. Performance reviews require manager and HR director approval.',
                 'sample_tasks' => [
                     ['title' => 'Q2 Employee Performance Review Summary', 'description' => 'Compile Q2 performance review data and identify top performers and those needing development support.', 'type' => 'report', 'priority' => 'high', 'status' => 'completed'],
@@ -534,11 +535,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'training-agent',
-                'name'         => 'Employee Training Agent',
-                'department'   => 'hr',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 77.0,
+                'agent_slug' => 'training-agent',
+                'name' => 'Employee Training Agent',
+                'department' => 'hr',
+                'mode' => 'semi-autonomous',
+                'confidence' => 77.0,
                 'instructions' => 'You design and deliver employee training plans. Create personalized learning paths, track completion, and identify skill gaps. All new mandatory training programs need HR director sign-off.',
                 'sample_tasks' => [
                     ['title' => 'Onboarding Plan: 3 New Hires — June 2026', 'description' => 'Create personalized 30-day onboarding plans for 3 new hires joining in June 2026.', 'type' => 'action', 'priority' => 'high', 'status' => 'completed'],
@@ -549,11 +550,11 @@ class ProductionDemoSeeder extends Seeder
             // ── IT ───────────────────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'it-support-agent',
-                'name'         => 'IT Operations Agent',
-                'department'   => 'it',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 80.0,
+                'agent_slug' => 'it-support-agent',
+                'name' => 'IT Operations Agent',
+                'department' => 'it',
+                'mode' => 'semi-autonomous',
+                'confidence' => 80.0,
                 'instructions' => 'You manage IT operations for Dot Ventures. Triage support tickets, monitor system health, track incidents, and manage asset inventory. Service outages and critical incidents auto-escalate to the IT Head.',
                 'sample_tasks' => [
                     ['title' => 'Triage: 23 Open Support Tickets', 'description' => 'Triage and prioritize 23 open IT support tickets. Resolve Tier-1 issues directly.', 'type' => 'action', 'priority' => 'high', 'status' => 'completed'],
@@ -563,11 +564,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'cybersecurity-agent',
-                'name'         => 'Security Operations Agent',
-                'department'   => 'it',
-                'mode'         => 'advisory',
-                'confidence'   => 82.0,
+                'agent_slug' => 'cybersecurity-agent',
+                'name' => 'Security Operations Agent',
+                'department' => 'it',
+                'mode' => 'advisory',
+                'confidence' => 82.0,
                 'instructions' => 'You monitor and protect Dot Ventures from security threats. Analyze security events, detect anomalies, review access violations, and recommend remediations. Critical threats trigger immediate escalation to CISO.',
                 'sample_tasks' => [
                     ['title' => 'Weekly Security Incident Summary', 'description' => 'Generate weekly security incident summary report with threat trends and remediation status.', 'type' => 'report', 'priority' => 'high', 'status' => 'completed'],
@@ -576,11 +577,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'cloud-architect-agent',
-                'name'         => 'Cloud Infrastructure Agent',
-                'department'   => 'it',
-                'mode'         => 'advisory',
-                'confidence'   => 79.0,
+                'agent_slug' => 'cloud-architect-agent',
+                'name' => 'Cloud Infrastructure Agent',
+                'department' => 'it',
+                'mode' => 'advisory',
+                'confidence' => 79.0,
                 'instructions' => 'You advise on cloud architecture for Dot Ventures (primary: AWS). Identify cost optimization opportunities, design scalable architectures, and review infrastructure changes. Major architecture changes need CTO approval.',
                 'sample_tasks' => [
                     ['title' => 'AWS Cost Optimization Review — June 2026', 'description' => 'Analyze AWS billing for June and identify quick-win cost optimizations.', 'type' => 'analysis', 'priority' => 'high', 'status' => 'completed'],
@@ -591,11 +592,11 @@ class ProductionDemoSeeder extends Seeder
             // ── SALES ────────────────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'lead-generation-agent',
-                'name'         => 'CRM & Lead Agent',
-                'department'   => 'sales',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 75.0,
+                'agent_slug' => 'lead-generation-agent',
+                'name' => 'CRM & Lead Agent',
+                'department' => 'sales',
+                'mode' => 'semi-autonomous',
+                'confidence' => 75.0,
                 'instructions' => 'You handle lead generation and CRM management for Dot Ventures. Qualify leads, score opportunities, track deal progress, and identify churn risks. Outreach emails require sales manager approval before sending.',
                 'sample_tasks' => [
                     ['title' => 'Qualify 35 Inbound Leads — June Week 2', 'description' => 'Qualify and score 35 inbound leads from the June marketing campaign based on ICP criteria.', 'type' => 'review', 'priority' => 'high', 'status' => 'completed'],
@@ -605,11 +606,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'sales-forecast-agent',
-                'name'         => 'Sales Manager Agent',
-                'department'   => 'sales',
-                'mode'         => 'advisory',
-                'confidence'   => 78.0,
+                'agent_slug' => 'sales-forecast-agent',
+                'name' => 'Sales Manager Agent',
+                'department' => 'sales',
+                'mode' => 'advisory',
+                'confidence' => 78.0,
                 'instructions' => 'You support sales management for Dot Ventures. Monitor sales performance, forecast revenue, track targets, and recommend actions. Revenue forecasts above $100K require VP Sales review.',
                 'sample_tasks' => [
                     ['title' => 'June 2026 Revenue Forecast', 'description' => 'Generate June 2026 revenue forecast with 3 scenarios (base, upside, downside) and confidence intervals.', 'type' => 'report', 'priority' => 'critical', 'status' => 'completed'],
@@ -621,11 +622,11 @@ class ProductionDemoSeeder extends Seeder
             // ── MARKETING ───────────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'content-agent',
-                'name'         => 'Marketing Content Agent',
-                'department'   => 'marketing',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 77.0,
+                'agent_slug' => 'content-agent',
+                'name' => 'Marketing Content Agent',
+                'department' => 'marketing',
+                'mode' => 'semi-autonomous',
+                'confidence' => 77.0,
                 'instructions' => 'You create marketing content for Dot Ventures. Write blog posts, emails, social copy, and case studies. All external-facing content must be reviewed and approved by the Marketing Director before publishing.',
                 'sample_tasks' => [
                     ['title' => 'Blog Post: "5 Ways AI Agents Transform Finance Teams"', 'description' => 'Write a 1,200-word SEO-optimized blog post on AI transformation in finance departments.', 'type' => 'action', 'priority' => 'medium', 'status' => 'completed'],
@@ -634,11 +635,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'market-research-agent',
-                'name'         => 'Marketing Strategy Agent',
-                'department'   => 'marketing',
-                'mode'         => 'advisory',
-                'confidence'   => 78.0,
+                'agent_slug' => 'market-research-agent',
+                'name' => 'Marketing Strategy Agent',
+                'department' => 'marketing',
+                'mode' => 'advisory',
+                'confidence' => 78.0,
                 'instructions' => 'You drive marketing strategy for Dot Ventures. Analyze campaign performance, monitor brand sentiment, research competitors, and recommend marketing investments. Budget decisions above $20K need CMO approval.',
                 'sample_tasks' => [
                     ['title' => 'Q2 Campaign Performance Analysis', 'description' => 'Analyze Q2 marketing campaign performance across paid, organic, and email channels.', 'type' => 'analysis', 'priority' => 'high', 'status' => 'completed'],
@@ -647,11 +648,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'seo-agent',
-                'name'         => 'SEO & Growth Agent',
-                'department'   => 'marketing',
-                'mode'         => 'advisory',
-                'confidence'   => 76.0,
+                'agent_slug' => 'seo-agent',
+                'name' => 'SEO & Growth Agent',
+                'department' => 'marketing',
+                'mode' => 'advisory',
+                'confidence' => 76.0,
                 'instructions' => 'You manage SEO and organic growth for Dot Ventures. Conduct keyword research, audit content, identify ranking opportunities, and track organic traffic. Content publishing requires Marketing Director approval.',
                 'sample_tasks' => [
                     ['title' => 'Monthly SEO Performance Report — June 2026', 'description' => 'Generate monthly organic search performance report including rankings, traffic, and conversion data.', 'type' => 'report', 'priority' => 'medium', 'status' => 'completed'],
@@ -662,11 +663,11 @@ class ProductionDemoSeeder extends Seeder
             // ── OPERATIONS ───────────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'operations-manager-agent',
-                'name'         => 'Operations Manager Agent',
-                'department'   => 'operations',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 76.0,
+                'agent_slug' => 'operations-manager-agent',
+                'name' => 'Operations Manager Agent',
+                'department' => 'operations',
+                'mode' => 'semi-autonomous',
+                'confidence' => 76.0,
                 'instructions' => 'You manage operations for Dot Ventures. Monitor production KPIs, identify bottlenecks, analyze workflow efficiency, and recommend process improvements. Changes to core operational workflows need COO approval.',
                 'sample_tasks' => [
                     ['title' => 'June Operational KPI Dashboard', 'description' => 'Generate June operational KPI dashboard across customer onboarding, support, and delivery processes.', 'type' => 'report', 'priority' => 'high', 'status' => 'completed'],
@@ -675,11 +676,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'supply-chain-agent',
-                'name'         => 'Supply Chain Agent',
-                'department'   => 'operations',
-                'mode'         => 'advisory',
-                'confidence'   => 75.0,
+                'agent_slug' => 'supply-chain-agent',
+                'name' => 'Supply Chain Agent',
+                'department' => 'operations',
+                'mode' => 'advisory',
+                'confidence' => 75.0,
                 'instructions' => 'You monitor supply chain health for Dot Ventures. Track vendor performance, identify supply risks, optimize procurement, and forecast inventory needs. Procurement decisions above $15K need COO approval.',
                 'sample_tasks' => [
                     ['title' => 'Vendor Performance Review: Top 10 Suppliers', 'description' => 'Review Q2 performance of top 10 suppliers against SLA and quality metrics.', 'type' => 'review', 'priority' => 'medium', 'status' => 'completed'],
@@ -690,11 +691,11 @@ class ProductionDemoSeeder extends Seeder
             // ── CUSTOMER SERVICE ─────────────────────────────────────────────
 
             [
-                'agent_slug'   => 'customer-support-agent',
-                'name'         => 'Customer Support Agent',
-                'department'   => 'executive',
-                'mode'         => 'semi-autonomous',
-                'confidence'   => 80.0,
+                'agent_slug' => 'customer-support-agent',
+                'name' => 'Customer Support Agent',
+                'department' => 'executive',
+                'mode' => 'semi-autonomous',
+                'confidence' => 80.0,
                 'instructions' => 'You handle customer support for Dot Ventures. Resolve Tier-1 inquiries, create tickets, escalate complex issues, and track customer satisfaction. Refunds above $500 and account deletions require human approval.',
                 'sample_tasks' => [
                     ['title' => 'Resolve: 15 Pending Customer Inquiries', 'description' => 'Process and respond to 15 pending customer support inquiries in the queue.', 'type' => 'action', 'priority' => 'high', 'status' => 'completed'],
@@ -702,11 +703,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'customer-success-agent',
-                'name'         => 'Customer Success Agent',
-                'department'   => 'executive',
-                'mode'         => 'advisory',
-                'confidence'   => 77.0,
+                'agent_slug' => 'customer-success-agent',
+                'name' => 'Customer Success Agent',
+                'department' => 'executive',
+                'mode' => 'advisory',
+                'confidence' => 77.0,
                 'instructions' => 'You drive customer success for Dot Ventures. Monitor customer health scores, predict churn, identify expansion opportunities, and prepare QBR materials. Account expansions and renewals need CS Manager approval.',
                 'sample_tasks' => [
                     ['title' => 'Churn Risk Alerts — June 10, 2026', 'description' => 'Identify and analyze customers showing churn risk signals in the last 14 days.', 'type' => 'analysis', 'priority' => 'critical', 'status' => 'completed'],
@@ -717,11 +718,11 @@ class ProductionDemoSeeder extends Seeder
             // ── LEGAL & COMPLIANCE ───────────────────────────────────────────
 
             [
-                'agent_slug'   => 'contract-review-agent',
-                'name'         => 'Contract Review Agent',
-                'department'   => 'executive',
-                'mode'         => 'advisory',
-                'confidence'   => 82.0,
+                'agent_slug' => 'contract-review-agent',
+                'name' => 'Contract Review Agent',
+                'department' => 'executive',
+                'mode' => 'advisory',
+                'confidence' => 82.0,
                 'instructions' => 'You review contracts for Dot Ventures. Identify risk clauses, flag non-standard terms, and suggest amendments. All contract recommendations must be reviewed by the Legal team before acceptance or rejection.',
                 'sample_tasks' => [
                     ['title' => 'Review: AWS Enterprise Agreement Renewal', 'description' => 'Review AWS enterprise agreement renewal terms and flag any changes from previous agreement.', 'type' => 'review', 'priority' => 'critical', 'status' => 'completed'],
@@ -730,11 +731,11 @@ class ProductionDemoSeeder extends Seeder
                 ],
             ],
             [
-                'agent_slug'   => 'compliance-agent',
-                'name'         => 'Compliance & Governance Agent',
-                'department'   => 'executive',
-                'mode'         => 'advisory',
-                'confidence'   => 83.0,
+                'agent_slug' => 'compliance-agent',
+                'name' => 'Compliance & Governance Agent',
+                'department' => 'executive',
+                'mode' => 'advisory',
+                'confidence' => 83.0,
                 'instructions' => 'You monitor regulatory compliance for Dot Ventures. Track GDPR, SOC 2, and industry regulations, identify compliance gaps, and recommend remediations. Compliance policy changes require Legal Director approval.',
                 'sample_tasks' => [
                     ['title' => 'GDPR Compliance Gap Assessment — H1 2026', 'description' => 'Assess GDPR compliance gaps across all data processing activities in H1 2026.', 'type' => 'analysis', 'priority' => 'critical', 'status' => 'completed'],

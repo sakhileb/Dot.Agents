@@ -8,6 +8,7 @@ use App\Models\AgentTask;
 use App\Models\DecisionLog;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -90,7 +91,7 @@ class CreateDecisionLogActionTest extends TestCase
             'organization_id' => $otherOrg->id,
         ]);
 
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(AuthorizationException::class);
         app(CreateDecisionLogAction::class)->execute($otherDeployment, $otherTask, ['confidence' => 80]);
     }
 }

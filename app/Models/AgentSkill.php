@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Support\TaggableCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Support\TaggableCache;
 use Illuminate\Support\Facades\Cache;
 
 class AgentSkill extends Model

@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\Api\V1\AgentController;
 use App\Http\Controllers\Api\V1\DeploymentController;
-use App\Http\Controllers\Api\V1\SkillController;
 use App\Http\Controllers\Api\V1\SkillApprovalController;
+use App\Http\Controllers\Api\V1\SkillController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -50,4 +50,3 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'org.context']
         Route::post('/{approval}/reject', [SkillApprovalController::class, 'reject'])->name('reject');
     });
 });
-

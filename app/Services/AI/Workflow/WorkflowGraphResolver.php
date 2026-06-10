@@ -84,13 +84,13 @@ class WorkflowGraphResolver
             $actual = data_get($result, $condition['field']);
 
             return match ($condition['op']) {
-                '=='    => $actual == $condition['value'],
-                '!='    => $actual != $condition['value'],
-                '>'     => $actual > $condition['value'],
-                '>='    => $actual >= $condition['value'],
-                '<'     => $actual < $condition['value'],
-                '<='    => $actual <= $condition['value'],
-                'in'    => in_array($actual, (array) $condition['value']),
+                '==' => $actual == $condition['value'],
+                '!=' => $actual != $condition['value'],
+                '>' => $actual > $condition['value'],
+                '>=' => $actual >= $condition['value'],
+                '<' => $actual < $condition['value'],
+                '<=' => $actual <= $condition['value'],
+                'in' => in_array($actual, (array) $condition['value']),
                 default => true,
             };
         }

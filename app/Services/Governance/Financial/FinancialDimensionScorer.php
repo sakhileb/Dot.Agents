@@ -40,10 +40,10 @@ class FinancialDimensionScorer
         $points = match (true) {
             $roi >= 200 => 30,
             $roi >= 100 => 26,
-            $roi >= 50  => 22,
-            $roi >= 0   => 18,
+            $roi >= 50 => 22,
+            $roi >= 0 => 18,
             $roi >= -20 => 10,
-            default     => 0,
+            default => 0,
         };
 
         $dimensions['roi_achievement'] = [
@@ -82,7 +82,7 @@ class FinancialDimensionScorer
             $costPerTask < 0.50 => 18,
             $costPerTask < 1.00 => 12,
             $costPerTask < 5.00 => 6,
-            default             => 0,
+            default => 0,
         };
 
         $dimensions['cost_efficiency'] = [
@@ -116,11 +116,11 @@ class FinancialDimensionScorer
 
         $points = match (true) {
             $multiplier >= 10 => 25,
-            $multiplier >= 5  => 22,
-            $multiplier >= 2  => 18,
-            $multiplier >= 1  => 14,
-            $multiplier > 0   => 8,
-            default           => 5,
+            $multiplier >= 5 => 22,
+            $multiplier >= 2 => 18,
+            $multiplier >= 1 => 14,
+            $multiplier > 0 => 8,
+            default => 5,
         };
 
         $dimensions['revenue_impact'] = [
@@ -156,10 +156,10 @@ class FinancialDimensionScorer
 
         $points = match (true) {
             $trendPct <= -20 => 20,
-            $trendPct <= -5  => 17,
-            $trendPct <= 5   => 14,
-            $trendPct <= 20  => 10,
-            default          => 5,
+            $trendPct <= -5 => 17,
+            $trendPct <= 5 => 14,
+            $trendPct <= 20 => 10,
+            default => 5,
         };
 
         $dimensions['cost_trend'] = [

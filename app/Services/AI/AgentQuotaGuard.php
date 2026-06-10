@@ -23,7 +23,6 @@ class AgentQuotaGuard
     /**
      * Assert that the organization has remaining task quota for this month.
      *
-     * @param  int  $organizationId
      * @param  string|null  $planSlug  The org's current subscription plan slug
      *
      * @throws \RuntimeException when the monthly task quota is exhausted
