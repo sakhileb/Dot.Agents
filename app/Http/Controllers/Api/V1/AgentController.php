@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Support\TaggableCache;
 use Illuminate\Support\Facades\Cache;
 
 class AgentController extends Controller
@@ -24,7 +25,7 @@ class AgentController extends Controller
         // Cache catalog listings for 10 minutes; tag-invalidated when agents change.
         $cacheKey = 'agent_catalog:' . md5(serialize($validated));
 
-        $agents = Cache::tags(['agents', 'catalog'])->remember($cacheKey, 600, function () use ($validated) {
+        $agents = TaggableCache::remember(['agents', 'catalog'], $cacheKey, 600, function () use ($validated) {
             return Agent::query()
                 ->active()
                 ->when(isset($validated['category_id']), fn ($q) => $q->where('category_id', $validated['category_id']))

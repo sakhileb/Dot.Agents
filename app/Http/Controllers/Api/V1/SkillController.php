@@ -12,6 +12,7 @@ use App\Models\AgentSkill;
 use App\Models\AgentSkillScore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Support\TaggableCache;
 use Illuminate\Support\Facades\Cache;
 
 class SkillController extends Controller
@@ -23,7 +24,7 @@ class SkillController extends Controller
         // Cache skill catalog for 10 minutes; tag-invalidated when skills change.
         $cacheKey = 'skill_catalog:' . md5($request->getQueryString() ?? '');
 
-        $skills = Cache::tags(['skills', 'catalog'])->remember($cacheKey, 600, function () use ($request) {
+        $skills = TaggableCache::remember(['skills', 'catalog'], $cacheKey, 600, function () use ($request) {
             return AgentSkill::active()
                 ->when($request->filled('department'), fn ($q) => $q->forDepartment($request->department))
                 ->when($request->filled('risk_level'), fn ($q) => $q->byRisk($request->risk_level))

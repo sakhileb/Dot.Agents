@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Support\TaggableCache;
 use Illuminate\Support\Facades\Cache;
 
 class Organization extends Model
@@ -108,7 +109,8 @@ class Organization extends Model
      */
     public function cachedSettings(): array
     {
-        return Cache::tags(['org_settings'])->remember(
+        return TaggableCache::remember(
+            ['org_settings'],
             "org_settings:{$this->id}",
             300,
             fn () => $this->settings ?? []
@@ -120,7 +122,7 @@ class Organization extends Model
         parent::boot();
         // Invalidate org settings cache when org is updated
         static::saved(function (self $org) {
-            Cache::tags(['org_settings'])->forget("org_settings:{$org->id}");
+            TaggableCache::forget(['org_settings'], "org_settings:{$org->id}");
         });
     }
 }

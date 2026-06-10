@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Support\TaggableCache;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -75,8 +76,8 @@ class Agent extends Model
             }
         });
         // Invalidate catalog cache when agents change
-        static::saved(fn () => Cache::tags(['agents', 'catalog'])->flush());
-        static::deleted(fn () => Cache::tags(['agents', 'catalog'])->flush());
+        static::saved(fn () => TaggableCache::flush(['agents', 'catalog']));
+        static::deleted(fn () => TaggableCache::flush(['agents', 'catalog']));
     }
 
     public function category(): BelongsTo

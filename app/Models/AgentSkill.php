@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Support\TaggableCache;
 use Illuminate\Support\Facades\Cache;
 
 class AgentSkill extends Model
@@ -215,7 +216,7 @@ class AgentSkill extends Model
     {
         parent::boot();
         // Invalidate skill catalog cache when skills change
-        static::saved(fn () => Cache::tags(['skills', 'catalog'])->flush());
-        static::deleted(fn () => Cache::tags(['skills', 'catalog'])->flush());
+        static::saved(fn () => TaggableCache::flush(['skills', 'catalog']));
+        static::deleted(fn () => TaggableCache::flush(['skills', 'catalog']));
     }
 }

@@ -6,6 +6,7 @@ use App\Models\AgentDeployment;
 use App\Models\AgentSkillApproval;
 use App\Models\AgentSkillExecution;
 use App\Models\AgentTask;
+use App\Support\TaggableCache;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -31,7 +32,8 @@ class AgentReputationService
     {
         $cacheKey = "agent_reputation_{$deploymentId}_{$organizationId}";
 
-        return Cache::tags(['agent_reputation'])->remember(
+        return TaggableCache::remember(
+            ['agent_reputation'],
             $cacheKey,
             self::CACHE_TTL,
             fn () => $this->buildProfile($deploymentId, $organizationId)
@@ -43,7 +45,8 @@ class AgentReputationService
      */
     public function invalidate(int $deploymentId, int $organizationId): void
     {
-        Cache::tags(['agent_reputation'])->forget(
+        TaggableCache::forget(
+            ['agent_reputation'],
             "agent_reputation_{$deploymentId}_{$organizationId}"
         );
     }
