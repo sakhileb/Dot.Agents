@@ -75,6 +75,8 @@ class WorkflowList extends Component
 
     public function render()
     {
-        return view('livewire.workflows.workflow-list');
+        return view('livewire.workflows.workflow-list', [
+            'workflows' => $this->workflows,
+        ]);
     }
 }

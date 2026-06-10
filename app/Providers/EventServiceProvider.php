@@ -13,7 +13,9 @@ use App\Events\SecurityThreatDetected;
 use App\Events\SkillApprovalRequested;
 use App\Events\SkillExecuted;
 use App\Events\SkillExecutionBlocked;
+use App\Listeners\AuditSkillExecution;
 use App\Listeners\HandleAgentTaskFailed;
+use App\Listeners\HandleSkillApprovalRequested;
 use App\Listeners\LogDeploymentAudit;
 use App\Listeners\LogSecurityThreat;
 use App\Listeners\LogSkillBlockedEvent;
@@ -22,7 +24,10 @@ use App\Listeners\NotifyOnApprovalProcessed;
 use App\Listeners\RecordSkillScoreOnExecution;
 use App\Listeners\SendApprovalNotification;
 use App\Listeners\SetupOrganizationDefaults;
+use App\Listeners\UpdateReputationOnTaskComplete;
+use App\Listeners\UpdateReputationOnTaskFailed;
 use App\Listeners\UpdateScorecardOnTaskComplete;
+use App\Listeners\WarmupAgentOnDeployment;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -38,14 +43,17 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         AgentDeployed::class => [
             LogDeploymentAudit::class,
+            WarmupAgentOnDeployment::class,
         ],
 
         AgentTaskCompleted::class => [
             UpdateScorecardOnTaskComplete::class,
+            UpdateReputationOnTaskComplete::class,
         ],
 
         AgentTaskFailed::class => [
             HandleAgentTaskFailed::class,
+            UpdateReputationOnTaskFailed::class,
         ],
 
         SecurityThreatDetected::class => [
@@ -70,6 +78,7 @@ class EventServiceProvider extends ServiceProvider
 
         SkillExecuted::class => [
             RecordSkillScoreOnExecution::class,
+            AuditSkillExecution::class,
         ],
 
         SkillExecutionBlocked::class => [
@@ -78,6 +87,7 @@ class EventServiceProvider extends ServiceProvider
 
         SkillApprovalRequested::class => [
             SendApprovalNotification::class,
+            HandleSkillApprovalRequested::class,
         ],
     ];
 

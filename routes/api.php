@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\V1\AgentController;
 use App\Http\Controllers\Api\V1\DeploymentController;
 use App\Http\Controllers\Api\V1\SkillApprovalController;
 use App\Http\Controllers\Api\V1\SkillController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+// Public health probe — no authentication, used by load balancers and CI/CD pipelines
+Route::get('/health', HealthController::class)->name('api.health');
 
 // All API routes are versioned under /v1 with auth:sanctum + org.context
 Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'org.context'])->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\SkillExecutionBlocked;
+use App\Models\AgentSkill;
 use App\Models\AuditLog;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;

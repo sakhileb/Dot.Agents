@@ -120,9 +120,15 @@ jobs:
             # Restart queue workers gracefully
             php "$CURRENT_DIR/artisan" queue:restart
 
-            # Health check
-            sleep 3
-            curl -sf http://localhost/up || exit 1
+            # Health check — verify the new release responds on the API health endpoint
+            sleep 5
+            for i in 1 2 3; do
+              STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost/api/health) && break || sleep 5
+            done
+            if [ "$STATUS" != "200" ]; then
+              echo "Health check failed (HTTP $STATUS) — triggering rollback"
+              exit 1
+            fi
 
             # Prune old releases (keep last 5)
             ls -dt /var/www/dotagents/releases/*/ | tail -n +6 | xargs rm -rf
@@ -142,10 +148,34 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
+            set -e
             PREVIOUS=$(ls -dt /var/www/dotagents/releases/*/ | sed -n '2p')
             if [ -n "$PREVIOUS" ]; then
               ln -sfn "$PREVIOUS" /var/www/dotagents/current
               sudo systemctl reload php8.4-fpm
               php /var/www/dotagents/current/artisan queue:restart
+              sleep 3
+              curl -sf http://localhost/api/health && echo "Rollback healthy: $PREVIOUS" || echo "WARNING: rollback health check failed — manual inspection required"
               echo "Rolled back to: $PREVIOUS"
+            else
+              echo "ERROR: No previous release found for rollback"
+              exit 1rtisan queue:restart
+              sleep 3
+              curl -sf http://localhost/api/health && echo "Rollback healthy: $PREVIOUS" || echo "WARNING: rollback health check failed — manual inspection required"
+              echo "Rolled back to: $PREVIOUS"
+            else
+              echo "ERROR: No previous release found for rollback"
+              exit 1rtisan queue:restart
+              sleep 3
+              curl -sf http://localhost/api/health && echo "Rollback healthy: $PREVIOUS" || echo "WARNING: rollback health check failed — manual inspection required"
+              echo "Rolled back to: $PREVIOUS"
+            else
+              echo "ERROR: No previous release found for rollback"
+              exit 1rtisan queue:restart
+              sleep 3
+              curl -sf http://localhost/api/health && echo "Rollback healthy: $PREVIOUS" || echo "WARNING: rollback health check failed — manual inspection required"
+              echo "Rolled back to: $PREVIOUS"
+            else
+              echo "ERROR: No previous release found for rollback"
+              exit 1
             fi
