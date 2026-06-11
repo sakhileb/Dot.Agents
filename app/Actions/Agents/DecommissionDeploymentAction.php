@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\Events\AgentDecommissioned;
 use App\Models\AgentDeployment;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +26,8 @@ class DecommissionDeploymentAction
             subject: $deployment,
             metadata: ['reason' => $reason],
         );
+
+        event(new AgentDecommissioned($deployment, $reason));
 
         return $deployment->refresh();
     }

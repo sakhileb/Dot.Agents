@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\Events\AgentUpdated;
 use App\Models\AgentDeployment;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -36,6 +37,8 @@ class UpdateDeploymentAction
             subject: $deployment,
             metadata: ['old' => $old, 'new' => $updates]
         );
+
+        event(new AgentUpdated($deployment, ['old' => $old, 'new' => $updates]));
 
         return $deployment->refresh();
     }

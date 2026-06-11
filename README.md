@@ -10,7 +10,7 @@
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel)](https://laravel.com)
 [![Livewire](https://img.shields.io/badge/Livewire-3.8-4E56A6?style=flat-square)](https://livewire.laravel.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
-[![Tests](https://img.shields.io/badge/tests-242%20passing-brightgreen?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-298%20passing-brightgreen?style=flat-square)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-≥80%25-brightgreen?style=flat-square)](phpunit.xml)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
@@ -116,7 +116,7 @@ Every resource on the platform is scoped to an `Organization` (backed by Jetstre
 
 | Dimension | Status |
 |-----------|--------|
-| Test Suite | ✅ 242 tests passing, 461 assertions |
+| Test Suite | ✅ 298 tests passing, 573 assertions |
 | Coverage Gate | ✅ ≥ 80% enforced in CI |
 | Architecture Guards | ✅ Service ≤ 200 lines, Controller ≤ 100 lines, Livewire ≤ 200 lines |
 | Redis Caching | ✅ Agent catalog, Skill catalog, Org settings (tagged cache invalidation) |
@@ -124,8 +124,11 @@ Every resource on the platform is scoped to an `Organization` (backed by Jetstre
 | Agent Certification | ✅ 7-dimension certification scoring (accuracy, reliability, security, governance, performance, risk, compliance) |
 | Agent Reputation | ✅ `AgentReputationService` — 5-dimension reputation tracking |
 | Health Checks | ✅ `/health` (public) and `/health/detailed` (authenticated) endpoints |
-| Prompt Injection | ✅ All AI input scanned before execution |
+| Prompt Injection | ✅ All AI input scanned at request boundary and AI service layer |
 | Tenant Isolation | ✅ All org-owned resources scoped via `organization_id` global scopes |
+| Domain Events | ✅ All state-changing Actions fire domain events (`AgentPaused`, `AgentUpdated`, `AgentDecommissioned`, …) |
+| Security | ✅ OWASP audit passed — no XSS, no raw SQL injection vectors, CSRF properly exempted |
+| Social Commerce | ✅ SCCS module — leads, sentiment, social inbox, posts, conversion tracking |
 
 ---
 
@@ -134,15 +137,17 @@ Every resource on the platform is scoped to an `Organization` (backed by Jetstre
 ```
 app/
 ├── Actions/           # Single-purpose operation classes (one execute() method)
-│   ├── Agents/        # Deploy, pause, update, decommission agent deployments
-│   ├── Billing/       # Subscription, invoicing, usage metering
-│   ├── Compliance/    # Compliance checks and reporting
+│   ├── Agents/        # Deploy, pause, update, decommission, rate, chat agent deployments
+│   ├── Billing/       # Subscription, checkout, webhook, usage metering
+│   ├── Compliance/    # Consent recording, data export, data erasure (GDPR)
 │   ├── Fortify/       # Auth: register, update profile, reset password
-│   ├── Governance/    # Approval processing, audit recording
+│   ├── Governance/    # Approval processing, audit recording, decision logging
 │   ├── Jetstream/     # Team creation, member management
-│   ├── Organizations/ # Org creation, member invitations
-│   ├── Security/      # Security event recording, threat response
-│   └── Workflows/     # Workflow creation and execution
+│   ├── Organizations/ # Org creation, member invitations, knowledge, departments
+│   ├── Security/      # Security event recording, emergency kill-switch
+│   ├── Skills/        # Skill assignment, approval, scoring
+│   ├── Social/        # Lead capture, social posting, inbox, sentiment, conversion
+│   └── Workflows/     # Workflow creation, deletion, and execution
 ├── DTOs/              # Typed readonly input/output objects
 │   ├── Agents/
 │   ├── Billing/
@@ -150,26 +155,33 @@ app/
 │   ├── Governance/
 │   ├── Organizations/
 │   ├── Security/
+│   ├── Social/
 │   └── Workflows/
 ├── Events/            # Domain events fired after every state change
+│   │                  # AgentDeployed, AgentPaused, AgentUpdated, AgentDecommissioned,
+│   │                  # AgentDriftDetected, ApprovalRequested, ApprovalProcessed,
+│   │                  # SocialLeadCaptured, SocialConversionAchieved, …
 ├── Listeners/         # Queued event handlers
-├── Jobs/              # Background work: AI execution, scoring, DIS, notifications
-├── Livewire/          # UI components (no business logic)
+├── Jobs/              # Background work: AI execution, scoring, DIS, social, notifications
+├── Livewire/          # UI components (no business logic — delegates to Actions)
 │   ├── Agents/        # Chat interface, deployment manager, scorecard viewer
 │   ├── Billing/       # Subscription management
-│   ├── Dashboard/     # Agent dashboard
+│   ├── Dashboard/     # Agent + operations dashboard
 │   ├── Governance/    # Approval queue, audit log viewer, decision log
-│   ├── Marketplace/   # Agent marketplace browser
-│   ├── Organizations/ # Org management
+│   ├── Marketplace/   # Agent marketplace browser & preview modal
+│   ├── Organizations/ # Org management, knowledge base, departments
 │   ├── Security/      # Security event monitor
-│   └── Workflows/     # Visual workflow builder
-├── Models/            # Eloquent models (37+ models across all domains)
-├── Policies/          # Authorization policies (one per model)
+│   ├── Social/        # Social inbox, lead pipeline, post manager, sentiment monitor
+│   └── Workflows/     # Visual workflow builder, workflow list
+├── Models/            # 60+ Eloquent models across all domains
+├── Policies/          # Authorization policies (30 policies registered)
 └── Services/
     ├── AI/            # Orchestration, memory, model routing, skill pipeline,
-    │                  # agent certification, agent reputation, workflows
-    ├── Governance/    # Audit, delusion detection, DIS, scorecard
-    └── Infrastructure/# Health checks (database, cache, queue, storage, agent runtime)
+    │                  # agent certification, agent reputation, workflows, brand brain
+    ├── Governance/    # Audit, delusion detection, DIS, scorecard, financial intelligence
+    ├── Infrastructure/# Health checks, observability, platform metrics, alerting
+    ├── Resilience/    # Circuit breaker for AI provider failover
+    └── Social/        # Social commerce, conversation continuation, sentiment
 ```
 
 ---
@@ -256,7 +268,7 @@ Event → Listener → Job (if async) → Livewire Component → Tests → Pint
 ### Running Tests
 
 ```bash
-php artisan test --compact                        # Full suite (242 tests)
+php artisan test --compact                        # Full suite (298 tests)
 php artisan test --compact tests/Feature/Actions/ # Actions only
 php artisan test --compact --coverage --min=80    # With coverage gate (≥ 80%)
 php artisan test --compact --filter=DeployAgent   # Single action
@@ -313,10 +325,12 @@ This repository uses a suite of GitHub Copilot skills that turn the AI assistant
 - All routes require authentication (`auth:sanctum`) and email verification
 - Every Action class authorizes via `Gate::authorize()` before execution
 - All org-owned resources are scoped to `organization_id` at the query level
-- User-supplied AI input is scanned for prompt injection before execution
+- User-supplied AI input is scanned for prompt injection at request boundaries and inside the AI service layer (`AgentModelCaller`)
+- `/api/v1/me` returns only whitelisted non-sensitive fields — no raw model serialization
 - No secrets are stored in code — all credentials loaded from environment variables
 - `composer audit` and `npm audit` are run on every CI pipeline
 - Architecture guard tests enforce service and component size limits to prevent god-class accumulation
+- Stripe webhook CSRF exemption secured via `Stripe-Signature` header verification
 
 To report a security vulnerability, please open a private security advisory on GitHub.
 
@@ -324,7 +338,19 @@ To report a security vulnerability, please open a private security advisory on G
 
 ## Changelog
 
-### June 2026
+### June 2026 (Latest)
+- **Full-stack security & integrity audit** — platform health score raised to 78/100
+- **Social Commerce & Customer Success (SCCS) module** — leads, social inbox, posts, sentiment monitoring, conversion tracking with AI-powered responses
+- **Domain events completed** — `AgentPaused`, `AgentUpdated`, `AgentDecommissioned` events now fired from all state-changing Agent Action classes
+- **Prompt injection coverage extended** — `AgentModelCaller` now screens every user message at the AI service layer (not just at request boundaries)
+- **Livewire architecture enforced** — `WorkflowList`, `KnowledgeManager`, `DepartmentManager` direct DB mutations extracted to `CreateWorkflowAction`, `DeleteWorkflowAction`, `DeleteKnowledgeArticleAction`, `DeleteDepartmentAction`
+- **`/api/v1/me` PII hardened** — endpoint now returns only whitelisted non-sensitive fields
+- **MySQL production compatibility** — `FinancialTrendAnalyzer` now uses DB-driver-aware date formatting (works on both SQLite dev and MySQL prod)
+- **Config cache safety** — `env('AUDIT_LOG_RETENTION_DAYS')` moved to `config/audit.php`; model now reads via `config()`
+- **`auth()->id()` type errors resolved** — all occurrences replaced with `Auth::id()` facade calls for language server compatibility
+- **Test suite** — 298 tests passing, 573 assertions, 0 failures
+
+### Earlier June 2026
 - Added `AgentReputationService` — 5-dimension reputation tracking per agent
 - Extended `AgentCertificationService` to 7 dimensions (added risk + compliance)
 - Added Redis tagged caching for agent catalog, skill catalog, and org settings

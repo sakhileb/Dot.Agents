@@ -121,6 +121,15 @@ Route::middleware([
 
     // Settings (catch-all for Jetstream profile routes)
     Route::get('/settings/billing', fn () => view('billing.settings'))->name('settings.billing');
+
+    // ── Social Commerce & Customer Success (SCCS) ─────────────────────────────
+    Route::prefix('social')->name('social.')->group(function () {
+        Route::get('/', fn () => view('social.dashboard'))->name('dashboard');
+        Route::get('/inbox', fn () => view('social.inbox'))->name('inbox');
+        Route::get('/leads', fn () => view('social.leads'))->name('leads');
+        Route::get('/posts', fn () => view('social.posts'))->name('posts');
+        Route::get('/sentiment', fn () => view('social.sentiment'))->name('sentiment');
+    });
 });
 
 // Stripe webhook — must be outside auth middleware + CSRF exempt (handled in VerifyCsrfToken)

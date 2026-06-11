@@ -514,6 +514,608 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  # ─── Social Commerce & Customer Success (SCCS) ─────────────────────────────
+
+  /social/accounts:
+    get:
+      summary: List connected social accounts
+      operationId: listSocialAccounts
+      tags: [SCCS]
+      responses:
+        '200':
+          description: Connected social accounts for the organization
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialAccount'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+    post:
+      summary: Connect a social media account
+      operationId: connectSocialAccount
+      tags: [SCCS]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectSocialAccountRequest'
+      responses:
+        '201':
+          description: Social account connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SocialAccount'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /social/accounts/{account}:
+    get:
+      summary: Get social account details
+      operationId: getSocialAccount
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialAccountParam'
+      responses:
+        '200':
+          description: Social account with engagement metrics
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Disconnect a social account
+      operationId: disconnectSocialAccount
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialAccountParam'
+      responses:
+        '200':
+          description: Social account disconnected
+
+  /social/accounts/{account}/sync:
+    post:
+      summary: Trigger a manual sync of messages and metrics
+      operationId: syncSocialAccount
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialAccountParam'
+      responses:
+        '202':
+          description: Sync dispatched to background queue
+
+  /social/conversations:
+    get:
+      summary: List social conversations (DMs, comments, mentions)
+      operationId: listSocialConversations
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, escalated, closed]
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [twitter, instagram, facebook, linkedin, tiktok]
+        - name: intent
+          in: query
+          schema:
+            type: string
+            enum: [neutral, interested, ready_to_buy, complaint, support_request, escalation]
+      responses:
+        '200':
+          description: Paginated social conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialConversation'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /social/conversations/{conversation}:
+    get:
+      summary: Get conversation with full message thread
+      operationId: getSocialConversation
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialConversationParam'
+      responses:
+        '200':
+          description: Conversation with messages and AI analysis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SocialConversation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /social/conversations/{conversation}/respond:
+    post:
+      summary: Send an AI-generated response to a conversation
+      operationId: respondToConversation
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialConversationParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  maxLength: 2000
+                  description: Override the AI-generated response (optional; AI drafts it if omitted)
+                deployment_id:
+                  type: integer
+      responses:
+        '202':
+          description: Response dispatched to social channel
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /social/conversations/{conversation}/escalate:
+    post:
+      summary: Escalate a conversation to a human agent
+      operationId: escalateConversation
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialConversationParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                assignee_id:
+                  type: integer
+                  nullable: true
+      responses:
+        '200':
+          description: Conversation escalated
+
+  /social/conversations/{conversation}/inbound:
+    post:
+      summary: Receive an inbound message (webhook endpoint for social platforms)
+      operationId: receiveInboundMessage
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialConversationParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  maxLength: 5000
+                sender_handle:
+                  type: string
+                platform_message_id:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Inbound message stored; AI job dispatched
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Prompt injection detected — message rejected
+
+  /social/posts:
+    get:
+      summary: List social posts
+      operationId: listSocialPosts
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, pending_approval, scheduled, published, failed, cancelled]
+      responses:
+        '200':
+          description: Paginated social posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialPost'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      summary: Create and schedule a social post
+      operationId: createSocialPost
+      tags: [SCCS]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSocialPostRequest'
+      responses:
+        '201':
+          description: Post created (queued for approval or scheduled)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SocialPost'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /social/posts/{post}/approve:
+    post:
+      summary: Approve a pending social post for publishing
+      operationId: approveSocialPost
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialPostParam'
+      responses:
+        '200':
+          description: Post approved and scheduled
+        '422':
+          description: Post already published or cancelled
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /social/leads:
+    get:
+      summary: List captured social leads
+      operationId: listSocialLeads
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [new, contacted, qualified, disqualified, converted, lost]
+        - name: intent
+          in: query
+          schema:
+            type: string
+            enum: [low_intent, medium_intent, high_intent, ready_to_buy]
+      responses:
+        '200':
+          description: Paginated social leads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialLead'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      summary: Manually capture a social lead
+      operationId: captureSocialLead
+      tags: [SCCS]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaptureSocialLeadRequest'
+      responses:
+        '201':
+          description: Lead captured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SocialLead'
+
+  /social/leads/{lead}:
+    get:
+      summary: Get lead details with full qualification analysis
+      operationId: getSocialLead
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialLeadParam'
+      responses:
+        '200':
+          description: Lead with AI qualification data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SocialLead'
+
+  /social/leads/{lead}/qualify:
+    post:
+      summary: Trigger AI qualification for a lead
+      operationId: qualifyLead
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/SocialLeadParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deployment_id:
+                  type: integer
+                  description: SCCS agent deployment to use for qualification
+      responses:
+        '200':
+          description: Lead qualification updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SocialLead'
+                  qualification:
+                    $ref: '#/components/schemas/LeadQualification'
+
+  /social/sentiment:
+    get:
+      summary: Get brand sentiment analysis
+      operationId: getSentimentAnalysis
+      tags: [SCCS]
+      parameters:
+        - name: period_days
+          in: query
+          schema:
+            type: integer
+            default: 30
+            minimum: 1
+            maximum: 365
+        - name: channel
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Brand sentiment scores and trending topics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SentimentAnalysis'
+
+  /social/conversions:
+    get:
+      summary: List social commerce conversions
+      operationId: listSocialConversions
+      tags: [SCCS]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, cancelled, refunded]
+      responses:
+        '200':
+          description: Social conversions with revenue attribution
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialConversion'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  # ─── Executive Council (AEC v2.0) ───────────────────────────────────────────
+
+  /executive-council/sessions:
+    get:
+      summary: List executive council deliberation sessions
+      operationId: listCouncilSessions
+      tags: [ExecutiveCouncil]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [deliberating, completed, failed]
+        - name: session_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated council sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExecutiveCouncilSession'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      summary: Convene a new executive council session
+      operationId: conveneCouncilSession
+      tags: [ExecutiveCouncil]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_type, title, context]
+              properties:
+                session_type:
+                  type: string
+                  enum: [procurement, strategic_initiative, ai_deployment, risk_assessment, budget, other]
+                title:
+                  type: string
+                  maxLength: 200
+                context:
+                  type: string
+                  maxLength: 5000
+                  description: Full decision context for executive deliberation
+                input_data:
+                  type: object
+                  additionalProperties: true
+                financial_threshold:
+                  type: number
+                  nullable: true
+      responses:
+        '201':
+          description: Session convened (may take 30-60s for AI deliberation)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExecutiveCouncilSession'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /executive-council/sessions/{session}:
+    get:
+      summary: Get council session with all executive recommendations
+      operationId: getCouncilSession
+      tags: [ExecutiveCouncil]
+      parameters:
+        - name: session
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Session with per-role recommendations and consensus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExecutiveCouncilSession'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── Enterprise Brain (AEC v2.0) ────────────────────────────────────────────
+
+  /enterprise/health:
+    get:
+      summary: Get composite Enterprise Health Score (8 domains)
+      operationId: getEnterpriseHealth
+      tags: [EnterpriseBrain]
+      responses:
+        '200':
+          description: Enterprise health score across all 8 domains
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnterpriseHealthScore'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  /enterprise/brain/predict:
+    post:
+      summary: Run 30-day predictive intelligence forecast
+      operationId: runPredictiveIntelligence
+      tags: [EnterpriseBrain]
+      responses:
+        '200':
+          description: Risk factors and opportunities for the next 30 days
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  risk_factors:
+                    type: array
+                    items:
+                      type: object
+                  opportunities:
+                    type: array
+                    items:
+                      type: object
+                  prediction_confidence:
+                    type: integer
+
+  /enterprise/dna:
+    get:
+      summary: Get organizational DNA (Enterprise Constitution)
+      operationId: getOrganizationDNA
+      tags: [EnterpriseBrain]
+      responses:
+        '200':
+          description: Organization DNA configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationDNA'
+    put:
+      summary: Update organizational DNA
+      operationId: updateOrganizationDNA
+      tags: [EnterpriseBrain]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationDNA'
+      responses:
+        '200':
+          description: DNA updated — all agent system prompts will reflect changes within 30 minutes
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
 
   securitySchemes:
@@ -555,6 +1157,30 @@ components:
         type: integer
     ApprovalParam:
       name: approval
+      in: path
+      required: true
+      schema:
+        type: integer
+    SocialAccountParam:
+      name: account
+      in: path
+      required: true
+      schema:
+        type: integer
+    SocialConversationParam:
+      name: conversation
+      in: path
+      required: true
+      schema:
+        type: integer
+    SocialPostParam:
+      name: post
+      in: path
+      required: true
+      schema:
+        type: integer
+    SocialLeadParam:
+      name: lead
       in: path
       required: true
       schema:
@@ -937,4 +1563,469 @@ components:
         justification:
           type: string
           maxLength: 500
+          nullable: true
+
+    # ─── SCCS Schemas ────────────────────────────────────────────────────────
+
+    SocialAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        organization_id:
+          type: integer
+        platform:
+          type: string
+          enum: [twitter, instagram, facebook, linkedin, tiktok, youtube]
+        account_name:
+          type: string
+        account_handle:
+          type: string
+        is_active:
+          type: boolean
+        followers_count:
+          type: integer
+          nullable: true
+        engagement_rate:
+          type: number
+          nullable: true
+        connected_at:
+          type: string
+          format: date-time
+
+    ConnectSocialAccountRequest:
+      type: object
+      required: [platform, account_name, account_handle]
+      properties:
+        platform:
+          type: string
+          enum: [twitter, instagram, facebook, linkedin, tiktok, youtube]
+        account_name:
+          type: string
+          maxLength: 150
+        account_handle:
+          type: string
+          maxLength: 100
+        access_token:
+          type: string
+          description: OAuth access token (encrypted at rest)
+        account_id_external:
+          type: string
+          nullable: true
+
+    SocialConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        organization_id:
+          type: integer
+        social_account_id:
+          type: integer
+        channel:
+          type: string
+          enum: [twitter, instagram, facebook, linkedin, tiktok]
+        status:
+          type: string
+          enum: [open, in_progress, resolved, escalated, closed]
+        customer_handle:
+          type: string
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        sentiment_score:
+          type: number
+          nullable: true
+        intent_level:
+          type: string
+          enum: [neutral, interested, ready_to_buy, complaint, support_request, escalation]
+          nullable: true
+        ai_analysis:
+          type: object
+          nullable: true
+        messages:
+          type: array
+          items:
+            type: object
+        created_at:
+          type: string
+          format: date-time
+
+    SocialPost:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        organization_id:
+          type: integer
+        social_account_id:
+          type: integer
+        content:
+          type: string
+        status:
+          type: string
+          enum: [draft, pending_approval, scheduled, published, failed, cancelled]
+        platform:
+          type: string
+          enum: [twitter, instagram, facebook, linkedin, tiktok]
+        media_urls:
+          type: array
+          items:
+            type: string
+          nullable: true
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        engagement_metrics:
+          type: object
+          nullable: true
+
+    CreateSocialPostRequest:
+      type: object
+      required: [social_account_id, content]
+      properties:
+        social_account_id:
+          type: integer
+        content:
+          type: string
+          maxLength: 2000
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+        media_urls:
+          type: array
+          items:
+            type: string
+          nullable: true
+        deployment_id:
+          type: integer
+          nullable: true
+          description: SCCS agent deployment to attribute this post to
+
+    SocialLead:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        organization_id:
+          type: integer
+        conversation_id:
+          type: integer
+          nullable: true
+        customer_handle:
+          type: string
+          nullable: true
+        customer_name:
+          type: string
+          nullable: true
+        platform:
+          type: string
+          enum: [twitter, instagram, facebook, linkedin, tiktok]
+        intent_level:
+          type: string
+          enum: [low_intent, medium_intent, high_intent, ready_to_buy]
+        intent_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        qualification_status:
+          type: string
+          enum: [new, contacted, qualified, disqualified, converted, lost]
+        estimated_value:
+          type: number
+          nullable: true
+        qualification_data:
+          type: object
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    CaptureSocialLeadRequest:
+      type: object
+      required: [platform, customer_handle]
+      properties:
+        platform:
+          type: string
+          enum: [twitter, instagram, facebook, linkedin, tiktok]
+        customer_handle:
+          type: string
+        customer_name:
+          type: string
+          nullable: true
+        conversation_id:
+          type: integer
+          nullable: true
+        intent_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 50
+        estimated_value:
+          type: number
+          nullable: true
+
+    LeadQualification:
+      type: object
+      properties:
+        intent_level:
+          type: string
+        intent_score:
+          type: integer
+        budget_indicator:
+          type: string
+          nullable: true
+        timeline:
+          type: string
+          nullable: true
+        pain_points:
+          type: array
+          items:
+            type: string
+        recommended_action:
+          type: string
+        confidence:
+          type: number
+
+    SentimentAnalysis:
+      type: object
+      properties:
+        organization_id:
+          type: integer
+        period_days:
+          type: integer
+        overall_sentiment:
+          type: string
+          enum: [very_positive, positive, neutral, negative, very_negative]
+        sentiment_score:
+          type: number
+          description: -100 to +100
+        positive_percentage:
+          type: number
+        neutral_percentage:
+          type: number
+        negative_percentage:
+          type: number
+        trending_topics:
+          type: array
+          items:
+            type: object
+        by_channel:
+          type: object
+          additionalProperties:
+            type: object
+
+    SocialConversion:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        organization_id:
+          type: integer
+        lead_id:
+          type: integer
+          nullable: true
+        conversation_id:
+          type: integer
+          nullable: true
+        platform:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, refunded]
+        revenue_amount:
+          type: number
+          nullable: true
+        product_name:
+          type: string
+          nullable: true
+        ai_attributed:
+          type: boolean
+        converted_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ─── AEC v2.0 Schemas ────────────────────────────────────────────────────
+
+    ExecutiveCouncilSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+        organization_id:
+          type: integer
+        session_type:
+          type: string
+          enum: [procurement, strategic_initiative, ai_deployment, risk_assessment, budget, other]
+        title:
+          type: string
+        status:
+          type: string
+          enum: [deliberating, completed, failed]
+        votes_for:
+          type: integer
+        votes_against:
+          type: integer
+        votes_cast:
+          type: integer
+        consensus_confidence:
+          type: number
+          nullable: true
+        final_decision:
+          type: string
+          enum: [approve, reject, defer]
+          nullable: true
+        consensus_recommendation:
+          type: object
+          nullable: true
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutiveRecommendation'
+        deliberation_started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ExecutiveRecommendation:
+      type: object
+      properties:
+        id:
+          type: integer
+        session_id:
+          type: integer
+        agent_role:
+          type: string
+          enum: [ceo, cfo, coo, cto, cio, chro, cmo, ciso, cso]
+        domain:
+          type: string
+        recommendation:
+          type: string
+        confidence_score:
+          type: number
+        risk_score:
+          type: number
+        vote:
+          type: string
+          enum: [for, against, abstain, conditional]
+        vote_rationale:
+          type: string
+        impact_analysis:
+          type: object
+          nullable: true
+
+    EnterpriseHealthScore:
+      type: object
+      properties:
+        organization_id:
+          type: integer
+        scored_at:
+          type: string
+          format: date
+        enterprise_health_score:
+          type: number
+          description: Composite health score (0-100)
+        revenue_health:
+          type: number
+        customer_health:
+          type: number
+        security_health:
+          type: number
+        agent_health:
+          type: number
+        workflow_health:
+          type: number
+        compliance_health:
+          type: number
+        operational_health:
+          type: number
+        technology_health:
+          type: number
+        domain_details:
+          type: object
+          nullable: true
+        recommendations:
+          type: array
+          items:
+            type: object
+          nullable: true
+
+    OrganizationDNA:
+      type: object
+      properties:
+        id:
+          type: integer
+        organization_id:
+          type: integer
+        mission:
+          type: string
+          nullable: true
+        vision:
+          type: string
+          nullable: true
+        values:
+          type: array
+          items:
+            type: string
+          nullable: true
+        leadership_principles:
+          type: array
+          items:
+            type: string
+          nullable: true
+        decision_principles:
+          type: array
+          items:
+            type: string
+          nullable: true
+        risk_appetite:
+          type: string
+          enum: [conservative, moderate, calculated, aggressive]
+          nullable: true
+        compliance_requirements:
+          type: array
+          items:
+            type: string
+          nullable: true
+        strategic_priorities:
+          type: array
+          items:
+            type: string
+          nullable: true
+        monthly_ai_budget_usd:
+          type: number
+          nullable: true
+        last_reviewed_at:
+          type: string
+          format: date-time
           nullable: true

@@ -2,6 +2,7 @@
 
 namespace App\Services\AI;
 
+use App\Services\Governance\AuditService;
 use App\Services\Resilience\CircuitBreakerService;
 use Illuminate\Support\Facades\Log;
 
@@ -23,6 +24,7 @@ class AgentModelCaller
     public function __construct(
         private readonly ModelRouterService $modelRouter,
         private readonly CircuitBreakerService $circuitBreaker,
+        private readonly AuditService $auditService,
     ) {}
 
     /**
@@ -36,6 +38,22 @@ class AgentModelCaller
         array $history,
         string $userMessage
     ): array {
+        // SECURITY: Screen user message for prompt injection before any model call.
+        // Stored content can re-enter as AI input; this is the last line of defence.
+        if ($this->auditService->detectPromptInjection($userMessage)) {
+            Log::warning('[AgentModelCaller] Prompt injection detected — request blocked', [
+                'deployment_id' => $deploymentId,
+            ]);
+
+            return [
+                'content' => 'Your request could not be processed due to a security policy violation.',
+                'usage' => ['total_tokens' => 0, 'prompt_tokens' => 0, 'completion_tokens' => 0],
+                'cost' => 0,
+                'finish_reason' => 'injection_blocked',
+                'is_fallback' => true,
+            ];
+        }
+
         $lastException = null;
 
         foreach ($chain as $index => $modelConfig) {

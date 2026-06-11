@@ -43,6 +43,7 @@ class EnterpriseSkillsSeeder extends Seeder
             $this->agentAuditorSkills(),
             $this->agentTrainerSkills(),
             $this->agentMarketplaceManagerSkills(),
+            $this->socialCommerceSkills(),
         );
     }
 
@@ -348,6 +349,33 @@ class EnterpriseSkillsSeeder extends Seeder
         ];
     }
 
+    // ─── Social Commerce & Customer Success (SCCS) ───────────────────────────
+
+    private function socialCommerceSkills(): array
+    {
+        return [
+            // Account & platform connectivity
+            $this->skill('sccs.connect-social-account', 'Connect Social Account', 'marketing', 'social_commerce', 'action', 'medium', true, ['social.connect_accounts'], ['oauth.platforms']),
+
+            // Content & publishing
+            $this->skill('sccs.schedule-social-post', 'Schedule Social Post', 'marketing', 'social_commerce', 'action', 'medium', false, ['social.create_posts'], ['social.platforms', 'content.library']),
+            $this->skill('sccs.approve-social-post', 'Approve Social Post', 'marketing', 'social_commerce', 'action', 'high', true, ['social.approve_posts'], ['social.platforms']),
+
+            // Customer engagement
+            $this->skill('sccs.respond-to-social-message', 'Respond to Social Message', 'marketing', 'social_commerce', 'action', 'high', false, ['social.send_messages'], ['social.inbox', 'crm.contacts'], ['ai_disclosure_required' => true, 'max_autonomous_replies_before_escalation' => 3]),
+            $this->skill('sccs.escalate-conversation', 'Escalate Conversation', 'marketing', 'social_commerce', 'action', 'high', false, ['social.escalate'], ['social.conversations', 'crm.contacts']),
+
+            // Lead management
+            $this->skill('sccs.capture-lead', 'Capture Social Lead', 'sales', 'social_commerce', 'record', 'medium', false, ['social.capture_leads'], ['social.conversations', 'crm.leads']),
+            $this->skill('sccs.qualify-lead', 'Qualify Social Lead', 'sales', 'social_commerce', 'action', 'medium', false, ['social.qualify_leads'], ['crm.leads', 'social.conversations']),
+            $this->skill('sccs.record-social-conversion', 'Record Social Conversion', 'sales', 'social_commerce', 'record', 'medium', true, ['social.record_conversions'], ['crm.leads', 'sales.orders']),
+
+            // Intelligence & monitoring
+            $this->skill('sccs.analyze-sentiment', 'Analyze Conversation Sentiment', 'marketing', 'social_commerce', 'report', 'low', false, ['social.read_sentiment'], ['social.messages', 'nlp.sentiment']),
+            $this->skill('sccs.monitor-brand-mentions', 'Monitor Brand Mentions', 'marketing', 'social_commerce', 'notification', 'medium', false, ['social.read_mentions'], ['social.platforms', 'brand.monitoring'], ['alert_on_negative_threshold' => 60]),
+        ];
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Skill builder helper
     // ─────────────────────────────────────────────────────────────────────────
@@ -399,6 +427,7 @@ class EnterpriseSkillsSeeder extends Seeder
             'operations' => 'operational',
             'executive' => 'strategic',
             'platform' => 'governance',
+            'social_commerce' => 'social_commerce',
             default => 'general',
         };
     }

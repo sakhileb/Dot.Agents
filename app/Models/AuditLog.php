@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class AuditLog extends Model
@@ -69,7 +70,7 @@ class AuditLog extends Model
      */
     public function prunable(): Builder
     {
-        $days = (int) env('AUDIT_LOG_RETENTION_DAYS', 90);
+        $days = (int) config('audit.retention_days', 90);
 
         return static::withoutGlobalScope('organization')
             ->where('created_at', '<', now()->subDays($days));
@@ -102,7 +103,7 @@ class AuditLog extends Model
             'description' => $description,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'session_id' => session()->getId(),
             'request_id' => request()->header('X-Correlation-ID')
                 ?? request()->header('X-Request-ID')

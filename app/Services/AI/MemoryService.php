@@ -2,24 +2,42 @@
 
 namespace App\Services\AI;
 
+use App\Jobs\EmbedAgentMemoryJob;
 use App\Models\AgentDeployment;
 use App\Models\AgentMemory;
+use Illuminate\Support\Facades\App;
 
 class MemoryService
 {
     /**
      * Retrieve memories relevant to the current input.
+     *
+     * Delegates to VectorMemoryService (Level 5 — semantic cosine-similarity search)
+     * which falls back to keyword scoring when embeddings are unavailable.
+     *
+     * Late-resolved to avoid circular service provider bootstrap issues.
      */
     public function getRelevantMemories(AgentDeployment $deployment, string $input, int $limit = 5): array
     {
-        // Get the most important, active memories
+        /** @var VectorMemoryService $vectorService */
+        $vectorService = App::make(VectorMemoryService::class);
+
+        return $vectorService->getRelevantMemories($deployment, $input, $limit);
+    }
+
+    /**
+     * Keyword-based fallback search (used by VectorMemoryService when OpenAI is unavailable).
+     *
+     * @internal Called only from VectorMemoryService::getRelevantMemories() as fallback.
+     */
+    public function keywordSearch(AgentDeployment $deployment, string $input, int $limit = 5): array
+    {
         $memories = AgentMemory::where('agent_deployment_id', $deployment->id)
             ->active()
             ->orderByDesc('importance_score')
             ->take($limit * 3)
             ->get();
 
-        // Simple keyword relevance scoring (production: use vector similarity)
         $keywords = $this->extractKeywords($input);
 
         $scored = $memories->map(function ($memory) use ($keywords) {
@@ -104,10 +122,15 @@ class MemoryService
 
     private function store(AgentDeployment $deployment, array $data): AgentMemory
     {
-        return AgentMemory::create(array_merge([
+        $memory = AgentMemory::create(array_merge([
             'agent_deployment_id' => $deployment->id,
             'organization_id' => $deployment->organization_id,
         ], $data));
+
+        // Queue embedding generation asynchronously (non-blocking)
+        EmbedAgentMemoryJob::dispatch($memory)->onQueue('agent-tasks');
+
+        return $memory;
     }
 
     private function pruneShortTermMemory(AgentDeployment $deployment): void

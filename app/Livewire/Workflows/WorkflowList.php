@@ -2,9 +2,10 @@
 
 namespace App\Livewire\Workflows;
 
+use App\Actions\Workflows\CreateWorkflowAction;
+use App\Actions\Workflows\DeleteWorkflowAction;
 use App\Models\AgentWorkflow;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use App\Models\Organization;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -44,16 +45,12 @@ class WorkflowList extends Component
     {
         $this->validate();
 
-        $orgId = session('current_organization_id');
+        $organization = Organization::findOrFail(session('current_organization_id'));
 
-        $workflow = AgentWorkflow::create([
-            'uuid' => (string) Str::uuid(),
-            'organization_id' => $orgId,
-            'created_by' => Auth::id(),
+        $workflow = app(CreateWorkflowAction::class)->execute($organization, [
             'name' => $this->newName,
             'description' => $this->newDescription ?: null,
             'trigger_type' => $this->newTrigger,
-            'status' => 'draft',
         ]);
 
         $this->showCreateModal = false;
@@ -65,9 +62,7 @@ class WorkflowList extends Component
         $workflow = AgentWorkflow::where('organization_id', session('current_organization_id'))
             ->findOrFail($id);
 
-        $this->authorize('delete', $workflow);
-
-        $workflow->delete();
+        app(DeleteWorkflowAction::class)->execute($workflow);
 
         unset($this->workflows);
         session()->flash('status', "Workflow \"{$workflow->name}\" deleted.");

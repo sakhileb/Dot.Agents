@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\Events\AgentPaused;
 use App\Models\AgentDeployment;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -21,6 +22,8 @@ class PauseDeploymentAction
             description: "Deployment {$deployment->display_name} paused",
             subject: $deployment,
         );
+
+        event(new AgentPaused($deployment));
 
         return $deployment->refresh();
     }

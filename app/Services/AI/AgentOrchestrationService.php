@@ -179,6 +179,8 @@ class AgentOrchestrationService
                 'agent_deployment_id' => $deployment->id,
                 'organization_id' => $deployment->organization_id,
                 'task_id' => $task->id,
+                'input_hash' => hash('sha256', $taskPrompt),
+                'model_used' => $response['model_used'] ?? 'gpt-4o',
                 'decision_type' => $task->task_type,
                 'title' => "Task: {$task->title}",
                 'decision_summary' => $task->result_summary,

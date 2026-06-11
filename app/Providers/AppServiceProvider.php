@@ -25,6 +25,11 @@ use App\Models\KnowledgeBase;
 use App\Models\Organization;
 use App\Models\PlatformNotification;
 use App\Models\SecurityEvent;
+use App\Models\SocialAccount;
+use App\Models\SocialConversation;
+use App\Models\SocialConversion;
+use App\Models\SocialLead;
+use App\Models\SocialPost;
 use App\Models\Team;
 use App\Models\UsageRecord;
 use App\Models\User;
@@ -50,13 +55,21 @@ use App\Policies\KnowledgeBasePolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\PlatformNotificationPolicy;
 use App\Policies\SecurityEventPolicy;
+use App\Policies\SocialAccountPolicy;
+use App\Policies\SocialConversationPolicy;
+use App\Policies\SocialConversionPolicy;
+use App\Policies\SocialLeadPolicy;
+use App\Policies\SocialPostPolicy;
 use App\Policies\TeamPolicy;
 use App\Policies\UsageRecordPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\WorkflowExecutionPolicy;
+use App\Services\AI\AgentCertificationService;
 use App\Services\AI\AgentOrchestrationService;
 use App\Services\AI\AgentPluginService;
 use App\Services\AI\AgentSandboxService;
+use App\Services\AI\EnterpriseBrainService;
+use App\Services\AI\ExecutiveCouncilService;
 use App\Services\AI\GraphWorkflowEngineService;
 use App\Services\AI\MemoryService;
 use App\Services\AI\ModelRouterService;
@@ -64,6 +77,7 @@ use App\Services\AI\OutputModerationService;
 use App\Services\AI\SkillExecutionPipeline;
 use App\Services\AI\SkillRegistryService;
 use App\Services\AI\ToolPermissionService;
+use App\Services\AI\VectorMemoryService;
 use App\Services\Governance\AgentReliabilityAuditorService;
 use App\Services\Governance\AgentReputationService;
 use App\Services\Governance\AuditService;
@@ -71,6 +85,8 @@ use App\Services\Governance\CustomerSuccessService;
 use App\Services\Governance\DataTrustScoreService;
 use App\Services\Governance\DelusionDetectionService;
 use App\Services\Governance\DigitalImmuneSystem;
+use App\Services\Governance\DWCAAuditService;
+use App\Services\Governance\EnterpriseConstitutionService;
 use App\Services\Governance\FinancialIntelligenceService;
 use App\Services\Governance\MegaV2ScorecardService;
 use App\Services\Governance\OrganizationalMemoryService;
@@ -78,6 +94,12 @@ use App\Services\Governance\PredictionAccuracyTrackingService;
 use App\Services\Governance\ScorecardService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Resilience\CircuitBreakerService;
+use App\Services\Social\ConversationContinuationService;
+use App\Services\Social\LeadQualificationService;
+use App\Services\Social\ReputationMonitoringService;
+use App\Services\Social\SentimentAnalysisService;
+use App\Services\Social\SocialCommerceService;
+use App\Services\Social\SocialPublishingService;
 use App\Skills\Governance\AuditLoggingSkill;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
@@ -163,6 +185,52 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        // ── Social Commerce & Customer Success (SCCS) ─────────────────────────
+        $this->app->singleton(SentimentAnalysisService::class);
+        $this->app->singleton(LeadQualificationService::class);
+        $this->app->singleton(SocialPublishingService::class);
+        $this->app->singleton(SocialCommerceService::class);
+        $this->app->singleton(ReputationMonitoringService::class, function ($app) {
+            return new ReputationMonitoringService(
+                $app->make(SentimentAnalysisService::class),
+            );
+        });
+        $this->app->singleton(ConversationContinuationService::class, function ($app) {
+            return new ConversationContinuationService(
+                $app->make(AuditService::class),
+                $app->make(DelusionDetectionService::class),
+            );
+        });
+
+        // ── DWCA — Digital Workforce Certification Audit ─────────────────────
+        $this->app->singleton(DWCAAuditService::class, function ($app) {
+            return new DWCAAuditService(
+                $app->make(AgentCertificationService::class),
+                $app->make(AuditService::class),
+                $app->make(DelusionDetectionService::class),
+                $app->make(DigitalImmuneSystem::class),
+            );
+        });
+
+        // ── AEC v2.0 — Enterprise Consciousness Layer ─────────────────────────
+        $this->app->singleton(VectorMemoryService::class, function ($app) {
+            return new VectorMemoryService(
+                $app->make(MemoryService::class),
+            );
+        });
+
+        $this->app->singleton(EnterpriseConstitutionService::class);
+
+        $this->app->singleton(ExecutiveCouncilService::class);
+
+        $this->app->singleton(EnterpriseBrainService::class, function ($app) {
+            return new EnterpriseBrainService(
+                $app->make(EnterpriseConstitutionService::class),
+                $app->make(AuditService::class),
+                $app->make(ScorecardService::class),
+            );
+        });
+
         // ── Skill system ─────────────────────────────────────────────────────
 
         // Skill Registry — singleton so built-in skill map is only built once
@@ -210,6 +278,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(UsageRecord::class, UsageRecordPolicy::class);
         Gate::policy(AgentPluginInstallation::class, AgentPluginInstallationPolicy::class);
         Gate::policy(PlatformNotification::class, PlatformNotificationPolicy::class);
+
+        // SCCS — Social Commerce & Customer Success policies
+        Gate::policy(SocialAccount::class, SocialAccountPolicy::class);
+        Gate::policy(SocialConversation::class, SocialConversationPolicy::class);
+        Gate::policy(SocialLead::class, SocialLeadPolicy::class);
+        Gate::policy(SocialPost::class, SocialPostPolicy::class);
+        Gate::policy(SocialConversion::class, SocialConversionPolicy::class);
 
         // Enforce strong password policy platform-wide (min 12 chars, mixed case, numbers, symbols)
         // In testing, use a relaxed rule so test factories and Jetstream tests still pass.

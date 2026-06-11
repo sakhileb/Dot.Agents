@@ -49,3 +49,13 @@ Schedule::job(new GenerateMegaV2PlatformScorecard)
     ->withoutOverlapping(60)
     ->onOneServer()
     ->name('mega-v2-scorecard');
+
+// DWCA — Digital Workforce Certification Audit — runs weekly on Sunday at 04:00
+// Audits all agent deployments and updates certification levels + maturity scores
+Schedule::command('dwca:audit')
+    ->weekly()
+    ->sundays()
+    ->at('04:00')
+    ->withoutOverlapping(120)
+    ->onOneServer()
+    ->name('dwca-weekly-audit');

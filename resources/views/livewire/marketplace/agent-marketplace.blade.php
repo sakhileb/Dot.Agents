@@ -186,7 +186,7 @@
                             <span class="font-medium text-gray-700 dark:text-gray-300">{{ number_format($agent->performance_score, 0) }}/100</span>
                         </div>
                         <div class="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-700" style="width: {{ min(100, $agent->performance_score) }}%"></div>
+                            <div class="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-700" :style="{ width: '{{ min(100, $agent->performance_score) }}%' }"></div>
                         </div>
                     </div>
                     @endif
@@ -309,7 +309,7 @@
                             <div class="flex items-center gap-2 mt-1">
                                 <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                     <div class="h-full rounded-full {{ ($previewAgent->trust_score ?? 0) >= 80 ? 'bg-green-500' : (($previewAgent->trust_score ?? 0) >= 60 ? 'bg-yellow-500' : 'bg-red-500') }}"
-                                         style="width: {{ min(100, $previewAgent->trust_score ?? 0) }}%"></div>
+                                         :style="{ width: '{{ min(100, $previewAgent->trust_score ?? 0) }}%' }"></div>
                                 </div>
                                 <span class="text-xs font-semibold text-gray-900 dark:text-white">{{ $previewAgent->trust_score ?? 'N/A' }}</span>
                             </div>

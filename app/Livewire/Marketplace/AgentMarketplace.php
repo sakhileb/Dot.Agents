@@ -8,6 +8,7 @@ use App\Livewire\Forms\DeployAgentForm;
 use App\Models\Agent;
 use App\Models\AgentCategory;
 use App\Models\AgentDepartment;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -221,7 +222,7 @@ class AgentMarketplace extends Component
         $data = DeployAgentData::fromArray([
             'agent_id' => $this->deployingAgentId,
             'organization_id' => $orgId,
-            'deployed_by' => auth()->id(),
+            'deployed_by' => Auth::id(),
             'name' => $formData['deployment_name'],
             'deployment_mode' => $formData['deployment_mode'],
             'department_id' => $formData['department_id'],

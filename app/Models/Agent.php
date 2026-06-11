@@ -31,6 +31,7 @@ class Agent extends Model
         'meta_title', 'meta_description',
         'certification_score', 'trust_score', 'trust_tier', 'certified_at',
         'performance_score', 'competencies', 'cost_tier',
+        'maturity_level', 'dwca_certified_at', 'dwca_certification_level',
     ];
 
     protected $casts = [
@@ -65,6 +66,7 @@ class Agent extends Model
         'is_enterprise_only' => 'boolean',
         'is_beta' => 'boolean',
         'competencies' => 'array',
+        'dwca_certified_at' => 'datetime',
     ];
 
     protected static function boot(): void

@@ -8,11 +8,17 @@ use App\Events\AgentTaskCompleted;
 use App\Events\AgentTaskFailed;
 use App\Events\ApprovalProcessed;
 use App\Events\ApprovalRequested;
+use App\Events\NegativeSentimentDetected;
 use App\Events\OrganizationCreated;
+use App\Events\PurchaseIntentDetected;
 use App\Events\SecurityThreatDetected;
 use App\Events\SkillApprovalRequested;
 use App\Events\SkillExecuted;
 use App\Events\SkillExecutionBlocked;
+use App\Events\SocialConversionAchieved;
+use App\Events\SocialLeadCaptured;
+use App\Events\SocialMessageReceived;
+use App\Events\SocialPostPublished;
 use App\Listeners\AuditSkillExecution;
 use App\Listeners\HandleAgentTaskFailed;
 use App\Listeners\HandleSkillApprovalRequested;
@@ -21,6 +27,7 @@ use App\Listeners\LogSecurityThreat;
 use App\Listeners\LogSkillBlockedEvent;
 use App\Listeners\NotifyOnAgentDrift;
 use App\Listeners\NotifyOnApprovalProcessed;
+use App\Listeners\ProvisionSCCSSkillsAndScorecard;
 use App\Listeners\RecordSkillScoreOnExecution;
 use App\Listeners\SendApprovalNotification;
 use App\Listeners\SetupOrganizationDefaults;
@@ -44,6 +51,7 @@ class EventServiceProvider extends ServiceProvider
         AgentDeployed::class => [
             LogDeploymentAudit::class,
             WarmupAgentOnDeployment::class,
+            ProvisionSCCSSkillsAndScorecard::class,
         ],
 
         AgentTaskCompleted::class => [
@@ -89,6 +97,14 @@ class EventServiceProvider extends ServiceProvider
             SendApprovalNotification::class,
             HandleSkillApprovalRequested::class,
         ],
+
+        // ── SCCS: Social Commerce & Customer Success events ──────────────────
+        SocialLeadCaptured::class => [],
+        SocialConversionAchieved::class => [],
+        NegativeSentimentDetected::class => [],
+        PurchaseIntentDetected::class => [],
+        SocialMessageReceived::class => [],
+        SocialPostPublished::class => [],
     ];
 
     /**

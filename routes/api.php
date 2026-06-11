@@ -14,8 +14,13 @@ Route::get('/health', HealthController::class)->name('api.health');
 // All API routes are versioned under /v1 with auth:sanctum + org.context
 Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'org.context'])->group(function () {
 
-    // Authenticated user
-    Route::get('/me', fn (Request $request) => response()->json($request->user()))->name('me');
+    // Authenticated user — only safe, non-sensitive fields returned
+    Route::get('/me', fn (Request $request) => response()->json(
+        $request->user()->only([
+            'id', 'name', 'email', 'profile_photo_url',
+            'current_team_id', 'created_at',
+        ])
+    ))->name('me');
 
     // Agent marketplace catalog (read-only) — rate limited to prevent bulk enumeration
     Route::prefix('agents')->name('agents.')->middleware('throttle:120,1')->group(function () {

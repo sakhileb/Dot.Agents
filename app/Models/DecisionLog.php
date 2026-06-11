@@ -14,6 +14,7 @@ class DecisionLog extends Model
 
     protected $fillable = [
         'uuid', 'agent_deployment_id', 'organization_id', 'task_id', 'session_id',
+        'input_hash', 'model_used',
         'decision_type', 'title', 'decision_summary', 'reasoning', 'evidence_used',
         'alternatives_considered', 'proposed_actions', 'confidence_score', 'risk_score',
         'impact_score', 'delusion_risk_score', 'reality_alignment_score',
