@@ -282,15 +282,12 @@ function workflowCanvas(initialNodes, initialConnections) {
             this.nodes       = initialNodes       ?? [];
             this.connections = initialConnections ?? [];
 
-            // Re-sync local state whenever Livewire pushes an update back
-            // ($wire.get() returns plain JS values — safe to assign directly)
-            Livewire.hook('commit', ({ component, succeed }) => {
-                succeed(() => {
-                    if (component.el === this.$el.closest('[wire\\:id]')) {
-                        this.nodes       = this.$wire.get('nodes')       ?? [];
-                        this.connections = this.$wire.get('connections') ?? [];
-                    }
-                });
+            // Re-sync whenever the server dispatches a canvas-synced event
+            // (fired by addNode, removeNode, connectNodes, removeConnection).
+            // Using a plain window listener avoids the async $wire.get() trap.
+            window.addEventListener('canvas-synced', (e) => {
+                this.nodes       = e.detail.nodes       ?? [];
+                this.connections = e.detail.connections ?? [];
             });
         },
 

@@ -106,6 +106,8 @@ class WorkflowBuilder extends Component
             'y' => $y,
             'config' => [],
         ];
+
+        $this->syncCanvas();
     }
 
     /**
@@ -132,10 +134,13 @@ class WorkflowBuilder extends Component
             'condition' => $condition,
             'label' => null,
         ];
+
+        $this->syncCanvas();
     }
 
     /**
      * Update a node's canvas position (called after drag-end).
+     * Alpine already has the correct position from live drag — no sync needed.
      */
     public function moveNode(string $nodeId, int $x, int $y): void
     {
@@ -160,6 +165,8 @@ class WorkflowBuilder extends Component
         $this->connections = array_values(
             array_filter($this->connections, fn ($c) => $c['from'] !== $nodeId && $c['to'] !== $nodeId)
         );
+
+        $this->syncCanvas();
     }
 
     /**
@@ -170,6 +177,18 @@ class WorkflowBuilder extends Component
         $this->connections = array_values(
             array_filter($this->connections, fn ($c) => $c['id'] !== $connectionId)
         );
+
+        $this->syncCanvas();
+    }
+
+    /**
+     * Dispatch a browser event carrying the current canvas state so Alpine
+     * can update its local nodes/connections arrays synchronously.
+     * Called after every canvas-mutating server method.
+     */
+    private function syncCanvas(): void
+    {
+        $this->dispatch('canvas-synced', nodes: $this->nodes, connections: $this->connections);
     }
 
     // ──────────────────────────────────────────────
