@@ -65,8 +65,10 @@ use App\Policies\UsageRecordPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\WorkflowExecutionPolicy;
 use App\Services\AI\AgentCertificationService;
+use App\Services\AI\AgentModelCaller;
 use App\Services\AI\AgentOrchestrationService;
 use App\Services\AI\AgentPluginService;
+use App\Services\AI\AgentQuotaGuard;
 use App\Services\AI\AgentSandboxService;
 use App\Services\AI\EnterpriseBrainService;
 use App\Services\AI\ExecutiveCouncilService;
@@ -74,10 +76,14 @@ use App\Services\AI\GraphWorkflowEngineService;
 use App\Services\AI\MemoryService;
 use App\Services\AI\ModelRouterService;
 use App\Services\AI\OutputModerationService;
+use App\Services\AI\PromptBuilderService;
+use App\Services\AI\ResponseProcessorService;
 use App\Services\AI\SkillExecutionPipeline;
 use App\Services\AI\SkillRegistryService;
 use App\Services\AI\ToolPermissionService;
 use App\Services\AI\VectorMemoryService;
+use App\Services\AI\WorkflowRiskScoringService;
+use App\Services\AI\Workflow\WorkflowGraphResolver;
 use App\Services\Governance\AgentReliabilityAuditorService;
 use App\Services\Governance\AgentReputationService;
 use App\Services\Governance\AuditService;
@@ -91,6 +97,9 @@ use App\Services\Governance\FinancialIntelligenceService;
 use App\Services\Governance\MegaV2ScorecardService;
 use App\Services\Governance\OrganizationalMemoryService;
 use App\Services\Governance\PredictionAccuracyTrackingService;
+use App\Services\Governance\Scorecard\ScorecardCertifier;
+use App\Services\Governance\Scorecard\ScorecardDomainScorer;
+use App\Services\Governance\Scorecard\ScorecardGateEvaluator;
 use App\Services\Governance\ScorecardService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Resilience\CircuitBreakerService;
@@ -151,8 +160,11 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(AuditService::class),
                 $app->make(MemoryService::class),
                 $app->make(AgentSandboxService::class),
-                $app->make(CircuitBreakerService::class),
                 $app->make(OutputModerationService::class),
+                $app->make(PromptBuilderService::class),
+                $app->make(ResponseProcessorService::class),
+                $app->make(AgentModelCaller::class),
+                $app->make(AgentQuotaGuard::class),
             );
         });
 
@@ -165,6 +177,8 @@ class AppServiceProvider extends ServiceProvider
             return new GraphWorkflowEngineService(
                 $app->make(AgentOrchestrationService::class),
                 $app->make(AuditService::class),
+                $app->make(WorkflowRiskScoringService::class),
+                $app->make(WorkflowGraphResolver::class),
             );
         });
 
@@ -182,6 +196,9 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(DigitalImmuneSystem::class),
                 $app->make(FinancialIntelligenceService::class),
                 $app->make(CustomerSuccessService::class),
+                $app->make(ScorecardDomainScorer::class),
+                $app->make(ScorecardGateEvaluator::class),
+                $app->make(ScorecardCertifier::class),
             );
         });
 
