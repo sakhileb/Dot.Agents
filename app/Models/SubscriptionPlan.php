@@ -11,10 +11,10 @@ class SubscriptionPlan extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'slug', 'description', 'price_monthly', 'price_annually',
-        'currency', 'max_agents', 'max_tasks_per_month', 'max_users',
-        'max_storage_gb', 'features', 'is_active', 'is_public',
-        'sort_order', 'metadata',
+        'name', 'slug', 'description', 'billing_cycle', 'price', 'yearly_price',
+        'max_agents', 'max_users', 'max_departments', 'max_workflows',
+        'monthly_token_quota', 'features', 'limits', 'is_active', 'is_featured',
+        'sort_order', 'stripe_price_id', 'stripe_product_id', 'trial_days',
     ];
 
     protected $casts = [

@@ -12,11 +12,10 @@ class Invoice extends Model
     use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
-        'organization_id', 'organization_subscription_id',
-        'invoice_number', 'status', 'subtotal', 'tax', 'total',
-        'currency', 'due_at', 'paid_at', 'voided_at',
-        'billing_address', 'line_items', 'payment_method',
-        'external_invoice_id', 'pdf_url', 'metadata',
+        'uuid', 'organization_id', 'invoice_number', 'stripe_invoice_id',
+        'status', 'subtotal', 'tax', 'total', 'currency',
+        'line_items', 'invoice_date', 'due_date', 'paid_at',
+        'payment_method', 'pdf_url', 'billing_details',
     ];
 
     protected $casts = [

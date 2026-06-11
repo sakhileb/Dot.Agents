@@ -13,8 +13,7 @@ class Division extends Model
     use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
-        'organization_id', 'name', 'slug', 'description',
-        'head_user_id', 'budget', 'currency', 'is_active', 'metadata',
+        'organization_id', 'department_id', 'name', 'slug', 'description', 'is_active',
     ];
 
     protected $casts = [

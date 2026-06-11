@@ -11,8 +11,7 @@ class Membership extends Model
     use HasFactory;
 
     protected $fillable = [
-        'organization_id', 'user_id', 'role', 'department',
-        'job_title', 'is_primary', 'joined_at', 'permissions', 'metadata',
+        'team_id', 'user_id', 'role',
     ];
 
     protected $casts = [

@@ -11,9 +11,9 @@ class AgentPersona extends Model
     use HasFactory;
 
     protected $fillable = [
-        'agent_id', 'name', 'slug', 'description', 'avatar',
-        'system_prompt', 'tone', 'personality_traits', 'communication_style',
-        'response_format', 'language', 'is_default', 'is_active',
+        'agent_id', 'name', 'system_prompt', 'persona_description',
+        'instructions', 'constraints', 'example_interactions',
+        'temperature', 'max_tokens', 'is_default',
     ];
 
     protected $casts = [

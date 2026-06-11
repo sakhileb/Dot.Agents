@@ -11,10 +11,9 @@ class AgentReview extends Model
     use HasFactory;
 
     protected $fillable = [
-        'agent_id', 'organization_id', 'user_id', 'agent_deployment_id',
-        'rating', 'title', 'content', 'pros', 'cons',
-        'use_case', 'would_recommend', 'is_verified', 'is_published',
-        'helpful_count', 'response', 'responded_at',
+        'agent_id', 'organization_id', 'user_id', 'deployment_id',
+        'rating', 'title', 'body', 'dimension_scores',
+        'is_verified', 'helpful_count', 'is_featured',
     ];
 
     protected $casts = [
