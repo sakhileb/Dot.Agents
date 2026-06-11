@@ -69,7 +69,6 @@ class GraphWorkflowEngineService
             'workflow_id' => $workflow->id,
             'organization_id' => $workflow->organization_id,
             'triggered_by' => $triggeredBy,
-            'trigger_type' => $workflow->trigger_type,
             'status' => 'running',
             'current_step' => 0,
             'input_data' => $initialInput,

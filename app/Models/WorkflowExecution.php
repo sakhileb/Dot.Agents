@@ -13,8 +13,8 @@ class WorkflowExecution extends Model
     use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
-        'uuid', 'workflow_id', 'organization_id', 'triggered_by', 'trigger_type', 'status',
-        'input_data', 'output_data', 'step_results', 'error_message', 'resumed_data',
+        'uuid', 'workflow_id', 'organization_id', 'triggered_by', 'status',
+        'input_data', 'output_data', 'step_results', 'error_message',
         'current_step', 'total_steps', 'total_cost', 'started_at', 'completed_at',
     ];
 
