@@ -6,6 +6,7 @@ use App\Actions\Workflows\SaveWorkflowAction;
 use App\Models\Agent;
 use App\Models\AgentWorkflow;
 use App\Services\AI\GraphWorkflowEngineService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -83,7 +84,7 @@ class WorkflowBuilder extends Component
         // Cache agent catalog for 5 minutes — used in canvas palette, rarely changes
         return Cache::remember('workflow_available_agents', 300, fn () => Agent::active()
             ->orderBy('name')
-            ->get(['id', 'key', 'name', 'category_id'])
+            ->get(['id', 'slug', 'name', 'category_id'])
             ->toArray()
         );
     }
@@ -201,7 +202,7 @@ class WorkflowBuilder extends Component
 
         $execution = app(GraphWorkflowEngineService::class)->execute(
             workflow: $this->workflow,
-            triggeredBy: auth()->id(),
+            triggeredBy: Auth::id(),
         );
 
         $this->flashMessage = "Execution #{$execution->id} started — status: {$execution->status}";

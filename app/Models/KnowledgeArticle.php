@@ -13,18 +13,17 @@ class KnowledgeArticle extends Model
     use HasFactory, HasOrganizationScope, SoftDeletes;
 
     protected $fillable = [
-        'knowledge_base_id', 'organization_id', 'author_id',
+        'knowledge_base_id', 'organization_id', 'created_by',
         'title', 'slug', 'content', 'summary', 'tags',
-        'category', 'status', 'source_type', 'source_url',
-        'embedding', 'view_count', 'helpful_count', 'published_at',
+        'category', 'is_published', 'source_type', 'source_url',
+        'relevance_score', 'view_count', 'last_reviewed_at',
     ];
 
     protected $casts = [
         'tags' => 'array',
-        'embedding' => 'array',
+        'is_published' => 'boolean',
         'view_count' => 'integer',
-        'helpful_count' => 'integer',
-        'published_at' => 'datetime',
+        'last_reviewed_at' => 'datetime',
     ];
 
     public function knowledgeBase(): BelongsTo

@@ -19,7 +19,7 @@
             @foreach($this->availableAgents as $agent)
                 <div
                     draggable="true"
-                    @dragstart="startAgentDrag($event, '{{ $agent['key'] }}', '{{ addslashes($agent['name']) }}')"
+                    @dragstart="startAgentDrag($event, '{{ $agent['slug'] }}', '{{ addslashes($agent['name']) }}')"
                     class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-grab active:cursor-grabbing hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
                 >
                     <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">

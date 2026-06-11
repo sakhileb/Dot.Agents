@@ -4,6 +4,7 @@ namespace App\Actions\Organizations;
 
 use App\Models\KnowledgeArticle;
 use App\Models\Organization;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
@@ -16,14 +17,13 @@ class SaveKnowledgeArticleAction
         $payload = [
             'knowledge_base_id' => $data['knowledge_base_id'],
             'organization_id' => $organization->id,
-            'author_id' => auth()->id(),
+            'created_by' => Auth::id(),
             'title' => $data['title'],
             'slug' => Str::slug($data['title']).'-'.time(),
             'content' => $data['content'],
             'summary' => $data['summary'] ?? null,
             'category' => $data['category'] ?? null,
-            'status' => 'published',
-            'published_at' => now(),
+            'is_published' => true,
         ];
 
         if ($existingId) {

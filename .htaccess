@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If the document root is the project root (not public/), redirect all
+    # requests to public/index.php. This handles cPanel/shared hosting setups
+    # where the vhost document root cannot be changed to point at public/.
+
+    # Do not rewrite requests that already start with public/
+    RewriteCond %{REQUEST_URI} !^/public/
+
+    # Pass everything to public/index.php
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
