@@ -1,13 +1,34 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # If the document root is the project root (not public/), redirect all
-    # requests to public/index.php. This handles cPanel/shared hosting setups
-    # where the vhost document root cannot be changed to point at public/.
+    # ──────────────────────────────────────────────────────────────────────────
+    # ROOT-LEVEL REWRITE — cPanel / Shared Hosting
+    #
+    # When the Apache document root points at the project root (not public/),
+    # this file rewrites all HTTP requests to the public/ subdirectory so that
+    # public/index.php acts as the front controller.
+    #
+    # If you can set your document root to public/ directly (recommended),
+    # you do not need this file — the public/.htaccess handles everything.
+    # ──────────────────────────────────────────────────────────────────────────
 
-    # Do not rewrite requests that already start with public/
+    # Preserve Authorization and XSRF headers so Laravel auth works correctly
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Do not rewrite requests that are already targeting public/ directly
     RewriteCond %{REQUEST_URI} !^/public/
 
-    # Pass everything to public/index.php
-    RewriteRule ^(.*)$ public/$1 [L]
+    # Do not rewrite actual files or directories that exist on disk
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Route everything else through public/index.php
+    RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
+
+# Disable directory listing at the project root
+Options -Indexes
