@@ -76,44 +76,45 @@
         </svg>
 
         {{-- ── SVG Connections ── --}}
-        <svg class="absolute inset-0 w-full h-full pointer-events-none" id="connections-svg">
+        <svg class="absolute inset-0 w-full h-full" style="pointer-events:none;overflow:visible;" id="connections-svg">
             <defs>
-                <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-                    <path d="M0,0 L0,6 L8,3 z" class="fill-purple-500 dark:fill-purple-400"/>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" class="fill-purple-500 dark:fill-purple-400"/>
                 </marker>
             </defs>
 
             {{-- Rendered connections --}}
             <template x-for="conn in connections" :key="conn.id">
-                <g class="pointer-events-auto">
+                <g style="pointer-events:auto;">
                     <path
                         :d="connectionPath(conn)"
                         fill="none"
                         class="stroke-purple-500 dark:stroke-purple-400"
                         stroke-width="2"
                         marker-end="url(#arrowhead)"
-                        stroke-dasharray="none"
                     />
-                    {{-- Clickable delete zone --}}
+                    {{-- Wide transparent hit zone for click-to-delete --}}
                     <path
                         :d="connectionPath(conn)"
                         fill="none"
                         stroke="transparent"
-                        stroke-width="12"
+                        stroke-width="14"
                         class="cursor-pointer"
                         @click="removeConnection(conn.id)"
+                        title="Click to remove connection"
                     />
                 </g>
             </template>
 
-            {{-- Live drawing line --}}
-            <template x-if="drawingConnection">
+            {{-- Live drawing line while dragging from a port --}}
+            <template x-if="drawingConnection && connectionSourceId">
                 <path
                     :d="liveConnectionPath()"
                     fill="none"
                     class="stroke-yellow-400"
                     stroke-width="2"
                     stroke-dasharray="6 3"
+                    style="pointer-events:none;"
                 />
             </template>
         </svg>
@@ -122,16 +123,22 @@
         <template x-for="node in nodes" :key="node.id">
             <div
                 :id="'node-' + node.id"
-                :style="`left: ${node.x}px; top: ${node.y}px`"
-                class="absolute w-44 rounded-xl shadow-lg border-2 cursor-move transition-shadow hover:shadow-xl"
-                :class="selectedNode === node.id
-                    ? 'border-yellow-400 bg-white dark:bg-gray-800'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850'"
-                @mousedown="startDrag($event, node)"
+                :style="`left: ${node.x}px; top: ${node.y}px; z-index: ${dragging === node.id ? 50 : 10};`"
+                class="absolute w-44 rounded-xl shadow-lg border-2 transition-shadow hover:shadow-xl select-none"
+                :class="[
+                    selectedNode === node.id
+                        ? 'border-yellow-400 bg-white dark:bg-gray-800'
+                        : 'border-purple-200 dark:border-gray-700 bg-white dark:bg-gray-850',
+                    dragging === node.id ? 'opacity-90 shadow-2xl' : '',
+                    drawingConnection ? 'cursor-crosshair' : ''
+                ]"
                 @click.stop="selectNode(node.id)"
             >
-                {{-- Node header --}}
-                <div class="flex items-center gap-2 px-3 py-2 bg-purple-600 dark:bg-purple-700 rounded-t-xl">
+                {{-- Node header — drag handle --}}
+                <div
+                    class="flex items-center gap-2 px-3 py-2 bg-purple-600 dark:bg-purple-700 rounded-t-xl cursor-move"
+                    @mousedown="startDrag($event, node.id)"
+                >
                     <div class="w-5 h-5 rounded bg-white/20 flex items-center justify-center shrink-0">
                         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
@@ -139,6 +146,7 @@
                     </div>
                     <span class="text-white text-xs font-semibold truncate flex-1" x-text="node.label || node.agent_key"></span>
                     <button
+                        @mousedown.stop
                         @click.stop="removeNode(node.id)"
                         class="w-4 h-4 rounded flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-colors"
                         aria-label="Remove node"
@@ -154,20 +162,25 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="node.agent_key"></p>
                 </div>
 
-                {{-- Input port (top-center) --}}
+                {{-- INPUT port (top-center) — drop target when drawing connection --}}
                 <div
-                    class="absolute -top-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white dark:bg-gray-700 border-2 border-purple-500 cursor-crosshair flex items-center justify-center hover:scale-125 transition-transform"
-                    @mousedown.stop="startConnectionFrom(node)"
-                    title="Connect from this node"
+                    class="absolute -top-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white dark:bg-gray-700 border-2 border-purple-500 flex items-center justify-center z-20 transition-all"
+                    :class="drawingConnection && connectionSourceId !== node.id
+                        ? 'cursor-pointer scale-125 ring-2 ring-purple-400 ring-offset-1'
+                        : 'cursor-default'"
+                    @mouseup.stop="endConnectionAt($event, node.id)"
+                    @click.stop
+                    title="Drop connection here"
                 >
                     <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                 </div>
 
-                {{-- Output port (bottom-center) --}}
+                {{-- OUTPUT port (bottom-center) — drag to start a connection --}}
                 <div
-                    class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white dark:bg-gray-700 border-2 border-yellow-400 cursor-crosshair flex items-center justify-center hover:scale-125 transition-transform"
-                    @mousedown.stop="endConnectionAt(node)"
-                    title="Connect to this node"
+                    class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white dark:bg-gray-700 border-2 border-yellow-400 cursor-crosshair flex items-center justify-center z-20 hover:scale-125 transition-transform"
+                    @mousedown.stop="startConnectionFrom($event, node.id)"
+                    @click.stop
+                    title="Drag to connect to another node"
                 >
                     <div class="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
                 </div>
@@ -259,39 +272,40 @@ function workflowCanvas(initialNodes, initialConnections) {
         nodes: [],
         connections: [],
 
-        // Drag state
+        // Node drag — store ID, not object reference (object refs go stale after canvas-synced)
         dragging: null,
         dragOffsetX: 0,
         dragOffsetY: 0,
 
-        // Connection drawing state
+        // Connection drawing — drag from OUTPUT port (bottom) to INPUT port (top)
         drawingConnection: false,
-        connectionSource: null,     // node object
+        connectionSourceId: null,
         mouseX: 0,
         mouseY: 0,
 
         // Selection
         selectedNode: null,
 
-        // Dragged agent key from sidebar
+        // Sidebar drag state
         pendingAgentKey: null,
         pendingAgentLabel: null,
 
+        // Node pixel constants (w-44 = 176px; height ~72px)
+        NODE_W: 176,
+        NODE_H: 72,
+
         init() {
-            // Initialise from server-rendered JSON (plain arrays, no $wire proxy)
             this.nodes       = initialNodes       ?? [];
             this.connections = initialConnections ?? [];
 
-            // Re-sync whenever the server dispatches a canvas-synced event
-            // (fired by addNode, removeNode, connectNodes, removeConnection).
-            // Using a plain window listener avoids the async $wire.get() trap.
+            // Server fires canvas-synced after every mutation (addNode, removeNode, etc.)
             window.addEventListener('canvas-synced', (e) => {
                 this.nodes       = e.detail.nodes       ?? [];
                 this.connections = e.detail.connections ?? [];
             });
         },
 
-        // ── Drag from sidebar ──
+        // ── Sidebar drag-and-drop ──
         startAgentDrag(e, agentKey, agentLabel) {
             this.pendingAgentKey   = agentKey;
             this.pendingAgentLabel = agentLabel;
@@ -302,54 +316,73 @@ function workflowCanvas(initialNodes, initialConnections) {
             if (!this.pendingAgentKey) return;
             const canvas = document.getElementById('workflow-canvas');
             const rect   = canvas.getBoundingClientRect();
-            const x = Math.round(e.clientX - rect.left - 88);
-            const y = Math.round(e.clientY - rect.top  - 24);
+            // Centre the dropped node under the cursor
+            const x = Math.round(e.clientX - rect.left - this.NODE_W / 2);
+            const y = Math.round(e.clientY - rect.top  - this.NODE_H / 2);
             this.$wire.addNode(this.pendingAgentKey, Math.max(0, x), Math.max(0, y));
             this.pendingAgentKey   = null;
             this.pendingAgentLabel = null;
         },
 
         // ── Node drag-to-move ──
-        startDrag(e, node) {
-            if (e.button !== 0) return;
-            this.dragging   = node;
-            this.dragOffsetX = e.clientX - node.x;
-            this.dragOffsetY = e.clientY - node.y;
+        // Pass node.id (not node object) so we always look up the live reactive element.
+        startDrag(e, nodeId) {
+            if (e.button !== 0 || this.drawingConnection) return;
+            const idx = this.nodes.findIndex(n => n.id === nodeId);
+            if (idx === -1) return;
+            this.dragging    = nodeId;
+            this.dragOffsetX = e.clientX - this.nodes[idx].x;
+            this.dragOffsetY = e.clientY - this.nodes[idx].y;
             e.preventDefault();
         },
 
         onMouseMove(e) {
-            if (this.dragging) {
-                const x = Math.max(0, Math.round(e.clientX - this.dragOffsetX));
-                const y = Math.max(0, Math.round(e.clientY - this.dragOffsetY));
-                this.dragging.x = x;
-                this.dragging.y = y;
-            }
             this.mouseX = e.clientX;
             this.mouseY = e.clientY;
+            if (this.dragging) {
+                // Mutate via index to guarantee Alpine array reactivity
+                const idx = this.nodes.findIndex(n => n.id === this.dragging);
+                if (idx !== -1) {
+                    this.nodes[idx].x = Math.max(0, Math.round(e.clientX - this.dragOffsetX));
+                    this.nodes[idx].y = Math.max(0, Math.round(e.clientY - this.dragOffsetY));
+                }
+            }
         },
 
         onMouseUp(e) {
             if (this.dragging) {
-                // Persist final position to Livewire
-                this.$wire.moveNode(this.dragging.id, this.dragging.x, this.dragging.y);
+                const node = this.nodes.find(n => n.id === this.dragging);
+                if (node) {
+                    this.$wire.moveNode(this.dragging, node.x, node.y);
+                }
                 this.dragging = null;
+            }
+            // If mouseup lands on the canvas (not a port), cancel connection drawing.
+            // Port handlers use @mouseup.stop so they prevent this from firing when
+            // the user releases on a valid input port.
+            if (this.drawingConnection) {
+                this.drawingConnection  = false;
+                this.connectionSourceId = null;
             }
         },
 
         // ── Connection drawing ──
-        startConnectionFrom(node) {
-            this.drawingConnection = true;
-            this.connectionSource  = node;
+        // Called from OUTPUT port (bottom, yellow) @mousedown.stop
+        startConnectionFrom(e, nodeId) {
+            this.drawingConnection  = true;
+            this.connectionSourceId = nodeId;
+            e.preventDefault();
         },
 
-        endConnectionAt(targetNode) {
-            if (!this.drawingConnection || !this.connectionSource) return;
-            if (this.connectionSource.id !== targetNode.id) {
-                this.$wire.connectNodes(this.connectionSource.id, targetNode.id, null);
+        // Called from INPUT port (top, purple) @mouseup.stop
+        // .stop prevents onMouseUp.window from firing and cancelling the connection.
+        endConnectionAt(e, nodeId) {
+            if (!this.drawingConnection || !this.connectionSourceId) return;
+            if (this.connectionSourceId !== nodeId) {
+                this.$wire.connectNodes(this.connectionSourceId, nodeId, null);
             }
-            this.drawingConnection = false;
-            this.connectionSource  = null;
+            this.drawingConnection  = false;
+            this.connectionSourceId = null;
         },
 
         removeNode(nodeId) {
@@ -362,6 +395,7 @@ function workflowCanvas(initialNodes, initialConnections) {
 
         // ── Selection ──
         selectNode(nodeId) {
+            if (this.dragging) return;
             this.selectedNode = this.selectedNode === nodeId ? null : nodeId;
         },
 
@@ -371,36 +405,44 @@ function workflowCanvas(initialNodes, initialConnections) {
         },
 
         updateNodeLabel(label) {
-            const node = this.nodes.find(n => n.id === this.selectedNode);
-            if (node) node.label = label;
+            const idx = this.nodes.findIndex(n => n.id === this.selectedNode);
+            if (idx !== -1) this.nodes[idx].label = label;
         },
 
-        // ── SVG path helpers ──
-        nodeCenter(nodeId) {
-            const node = this.nodes.find(n => n.id === nodeId);
-            if (!node) return { x: 0, y: 0 };
-            return { x: node.x + 88, y: node.y + 24 };
+        // ── Port centre helpers ──
+        // OUTPUT port sits at bottom-centre of the node body.
+        outputPort(node) {
+            return { x: node.x + this.NODE_W / 2, y: node.y + this.NODE_H };
+        },
+        // INPUT port sits at top-centre of the node body.
+        inputPort(node) {
+            return { x: node.x + this.NODE_W / 2, y: node.y };
         },
 
+        // ── SVG bezier path helpers ──
         connectionPath(conn) {
-            const from = this.nodeCenter(conn.from);
-            const to   = this.nodeCenter(conn.to);
-            if (!from || !to) return '';
-            const dx = Math.abs(to.x - from.x);
-            const cy = Math.min(150, dx * 0.6 + 60);
-            return `M ${from.x} ${from.y + 18} C ${from.x} ${from.y + 18 + cy}, ${to.x} ${to.y - 18 - cy}, ${to.x} ${to.y - 18}`;
+            const fromNode = this.nodes.find(n => n.id === conn.from);
+            const toNode   = this.nodes.find(n => n.id === conn.to);
+            if (!fromNode || !toNode) return '';
+            const from = this.outputPort(fromNode);
+            const to   = this.inputPort(toNode);
+            // Control-point vertical offset — larger gap = more pronounced curve
+            const cy = Math.max(50, Math.abs(to.y - from.y) * 0.55);
+            return `M ${from.x} ${from.y} C ${from.x} ${from.y + cy}, ${to.x} ${to.y - cy}, ${to.x} ${to.y}`;
         },
 
         liveConnectionPath() {
-            if (!this.connectionSource) return '';
+            if (!this.connectionSourceId) return '';
+            const src = this.nodes.find(n => n.id === this.connectionSourceId);
+            if (!src) return '';
             const canvas = document.getElementById('workflow-canvas');
-            const rect   = canvas.getBoundingClientRect();
-            const fx = this.connectionSource.x + 88;
-            const fy = this.connectionSource.y + 42;
-            const tx = this.mouseX - rect.left;
-            const ty = this.mouseY - rect.top;
-            const cy = Math.abs(ty - fy) * 0.5;
-            return `M ${fx} ${fy} C ${fx} ${fy + cy}, ${tx} ${ty - cy}, ${tx} ${ty}`;
+            if (!canvas) return '';
+            const rect  = canvas.getBoundingClientRect();
+            const from  = this.outputPort(src);
+            const tx    = this.mouseX - rect.left;
+            const ty    = this.mouseY - rect.top;
+            const cy    = Math.max(40, Math.abs(ty - from.y) * 0.45);
+            return `M ${from.x} ${from.y} C ${from.x} ${from.y + cy}, ${tx} ${ty - cy}, ${tx} ${ty}`;
         },
     };
 }
