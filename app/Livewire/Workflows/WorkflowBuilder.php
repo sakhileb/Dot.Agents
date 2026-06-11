@@ -202,10 +202,42 @@ class WorkflowBuilder extends Component
     {
         app(SaveWorkflowAction::class)->execute($this->workflow, $this->nodes, $this->connections);
 
-        $this->flashMessage = 'Workflow saved successfully.';
+        $this->flashMessage = 'Workflow saved as draft.';
         $this->flashType = 'success';
 
         $this->dispatch('graph-saved');
+    }
+
+    /**
+     * Publish the workflow — saves the graph then sets status to 'active'.
+     */
+    public function publish(): void
+    {
+        if (empty($this->nodes)) {
+            $this->flashMessage = 'Add at least one agent node before publishing.';
+            $this->flashType = 'warning';
+            return;
+        }
+
+        app(SaveWorkflowAction::class)->execute($this->workflow, $this->nodes, $this->connections);
+
+        $this->workflow->update(['status' => 'active']);
+        $this->workflow->refresh();
+
+        $this->flashMessage = 'Workflow published and is now active.';
+        $this->flashType = 'success';
+    }
+
+    /**
+     * Unpublish — revert status back to draft.
+     */
+    public function unpublish(): void
+    {
+        $this->workflow->update(['status' => 'draft']);
+        $this->workflow->refresh();
+
+        $this->flashMessage = 'Workflow reverted to draft.';
+        $this->flashType = 'success';
     }
 
     // ──────────────────────────────────────────────

@@ -34,6 +34,18 @@
 
         {{-- Footer actions --}}
         <div class="p-3 border-t border-gray-200 dark:border-gray-800 space-y-2">
+
+            {{-- Status badge --}}
+            <div class="flex items-center justify-between px-1 mb-1">
+                <span class="text-xs text-gray-400 dark:text-gray-500">Status</span>
+                <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full
+                    {{ $workflow->status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full inline-block
+                        {{ $workflow->status === 'active' ? 'bg-green-500' : 'bg-gray-400' }}"></span>
+                    {{ ucfirst($workflow->status) }}
+                </span>
+            </div>
+
             <button
                 wire:click="save"
                 wire:loading.attr="disabled"
@@ -41,9 +53,34 @@
                 aria-label="Save workflow graph"
             >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                <span wire:loading.remove>Save Graph</span>
-                <span wire:loading>Saving…</span>
+                <span wire:loading.remove wire:target="save">Save Draft</span>
+                <span wire:loading wire:target="save">Saving…</span>
             </button>
+
+            @if($workflow->status !== 'active')
+                <button
+                    wire:click="publish"
+                    wire:loading.attr="disabled"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors"
+                    aria-label="Publish workflow"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span wire:loading.remove wire:target="publish">Publish Workflow</span>
+                    <span wire:loading wire:target="publish">Publishing…</span>
+                </button>
+            @else
+                <button
+                    wire:click="unpublish"
+                    wire:loading.attr="disabled"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs font-semibold transition-colors"
+                    aria-label="Unpublish workflow"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+                    <span wire:loading.remove wire:target="unpublish">Unpublish</span>
+                    <span wire:loading wire:target="unpublish">Unpublishing…</span>
+                </button>
+            @endif
+
             <button
                 wire:click="run"
                 wire:loading.attr="disabled"
@@ -51,17 +88,19 @@
                 aria-label="Execute workflow"
             >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span wire:loading.remove>Run Workflow</span>
-                <span wire:loading>Running…</span>
+                <span wire:loading.remove wire:target="run">Run Workflow</span>
+                <span wire:loading wire:target="run">Running…</span>
             </button>
         </div>
     </aside>
 
     {{-- ── MAIN CANVAS ── --}}
     <main
-        class="relative flex-1 overflow-hidden"
+        class="relative flex-1"
+        style="overflow: hidden;"
         @dragover.prevent
         @drop="onCanvasDrop($event)"
+        @mouseleave="onMouseUp($event)"
         id="workflow-canvas"
     >
 
@@ -76,20 +115,27 @@
         </svg>
 
         {{-- ── SVG Connections ── --}}
-        <svg class="absolute inset-0 w-full h-full" style="pointer-events:none;overflow:visible;" id="connections-svg">
+        {{-- NOTE: stroke colours use inline attributes, NOT Tailwind classes.
+             Alpine x-for renders these elements dynamically — the JIT scanner
+             never sees them at build time, so Tailwind classes are stripped. --}}
+        <svg class="absolute inset-0 w-full h-full" style="pointer-events:none; overflow:visible; z-index:5;" id="connections-svg">
             <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" class="fill-purple-500 dark:fill-purple-400"/>
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#8b5cf6"/>
+                </marker>
+                <marker id="arrowhead-live" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#f5be1c"/>
                 </marker>
             </defs>
 
             {{-- Rendered connections --}}
             <template x-for="conn in connections" :key="conn.id">
                 <g style="pointer-events:auto;">
+                    {{-- Visible bezier line --}}
                     <path
                         :d="connectionPath(conn)"
                         fill="none"
-                        class="stroke-purple-500 dark:stroke-purple-400"
+                        stroke="#8b5cf6"
                         stroke-width="2"
                         marker-end="url(#arrowhead)"
                     />
@@ -99,22 +145,23 @@
                         fill="none"
                         stroke="transparent"
                         stroke-width="14"
-                        class="cursor-pointer"
+                        style="cursor:pointer;"
                         @click="removeConnection(conn.id)"
                         title="Click to remove connection"
                     />
                 </g>
             </template>
 
-            {{-- Live drawing line while dragging from a port --}}
+            {{-- Live dashed line while dragging from output port --}}
             <template x-if="drawingConnection && connectionSourceId">
                 <path
                     :d="liveConnectionPath()"
                     fill="none"
-                    class="stroke-yellow-400"
-                    stroke-width="2"
-                    stroke-dasharray="6 3"
+                    stroke="#f5be1c"
+                    stroke-width="2.5"
+                    stroke-dasharray="8 4"
                     style="pointer-events:none;"
+                    marker-end="url(#arrowhead-live)"
                 />
             </template>
         </svg>
