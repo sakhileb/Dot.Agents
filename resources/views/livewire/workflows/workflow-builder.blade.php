@@ -115,15 +115,13 @@
             <rect width="100%" height="100%" fill="url(#grid)"/>
         </svg>
 
-        {{-- ── SVG layer: connection lines + live preview ──
-             IMPORTANT:
-             • Stroke colours use inline SVG attributes (not Tailwind) —
-               Alpine x-for renders dynamically; Tailwind JIT never scans it.
-             • Live path is ALWAYS in the DOM (display:none toggle) to avoid
-               SVG namespace corruption that <template x-if> can cause inside SVG.
-             • z-index 20 ensures lines render above node cards (z-10).
-             • pointer-events:none on the SVG itself so nodes stay draggable;
-               individual connection <g> elements override with pointer-events:all. --}}
+        {{-- ── SVG layer ──
+             x-for CANNOT be used inside SVG with Livewire: when Livewire morphs
+             the DOM after a server response, Alpine loses the x-for loop variable
+             scope on cloned path elements → "conn is not defined".
+             Solution: a single <g x-effect="renderConnections()"> that imperatively
+             creates SVG path elements using document.createElementNS so they are
+             always in the correct SVG namespace with no Alpine scope dependency. --}}
         <svg
             id="connections-svg"
             class="absolute inset-0 w-full h-full"
@@ -138,32 +136,10 @@
                 </marker>
             </defs>
 
-            {{-- Saved connection lines --}}
-            <template x-for="conn in connections" :key="conn.id">
-                <g style="pointer-events:all;">
-                    <path
-                        :d="connectionPath(conn)"
-                        fill="none"
-                        stroke="#8b5cf6"
-                        stroke-width="2"
-                        marker-end="url(#arrowhead)"
-                        style="pointer-events:none;"
-                    />
-                    {{-- Wide transparent hit-zone for click-to-delete --}}
-                    <path
-                        :d="connectionPath(conn)"
-                        fill="none"
-                        stroke="transparent"
-                        stroke-width="16"
-                        style="pointer-events:all; cursor:pointer;"
-                        @click.stop="removeConnection(conn.id)"
-                        title="Click to delete connection"
-                    />
-                </g>
-            </template>
+            {{-- Saved connection lines — rendered imperatively via x-effect --}}
+            <g id="connections-group" x-effect="renderConnections()"></g>
 
-            {{-- Live preview line while in connect-mode.
-                 Always in DOM; toggled with display to avoid x-if SVG namespace issues. --}}
+            {{-- Live preview line (single path, always in DOM, toggled via display) --}}
             <path
                 id="live-connection-path"
                 :d="liveConnectionPath()"
@@ -470,6 +446,55 @@ function workflowCanvas(initialNodes, initialConnections) {
 
         removeConnection(connId) {
             this.$wire.removeConnection(connId);
+        },
+
+        // ── Imperative SVG renderer ──
+        // Called by x-effect on <g id="connections-group">.
+        // Builds SVG path elements using createElementNS so they are always
+        // in the correct SVG namespace — avoids the "conn is not defined"
+        // error caused by Alpine x-for losing scope when Livewire morphs the DOM.
+        renderConnections() {
+            const group = document.getElementById('connections-group');
+            if (!group) return;
+
+            // Remove all existing children
+            while (group.firstChild) group.removeChild(group.firstChild);
+
+            const SVG = 'http://www.w3.org/2000/svg';
+            const self = this;
+
+            for (const conn of this.connections) {
+                const d = this.connectionPath(conn);
+                if (!d || d === 'M 0 0') continue;
+
+                // Visible bezier line
+                const line = document.createElementNS(SVG, 'path');
+                line.setAttribute('d', d);
+                line.setAttribute('fill', 'none');
+                line.setAttribute('stroke', '#8b5cf6');
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('marker-end', 'url(#arrowhead)');
+                line.style.pointerEvents = 'none';
+                group.appendChild(line);
+
+                // Wide transparent hit-zone for click-to-delete
+                const hit = document.createElementNS(SVG, 'path');
+                hit.setAttribute('d', d);
+                hit.setAttribute('fill', 'none');
+                hit.setAttribute('stroke', 'transparent');
+                hit.setAttribute('stroke-width', '16');
+                hit.style.pointerEvents = 'all';
+                hit.style.cursor = 'pointer';
+                hit.title = 'Click to delete connection';
+                // Capture conn.id in closure to avoid loop variable re-binding
+                (function(id) {
+                    hit.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        self.removeConnection(id);
+                    });
+                })(conn.id);
+                group.appendChild(hit);
+            }
         },
 
         // ── Selection ──
