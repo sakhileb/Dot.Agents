@@ -197,7 +197,7 @@
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-2"
                 class="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium
-                    {{ $flashType === 'success' ? 'bg-green-500 text-white' : 'bg-yellow-400 text-gray-900' }}"
+                    {{ $flashType === 'success' ? 'bg-green-500 text-white' : ($flashType === 'error' ? 'bg-red-600 text-white' : 'bg-yellow-400 text-gray-900') }}"
                 role="status"
                 aria-live="polite"
             >

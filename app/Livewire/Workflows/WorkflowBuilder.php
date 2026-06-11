@@ -217,17 +217,28 @@ class WorkflowBuilder extends Component
      */
     public function run(): void
     {
+        if (empty($this->nodes)) {
+            $this->flashMessage = 'Add at least one agent node to the canvas before running.';
+            $this->flashType = 'warning';
+            return;
+        }
+
         $this->save();
 
-        $execution = app(GraphWorkflowEngineService::class)->execute(
-            workflow: $this->workflow,
-            triggeredBy: Auth::id(),
-        );
+        try {
+            $execution = app(GraphWorkflowEngineService::class)->execute(
+                workflow: $this->workflow,
+                triggeredBy: Auth::id(),
+            );
 
-        $this->flashMessage = "Execution #{$execution->id} started — status: {$execution->status}";
-        $this->flashType = $execution->status === 'completed' ? 'success' : 'warning';
+            $this->flashMessage = "Execution #{$execution->id} started — status: {$execution->status}";
+            $this->flashType = $execution->status === 'completed' ? 'success' : 'warning';
 
-        $this->dispatch('execution-started', executionId: $execution->id);
+            $this->dispatch('execution-started', executionId: $execution->id);
+        } catch (\Throwable $e) {
+            $this->flashMessage = 'Workflow execution failed: ' . $e->getMessage();
+            $this->flashType = 'error';
+        }
     }
 
     // ──────────────────────────────────────────────
