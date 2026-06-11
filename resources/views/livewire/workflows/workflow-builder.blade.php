@@ -1,5 +1,5 @@
 <div
-    x-data="workflowCanvas(@entangle('nodes').live, @entangle('connections').live)"
+    x-data="workflowCanvas({{ Js::from($nodes) }}, {{ Js::from($connections) }})"
     x-init="init()"
     @mousemove.window="onMouseMove($event)"
     @mouseup.window="onMouseUp($event)"
@@ -254,7 +254,7 @@
 
 {{-- ── Alpine.js Canvas Controller ── --}}
 <script nonce="{{ \Illuminate\Support\Facades\Vite::cspNonce() }}">
-function workflowCanvas(nodesRef, connectionsRef) {
+function workflowCanvas(initialNodes, initialConnections) {
     return {
         nodes: [],
         connections: [],
@@ -278,11 +278,20 @@ function workflowCanvas(nodesRef, connectionsRef) {
         pendingAgentLabel: null,
 
         init() {
-            // Two-way sync with Livewire entangled refs
-            this.$watch('nodesRef', (val) => { this.nodes = val ?? []; });
-            this.$watch('connectionsRef', (val) => { this.connections = val ?? []; });
-            this.nodes = nodesRef ?? [];
-            this.connections = connectionsRef ?? [];
+            // Initialise from server-rendered JSON (plain arrays, no $wire proxy)
+            this.nodes       = initialNodes       ?? [];
+            this.connections = initialConnections ?? [];
+
+            // Re-sync local state whenever Livewire pushes an update back
+            // ($wire.get() returns plain JS values — safe to assign directly)
+            Livewire.hook('commit', ({ component, succeed }) => {
+                succeed(() => {
+                    if (component.el === this.$el.closest('[wire\\:id]')) {
+                        this.nodes       = this.$wire.get('nodes')       ?? [];
+                        this.connections = this.$wire.get('connections') ?? [];
+                    }
+                });
+            });
         },
 
         // ── Drag from sidebar ──
