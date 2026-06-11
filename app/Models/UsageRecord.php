@@ -12,22 +12,23 @@ class UsageRecord extends Model
     use HasFactory, HasOrganizationScope;
 
     protected $fillable = [
-        'organization_id', 'agent_deployment_id', 'user_id',
-        'record_type', 'recorded_date', 'message_count', 'task_count',
-        'token_count', 'input_tokens', 'output_tokens',
-        'compute_units', 'total_cost', 'currency', 'metadata',
+        'organization_id',
+        'agent_deployment_id',
+        'metric_type',
+        'quantity',
+        'unit_cost',
+        'total_cost',
+        'model_used',
+        'reference_type',
+        'reference_id',
+        'recorded_date',
     ];
 
     protected $casts = [
         'recorded_date' => 'date',
-        'message_count' => 'integer',
-        'task_count' => 'integer',
-        'token_count' => 'integer',
-        'input_tokens' => 'integer',
-        'output_tokens' => 'integer',
-        'compute_units' => 'decimal:4',
+        'quantity' => 'integer',
+        'unit_cost' => 'decimal:8',
         'total_cost' => 'decimal:4',
-        'metadata' => 'array',
     ];
 
     public function organization(): BelongsTo

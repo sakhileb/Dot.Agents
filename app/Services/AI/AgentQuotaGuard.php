@@ -43,9 +43,9 @@ class AgentQuotaGuard
 
         $used = Cache::remember($cacheKey, 300, fn () => UsageRecord::withoutGlobalScope('organization')
             ->where('organization_id', $organizationId)
-            ->where('record_type', 'task')
-            ->whereYear('recorded_at', now()->year)
-            ->whereMonth('recorded_at', now()->month)
+            ->where('metric_type', 'tasks')
+            ->whereYear('recorded_date', now()->year)
+            ->whereMonth('recorded_date', now()->month)
             ->count()
         );
 
