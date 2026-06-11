@@ -241,6 +241,22 @@ class WorkflowBuilder extends Component
     }
 
     // ──────────────────────────────────────────────
+    // Compatibility shim
+    // ──────────────────────────────────────────────
+
+    /**
+     * Older compiled blade views (with @entangle) call toJSON() on this
+     * component when Alpine initialises. This method exists solely to
+     * prevent a MethodNotFoundException 500 if a stale compiled view is
+     * still cached on the production server.  It is never called by the
+     * current blade (which uses Js::from() instead of @entangle).
+     */
+    public function toJSON(): array
+    {
+        return [];
+    }
+
+    // ──────────────────────────────────────────────
     // Execution
     // ──────────────────────────────────────────────
 
