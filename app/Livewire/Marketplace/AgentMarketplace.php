@@ -174,7 +174,7 @@ class AgentMarketplace extends Component
     }
 
     // ── Preview modal ────────────────────────────────────────────────
-    public function previewAgent(int $agentId): void
+    public function openPreview(int $agentId): void
     {
         $this->previewAgent = Agent::with([
             'agentDepartment',

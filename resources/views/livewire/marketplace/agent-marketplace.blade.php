@@ -219,7 +219,7 @@
                     @endif
 
                     <div class="mt-auto flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                        <button wire:click="previewAgent({{ $agent->id }})" aria-label="Preview {{ $agent->name }}"
+                        <button wire:click="openPreview({{ $agent->id }})" aria-label="Preview {{ $agent->name }}"
                                 class="flex-1 px-3 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition">
                             Preview
                         </button>
