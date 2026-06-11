@@ -55,8 +55,8 @@ Route::middleware([
     // Marketplace
     Route::get('/marketplace', fn () => view('marketplace.index'))->name('marketplace');
 
-    // Agents
-    Route::prefix('agents')->name('agents.')->group(function () {
+    // Active Agents (deployed workforce)
+    Route::prefix('my-agents')->name('agents.')->group(function () {
         Route::get('/', fn () => view('agents.index'))->name('deployments');
         Route::get('/{deployment}', function (AgentDeployment $deployment) {
             abort_unless(auth()->user()->can('view', $deployment), 403);

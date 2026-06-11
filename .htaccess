@@ -22,9 +22,14 @@
     # Do not rewrite requests that are already targeting public/ directly
     RewriteCond %{REQUEST_URI} !^/public/
 
-    # Do not rewrite actual files or directories that exist on disk
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+    # Only skip the rewrite if the requested path is a real file or directory
+    # INSIDE public/ (e.g. public/build/*, public/storage/*).
+    # Deliberately do NOT check the project-root filesystem — a directory like
+    # `agents/` at the cPanel document root must NOT block the Laravel route
+    # from being served. Checking %{REQUEST_FILENAME} (doc-root-relative) would
+    # silently 403 whenever a same-named folder exists at the project root.
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} !-f
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} !-d
 
     # Route everything else through public/index.php
     RewriteRule ^(.*)$ public/index.php [QSA,L]
