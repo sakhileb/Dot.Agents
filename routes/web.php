@@ -4,6 +4,9 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\HealthCheckController;
 use App\Models\AgentDeployment;
 use App\Models\AgentWorkflow;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
 // ── Health Checks ─────────────────────────────────────────────────────────────
@@ -17,7 +20,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(fun
 
 // Landing page
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : view('welcome');
+    return Auth::check() ? redirect()->route('dashboard') : view('welcome');
 });
 
 // Consent routes — accessible to authenticated users regardless of consent status
@@ -27,7 +30,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     ->group(function () {
         Route::get('/', fn () => view('consent.show'))->name('show');
         Route::post('/', function () {
-            $user = auth()->user();
+            /** @var User $user */
+            $user = Auth::user();
             $records = $user->consent_records ?? [];
             $records['platform_terms'] = [
                 'accepted_at' => now()->toIso8601String(),
@@ -59,17 +63,17 @@ Route::middleware([
     Route::prefix('my-agents')->name('agents.')->group(function () {
         Route::get('/', fn () => view('agents.index'))->name('deployments');
         Route::get('/{deployment}', function (AgentDeployment $deployment) {
-            abort_unless(auth()->user()->can('view', $deployment), 403);
+            abort_unless(Gate::allows('view', $deployment), 403);
 
             return view('agents.show', compact('deployment'));
         })->name('show');
         Route::get('/{deployment}/chat', function (AgentDeployment $deployment) {
-            abort_unless(auth()->user()->can('chat', $deployment), 403);
+            abort_unless(Gate::allows('chat', $deployment), 403);
 
             return view('agents.chat', compact('deployment'));
         })->name('chat');
         Route::get('/{deployment}/scorecard', function (AgentDeployment $deployment) {
-            abort_unless(auth()->user()->can('view', $deployment), 403);
+            abort_unless(Gate::allows('view', $deployment), 403);
 
             return view('agents.scorecard', compact('deployment'));
         })->name('scorecard');
