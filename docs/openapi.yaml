@@ -1347,6 +1347,489 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SKILL CATALOG — Direct execution (preview / sandbox mode)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  /skills/{key}/execute:
+    post:
+      summary: Execute a skill directly (sandbox / preview mode)
+      description: |
+        Executes a skill from the global catalog in sandbox mode without requiring an active
+        AgentDeployment. Intended for skill developers and platform administrators to preview
+        or validate skill behaviour before assigning to a deployment.
+
+        Rate limited — see `ai-execution` limiter (10/min per user, 100/min per org).
+      operationId: executeSkillDirect
+      tags: [Skills]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique skill key (e.g. `seo-analyser`, `marketing-intelligence`)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [input]
+              properties:
+                input:
+                  type: object
+                  description: Skill-specific input payload (see individual skill documentation)
+                  additionalProperties: true
+                context:
+                  type: object
+                  description: Optional execution context (organization_id, deployment_id, etc.)
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Skill executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillExecutionResult'
+        '404':
+          description: Skill key not found in registry
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # WORKFLOWS — Automated multi-step agent workflows
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  /workflows:
+    get:
+      summary: List workflows for the current organization
+      operationId: listWorkflows
+      tags: [Workflows]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, paused, archived]
+        - name: trigger_type
+          in: query
+          schema:
+            type: string
+            enum: [manual, schedule, event, webhook]
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: Paginated list of workflows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWorkflows'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Create a new workflow
+      operationId: createWorkflow
+      tags: [Workflows]
+      security:
+        - bearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowCreateRequest'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workflows/{workflow}:
+    get:
+      summary: Get a workflow by ID
+      operationId: getWorkflow
+      tags: [Workflows]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Workflow detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      summary: Update a workflow
+      operationId: updateWorkflow
+      tags: [Workflows]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowCreateRequest'
+      responses:
+        '200':
+          description: Workflow updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      summary: Archive a workflow
+      operationId: archiveWorkflow
+      tags: [Workflows]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Workflow archived
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workflows/{workflow}/run:
+    post:
+      summary: Trigger a manual workflow run
+      description: |
+        Queues an immediate workflow execution. Returns a run ID that can be polled
+        via `/workflows/{workflow}/runs/{run}`. Async — the workflow is dispatched
+        to the queue and does not block the response.
+      operationId: runWorkflow
+      tags: [Workflows]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: object
+                  description: Runtime input variables passed to the first workflow step
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Workflow run queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [queued]
+                  estimated_start_at:
+                    type: string
+                    format: date-time
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Workflow is paused or archived and cannot be run
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workflows/{workflow}/steps:
+    get:
+      summary: List the steps (nodes) of a workflow
+      operationId: listWorkflowSteps
+      tags: [Workflows]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ordered list of workflow steps
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkflowStep'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SOCIAL COMMERCE — Cart recovery, product recommendations, upsell / cross-sell
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  /social/commerce/cart-recovery:
+    post:
+      summary: Trigger abandoned cart recovery campaign
+      description: |
+        Queues a personalised recovery sequence for one or more abandoned carts.
+        The AI agent analyses the cart contents, customer history, and optimal
+        send time before dispatching outreach via the configured channels.
+      operationId: triggerCartRecovery
+      tags: [SocialCommerce]
+      security:
+        - bearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cart_ids]
+              properties:
+                cart_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: External cart identifiers to recover
+                channels:
+                  type: array
+                  items:
+                    type: string
+                    enum: [email, sms, whatsapp, push]
+                  default: [email]
+                delay_minutes:
+                  type: integer
+                  default: 60
+                  description: Minutes to wait before first outreach touch
+      responses:
+        '202':
+          description: Cart recovery campaign queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaign_id:
+                    type: string
+                    format: uuid
+                  carts_queued:
+                    type: integer
+                  estimated_first_touch:
+                    type: string
+                    format: date-time
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /social/commerce/recommendations:
+    post:
+      summary: Generate personalised product recommendations
+      description: |
+        Returns AI-generated product recommendation sets for the given customer
+        and context. Recommendations are ranked by predicted conversion probability
+        and optionally filtered by inventory availability.
+      operationId: generateProductRecommendations
+      tags: [SocialCommerce]
+      security:
+        - bearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id]
+              properties:
+                customer_id:
+                  type: string
+                context:
+                  type: string
+                  enum: [homepage, pdp, cart, post_purchase, email]
+                  default: homepage
+                limit:
+                  type: integer
+                  default: 5
+                  maximum: 20
+                exclude_owned:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Product recommendation set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customer_id:
+                    type: string
+                  context:
+                    type: string
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductRecommendation'
+                  generated_at:
+                    type: string
+                    format: date-time
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /social/commerce/upsell:
+    post:
+      summary: Identify upsell and cross-sell opportunities
+      description: |
+        Analyses the customer's current order or cart to surface targeted upsell
+        (higher-tier SKU) and cross-sell (complementary SKU) opportunities.
+        Returns ranked suggestions with confidence scores and recommended messaging.
+      operationId: generateUpsellOpportunities
+      tags: [SocialCommerce]
+      security:
+        - bearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, current_items]
+              properties:
+                customer_id:
+                  type: string
+                current_items:
+                  type: array
+                  items:
+                    type: string
+                  description: SKU or product IDs currently in the cart/order
+                type:
+                  type: string
+                  enum: [upsell, cross_sell, both]
+                  default: both
+                limit:
+                  type: integer
+                  default: 3
+      responses:
+        '200':
+          description: Upsell/cross-sell opportunity set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customer_id:
+                    type: string
+                  opportunities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UpsellOpportunity'
+                  estimated_revenue_uplift_pct:
+                    type: number
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /social/commerce/conversions:
+    get:
+      summary: List AI-attributed commerce conversions
+      description: Returns conversions that were directly attributed to an AI agent outreach action.
+      operationId: listCommerceConversions
+      tags: [SocialCommerce]
+      security:
+        - bearerToken: []
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [cart_recovery, recommendation, upsell, cross_sell]
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: Paginated conversion list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommerceConversion'
+                  total_revenue_attributed:
+                    type: number
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
 
   securitySchemes:
@@ -2318,3 +2801,173 @@ components:
           type: string
           format: date-time
           nullable: true
+
+    SkillExecutionResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [completed, failed, skipped, delegated]
+        output:
+          type: object
+          additionalProperties: true
+        confidence:
+          type: number
+          nullable: true
+        findings:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        executed_at:
+          type: string
+          format: date-time
+
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, active, paused, archived]
+        trigger_type:
+          type: string
+          enum: [manual, schedule, event, webhook]
+        trigger_config:
+          type: object
+          additionalProperties: true
+          nullable: true
+        step_count:
+          type: integer
+        last_run_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WorkflowCreateRequest:
+      type: object
+      required: [name, trigger_type]
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          nullable: true
+        trigger_type:
+          type: string
+          enum: [manual, schedule, event, webhook]
+        trigger_config:
+          type: object
+          additionalProperties: true
+          nullable: true
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+
+    WorkflowStep:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [skill_execution, condition, delay, notification, webhook]
+        config:
+          type: object
+          additionalProperties: true
+        sort_order:
+          type: integer
+        on_success:
+          type: string
+          nullable: true
+          description: Next step ID on success
+        on_failure:
+          type: string
+          nullable: true
+          description: Next step ID on failure (or 'stop')
+
+    PaginatedWorkflows:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ProductRecommendation:
+      type: object
+      properties:
+        product_id:
+          type: string
+        name:
+          type: string
+        score:
+          type: number
+          description: Predicted conversion probability (0–1)
+        reason:
+          type: string
+          description: Human-readable reason for recommendation
+        price:
+          type: number
+          nullable: true
+
+    UpsellOpportunity:
+      type: object
+      properties:
+        product_id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [upsell, cross_sell]
+        confidence:
+          type: number
+        revenue_delta:
+          type: number
+          nullable: true
+          description: Estimated incremental revenue if accepted
+        suggested_message:
+          type: string
+
+    CommerceConversion:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [cart_recovery, recommendation, upsell, cross_sell]
+        customer_id:
+          type: string
+        order_id:
+          type: string
+          nullable: true
+        revenue:
+          type: number
+        ai_attributed:
+          type: boolean
+        converted_at:
+          type: string
+          format: date-time

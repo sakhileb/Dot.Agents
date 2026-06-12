@@ -38,4 +38,16 @@ class AgentPersona extends Model
     {
         return $query->where('is_active', true);
     }
+
+    /**
+     * Named scope that documents this model is an intentionally shared
+     * platform-level catalog — NOT org-scoped. Agent personas are global
+     * templates; organization-specific overrides are stored in AgentDeployment.
+     *
+     * Usage: AgentPersona::platformCatalog()->where(...)->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — no organization_id filter
+    }
 }

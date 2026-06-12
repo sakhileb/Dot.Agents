@@ -8,6 +8,8 @@ use App\Skills\Meta\SuperpowersSkill;
 use App\Skills\Platform\ExcelDataProcessingSkill;
 use App\Skills\Platform\MarketingIntelligenceSkill;
 use App\Skills\Platform\MassContentGenerationSkill;
+use App\Skills\Platform\SeoAnalyserSkill;
+use App\Skills\Platform\SeoAuditSkill;
 use App\Skills\Platform\SeoOptimizationSkill;
 use App\Skills\Platform\VideoScriptingSkill;
 use Illuminate\Database\Seeder;
@@ -507,6 +509,56 @@ class EnterpriseSkillsSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => 102,
                 'class' => SeoOptimizationSkill::class,
+            ],
+
+            // seo-analyser — extracted from seo-optimization (content analysis actions)
+            [
+                'key' => 'seo-analyser',
+                'name' => 'SEO Analyser',
+                'description' => 'Analyse on-page SEO, research keywords, and score content against search best practices.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'marketing_strategist',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => true,
+                'required_permissions' => ['content.read', 'content.analyse'],
+                'required_data_sources' => ['cms.pages', 'analytics.search'],
+                'governance_rules' => null,
+                'confidence_score' => 82,
+                'requires_ai' => true,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 103,
+                'class' => SeoAnalyserSkill::class,
+            ],
+
+            // seo-audit — extracted from seo-optimization (technical checklist action)
+            [
+                'key' => 'seo-audit',
+                'name' => 'SEO Technical Audit',
+                'description' => 'Run a technical SEO checklist for HTTPS, canonical tags, structured data, and Core Web Vitals compliance.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'marketing_strategist',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => true,
+                'required_permissions' => ['content.read', 'content.analyse'],
+                'required_data_sources' => ['cms.pages'],
+                'governance_rules' => null,
+                'confidence_score' => 88,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 104,
+                'class' => SeoAuditSkill::class,
             ],
 
             // video-scripting — remotion-dev/remotion

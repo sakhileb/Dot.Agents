@@ -42,4 +42,16 @@ class AgentSkillRequirement extends Model
     {
         return $this->belongsTo(AgentSkill::class, 'skill_id');
     }
+
+    /**
+     * Named scope that documents this model is an intentionally shared
+     * platform-level catalog — NOT org-scoped. Skill requirements are
+     * global definitions tied to AgentSkill records, not organizations.
+     *
+     * Usage: AgentSkillRequirement::platformCatalog()->where('skill_id', $id)->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — no organization_id filter
+    }
 }

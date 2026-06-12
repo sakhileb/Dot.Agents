@@ -50,4 +50,16 @@ class SubscriptionPlan extends Model
     {
         return $query->orderBy('sort_order');
     }
+
+    /**
+     * Named scope that documents this model is an intentionally shared
+     * platform-level catalog — NOT org-scoped. Subscription plans are global
+     * product definitions; org subscriptions are stored in Subscription model.
+     *
+     * Usage: SubscriptionPlan::platformCatalog()->public()->ordered()->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — no organization_id filter
+    }
 }

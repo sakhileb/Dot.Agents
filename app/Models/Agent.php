@@ -158,4 +158,17 @@ class Agent extends Model
     {
         return $query->whereJsonContains('skills', $skill);
     }
+
+    /**
+     * Named scope that documents this model is an intentionally shared
+     * platform-level catalog — NOT org-scoped. Records are accessible across
+     * all organizations by design. Makes the access pattern explicit and
+     * auditable in code reviews so the absence of an org_id filter is clear.
+     *
+     * Usage: Agent::platformCatalog()->where(...)->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — no organization_id filter
+    }
 }

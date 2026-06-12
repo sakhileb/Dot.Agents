@@ -10,6 +10,7 @@ use App\Models\EnterpriseHealthScore;
 use App\Models\OrganizationTwin;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\EnterpriseConstitutionService;
+use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -220,58 +221,14 @@ class EnterpriseBrainService
 
     /**
      * Forecast risks and opportunities over the next 30 days based on current trends.
+     *
+     * @deprecated Delegated to EnterpriseBrainOrchestrator — use that class directly for new code.
      */
     public function generatePredictions(int $organizationId): array
     {
-        $bottlenecks = $this->detectBottlenecks($organizationId);
-        $learning = $this->generateLearningInsights($organizationId);
-        $governance = $this->assessGovernanceHealth($organizationId);
-
-        $riskFactors = [];
-        $opportunities = [];
-
-        if ($bottlenecks['bottlenecks_detected'] > 3) {
-            $riskFactors[] = [
-                'type' => 'operational_degradation',
-                'probability' => 'high',
-                'description' => "{$bottlenecks['bottlenecks_detected']} agent bottlenecks likely to escalate",
-                'recommended_action' => 'Review capacity and skill configurations for bottlenecked agents',
-            ];
-        }
-
-        if ($learning['declining_agents'] > 0) {
-            $riskFactors[] = [
-                'type' => 'agent_performance_decay',
-                'probability' => 'medium',
-                'description' => "{$learning['declining_agents']} agents showing performance decline",
-                'recommended_action' => 'Schedule DWCA re-certification for declining agents',
-            ];
-        }
-
-        if ($governance['overdue_approvals'] > 5) {
-            $riskFactors[] = [
-                'type' => 'approval_backlog',
-                'probability' => 'high',
-                'description' => 'Approval queue backlog may create operational bottleneck',
-                'recommended_action' => 'Adjust confidence thresholds or add human reviewers',
-            ];
-        }
-
-        if ($learning['improving_agents'] > $learning['declining_agents']) {
-            $opportunities[] = [
-                'type' => 'autonomy_expansion',
-                'description' => 'Strong performance trends support increasing agent autonomy levels',
-                'estimated_efficiency_gain' => '15-25%',
-            ];
-        }
-
-        return [
-            'core' => 'predictive',
-            'forecast_horizon_days' => 30,
-            'risk_factors' => $riskFactors,
-            'opportunities' => $opportunities,
-            'prediction_confidence' => 72,
-        ];
+        return Container::getInstance()
+            ->make(EnterpriseBrainOrchestrator::class)
+            ->generatePredictions($organizationId);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -281,39 +238,13 @@ class EnterpriseBrainService
     /**
      * Compute the composite Enterprise Health Score across all 8 domains.
      * Stores a daily snapshot in enterprise_health_scores.
+     *
+     * @deprecated Delegated to EnterpriseBrainOrchestrator — use that class directly for new code.
      */
     public function computeEnterpriseHealth(int $organizationId): EnterpriseHealthScore
     {
-        $governance = $this->assessGovernanceHealth($organizationId);
-        $economic = $this->assessEconomicHealth($organizationId);
-        $operational = $this->detectBottlenecks($organizationId);
-        $learning = $this->generateLearningInsights($organizationId);
-
-        $agentHealth = $learning['total_active_agents'] > 0
-            ? max(0, 100 - ($learning['declining_agents'] / $learning['total_active_agents']) * 100)
-            : 50.0;
-
-        $domainScores = $this->scorer->buildDomainScores(
-            economicScore: $economic['health_score'],
-            agentHealthPct: $agentHealth,
-            bottlenecksDetected: $operational['bottlenecks_detected'],
-            governanceScore: $governance['health_score'],
-        );
-
-        $composite = $this->scorer->computeCompositeScore($domainScores);
-
-        return EnterpriseHealthScore::updateOrCreate(
-            ['organization_id' => $organizationId, 'scored_at' => today()],
-            array_merge($domainScores, [
-                'enterprise_health_score' => $composite,
-                'domain_details' => [
-                    'governance' => $governance,
-                    'economic' => $economic,
-                    'operational' => $operational,
-                    'learning' => $learning,
-                ],
-                'recommendations' => $this->generatePredictions($organizationId)['risk_factors'],
-            ])
-        );
+        return Container::getInstance()
+            ->make(EnterpriseBrainOrchestrator::class)
+            ->computeEnterpriseHealth($organizationId);
     }
 }

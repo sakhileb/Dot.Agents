@@ -108,7 +108,7 @@ class AgentVersion extends Model
         }
 
         $previousKeys = array_keys($previous);
-        $currentKeys  = array_keys($current);
+        $currentKeys = array_keys($current);
 
         // Removed capability keys are always breaking
         $removedKeys = array_diff($previousKeys, $currentKeys);
@@ -131,5 +131,18 @@ class AgentVersion extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Named scope that documents this model is a platform-level version
+     * catalog scoped to an Agent, not to an Organization. Deployments
+     * reference versions via agent_version_id — access control is enforced
+     * at the deployment level, not here.
+     *
+     * Usage: AgentVersion::platformCatalog()->where('agent_id', $id)->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — scoped by agent_id, not org_id
     }
 }

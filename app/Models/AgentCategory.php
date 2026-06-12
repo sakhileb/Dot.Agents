@@ -33,4 +33,16 @@ class AgentCategory extends Model
     {
         return $query->orderBy('sort_order');
     }
+
+    /**
+     * Named scope that documents this model is an intentionally shared
+     * platform-level catalog — NOT org-scoped. Categories are global
+     * taxonomy data visible to all organizations in the marketplace.
+     *
+     * Usage: AgentCategory::platformCatalog()->active()->ordered()->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — no organization_id filter
+    }
 }

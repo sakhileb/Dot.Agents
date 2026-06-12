@@ -65,8 +65,15 @@ class AppServiceProvider extends ServiceProvider
         // AI execution: 10 calls/minute per authenticated user
         RateLimiter::for('ai-execution', function (Request $request) {
             $userId = optional($request->user('sanctum') ?? $request->user())->id;
+            $orgId = session('current_organization_id', 'anon');
 
-            return Limit::perMinute(10)->by($userId ?: $request->ip());
+            return [
+                // Per-user: 10 AI skill executions per minute
+                Limit::perMinute(10)->by('user:'.($userId ?: $request->ip())),
+                // Per-org: 100 AI executions per minute (prevents one org from
+                // monopolising shared GPU/LLM resources and controlling cost overruns)
+                Limit::perMinute(100)->by('org:'.$orgId),
+            ];
         });
 
         // Strict write operations: 30 creates/minute per authenticated user

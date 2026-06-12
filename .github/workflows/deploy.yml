@@ -79,6 +79,19 @@ jobs:
             --exclude='storage/logs/*.log' \
             .
 
+      - name: Validate production environment requirements
+        run: |
+          # Ensure QUEUE_CONNECTION is not 'database' in production.
+          # The database driver is a bottleneck under sustained load and
+          # prevents Horizon from functioning. Production must use redis.
+          ENV_FILE=".env"
+          if [ -f "$ENV_FILE" ]; then
+            QUEUE_CONN=$(grep -E "^QUEUE_CONNECTION=" "$ENV_FILE" | cut -d= -f2 | tr -d '[:space:]')
+            if [ "$QUEUE_CONN" = "database" ]; then
+              echo "::warning::QUEUE_CONNECTION=database detected in build .env — production server must override this to 'redis' in the shared .env. See .env.example for the correct configuration."
+            fi
+          fi
+
       # ── Zero-downtime deployment via SSH ──────────────────────────────────
       - name: Deploy to server (zero-downtime)
         uses: appleboy/ssh-action@v1.0.3

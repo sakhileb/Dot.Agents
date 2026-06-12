@@ -33,4 +33,16 @@ class AgentDepartment extends Model
     {
         return $query->orderBy('sort_order');
     }
+
+    /**
+     * Named scope that documents this model is an intentionally shared
+     * platform-level catalog — NOT org-scoped. Departments are global
+     * taxonomy data used across all organizations for agent classification.
+     *
+     * Usage: AgentDepartment::platformCatalog()->active()->ordered()->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — no organization_id filter
+    }
 }

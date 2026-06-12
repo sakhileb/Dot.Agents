@@ -17,6 +17,8 @@ use App\Skills\Meta\SuperpowersSkill;
 use App\Skills\Platform\ExcelDataProcessingSkill;
 use App\Skills\Platform\MarketingIntelligenceSkill;
 use App\Skills\Platform\MassContentGenerationSkill;
+use App\Skills\Platform\SeoAnalyserSkill;
+use App\Skills\Platform\SeoAuditSkill;
 use App\Skills\Platform\SeoOptimizationSkill;
 use App\Skills\Platform\VideoScriptingSkill;
 use App\Skills\Platform\WorkflowOptimizationSkill;
@@ -150,8 +152,12 @@ class SkillRegistryService
             'excel-data-processing' => ExcelDataProcessingSkill::class,
             // marketing-intelligence  (coreyhaines31/marketingskills)
             'marketing-intelligence' => MarketingIntelligenceSkill::class,
-            // seo-optimization        (agricidaniel/claude-seo)
+            // seo-optimization        (agricidaniel/claude-seo) — router kept for backward compat
             'seo-optimization' => SeoOptimizationSkill::class,
+            // seo-analyser           — extracted from seo-optimization (content analysis)
+            'seo-analyser' => SeoAnalyserSkill::class,
+            // seo-audit              — extracted from seo-optimization (technical checklist)
+            'seo-audit' => SeoAuditSkill::class,
             // video-scripting         (remotion-dev/remotion)
             'video-scripting' => VideoScriptingSkill::class,
             // context-engineering     (muratcankoylan/agent-skills-for-context-engineering)

@@ -219,4 +219,16 @@ class AgentSkill extends Model
         static::saved(fn () => TaggableCache::flush(['skills', 'catalog']));
         static::deleted(fn () => TaggableCache::flush(['skills', 'catalog']));
     }
+
+    /**
+     * Named scope that documents this model is an intentionally shared
+     * platform-level catalog — NOT org-scoped. Skills are global definitions;
+     * org-specific assignments live in AgentSkillAssignment.
+     *
+     * Usage: AgentSkill::platformCatalog()->where('layer', 'core')->get();
+     */
+    public function scopePlatformCatalog($query)
+    {
+        return $query; // Intentionally shared — no organization_id filter
+    }
 }
