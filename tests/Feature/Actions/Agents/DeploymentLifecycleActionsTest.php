@@ -5,6 +5,7 @@ namespace Tests\Feature\Actions\Agents;
 use App\Actions\Agents\DecommissionDeploymentAction;
 use App\Actions\Agents\PauseDeploymentAction;
 use App\Actions\Agents\StartAgentChatSessionAction;
+use App\DTOs\Agents\StartAgentChatSessionData;
 use App\Actions\Agents\UpdateDeploymentAction;
 use App\DTOs\Agents\UpdateDeploymentData;
 use App\Models\AgentDeployment;
@@ -138,7 +139,11 @@ class DeploymentLifecycleActionsTest extends TestCase
         $this->actingAs($this->user);
 
         $session = app(StartAgentChatSessionAction::class)
-            ->execute($this->deployment, $this->user->id, $this->organization->id);
+            ->execute($this->deployment, new StartAgentChatSessionData(
+                userId: $this->user->id,
+                agentDeploymentId: $this->deployment->id,
+                organizationId: $this->organization->id,
+            ));
 
         $this->assertInstanceOf(AgentSession::class, $session);
         $this->assertSame($this->deployment->id, $session->agent_deployment_id);
@@ -151,7 +156,11 @@ class DeploymentLifecycleActionsTest extends TestCase
         $this->actingAs($this->user);
 
         $session = app(StartAgentChatSessionAction::class)
-            ->execute($this->deployment, $this->user->id, $this->organization->id);
+            ->execute($this->deployment, new StartAgentChatSessionData(
+                userId: $this->user->id,
+                agentDeploymentId: $this->deployment->id,
+                organizationId: $this->organization->id,
+            ));
 
         $this->assertSame($this->organization->id, $session->organization_id);
     }

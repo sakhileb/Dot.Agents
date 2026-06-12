@@ -2,6 +2,7 @@
 
 namespace App\Actions\Organizations;
 
+use App\DTOs\Organizations\UpdateOrganizationSettingsData;
 use App\Events\OrganizationSettingsUpdated;
 use App\Models\Organization;
 use App\Services\Governance\AuditService;
@@ -13,7 +14,7 @@ class UpdateOrganizationSettingsAction
         private readonly AuditService $auditService
     ) {}
 
-    public function execute(Organization $organization, array $data): Organization
+    public function execute(Organization $organization, UpdateOrganizationSettingsData $data): Organization
     {
         Gate::authorize('update', $organization);
 
@@ -22,8 +23,8 @@ class UpdateOrganizationSettingsAction
             'country', 'timezone', 'currency', 'settings', 'billing_address',
         ];
 
-        $old = $organization->only($allowed);
-        $updates = array_intersect_key($data, array_flip($allowed));
+        $old     = $organization->only($allowed);
+        $updates = $data->toArray();
 
         if (isset($updates['settings'])) {
             $updates['settings'] = array_merge(

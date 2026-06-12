@@ -100,8 +100,11 @@ class AgentChat extends Component
         $deployment = AgentDeployment::findOrFail($this->deploymentId);
         $session = app(StartAgentChatSessionAction::class)->execute(
             $deployment,
-            auth()->id(),
-            session('current_organization_id'),
+            new \App\DTOs\Agents\StartAgentChatSessionData(
+                userId: auth()->id(),
+                agentDeploymentId: $deployment->id,
+                organizationId: session('current_organization_id'),
+            ),
         );
 
         $this->sessionId = $session->id;

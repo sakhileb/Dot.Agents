@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\Organizations\UpdateOrganizationSettingsAction;
+use App\DTOs\Organizations\UpdateOrganizationSettingsData;
 use App\Events\OrganizationSettingsUpdated;
 use App\Models\Organization;
 use App\Models\User;
@@ -33,10 +34,10 @@ class UpdateOrganizationSettingsActionTest extends TestCase
         $this->actingAs($this->user);
         Gate::before(fn () => true);
 
-        $result = app(UpdateOrganizationSettingsAction::class)->execute($this->organization, [
+        $result = app(UpdateOrganizationSettingsAction::class)->execute($this->organization, UpdateOrganizationSettingsData::fromArray([
             'name' => 'Acme Corp Updated',
             'industry' => 'fintech',
-        ]);
+        ]));
 
         $this->assertEquals('Acme Corp Updated', $result->name);
         $this->assertDatabaseHas('organizations', [
@@ -51,7 +52,7 @@ class UpdateOrganizationSettingsActionTest extends TestCase
         $this->actingAs($otherUser);
 
         $this->expectException(AuthorizationException::class);
-        app(UpdateOrganizationSettingsAction::class)->execute($this->organization, ['name' => 'Hacked']);
+        app(UpdateOrganizationSettingsAction::class)->execute($this->organization, UpdateOrganizationSettingsData::fromArray(['name' => 'Hacked']));
     }
 
     public function test_creates_audit_log_on_settings_update(): void
@@ -61,7 +62,7 @@ class UpdateOrganizationSettingsActionTest extends TestCase
 
         Event::fake([OrganizationSettingsUpdated::class]);
 
-        app(UpdateOrganizationSettingsAction::class)->execute($this->organization, ['name' => 'New Name']);
+        app(UpdateOrganizationSettingsAction::class)->execute($this->organization, UpdateOrganizationSettingsData::fromArray(['name' => 'New Name']));
 
         Event::assertDispatched(OrganizationSettingsUpdated::class);
     }

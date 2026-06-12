@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\DTOs\Agents\StartAgentChatSessionData;
 use App\Events\AgentChatStarted;
 use App\Models\AgentDeployment;
 use App\Models\AgentMessage;
@@ -16,18 +17,18 @@ class StartAgentChatSessionAction
     /**
      * Create a new chat session for the given deployment.
      */
-    public function execute(AgentDeployment $deployment, int $userId, ?int $organizationId): AgentSession
+    public function execute(AgentDeployment $deployment, StartAgentChatSessionData $data): AgentSession
     {
         Gate::authorize('chat', $deployment);
 
         $session = AgentSession::create([
             'agent_deployment_id' => $deployment->id,
-            'organization_id' => $organizationId ?? $deployment->organization_id,
-            'user_id' => $userId,
-            'session_type' => 'conversation',
-            'title' => 'New Conversation',
-            'status' => 'active',
-            'started_at' => now(),
+            'organization_id'     => $data->organizationId ?? $deployment->organization_id,
+            'user_id'             => $data->userId,
+            'session_type'        => 'conversation',
+            'title'               => $data->title ?? 'New Conversation',
+            'status'              => 'active',
+            'started_at'          => now(),
         ]);
 
         event(new AgentChatStarted($session));

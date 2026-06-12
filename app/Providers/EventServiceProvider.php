@@ -35,6 +35,7 @@ use App\Listeners\HandleAgentTaskFailed;
 use App\Listeners\HandleSkillApprovalRequested;
 use App\Listeners\LogAgentDecommissionedAudit;
 use App\Listeners\LogAgentPausedAudit;
+use App\Listeners\LogAgentChatStarted;
 use App\Listeners\LogAgentResumedAudit;
 use App\Listeners\LogAgentTaskRated;
 use App\Listeners\LogAgentUpdatedAudit;
@@ -112,7 +113,9 @@ class EventServiceProvider extends ServiceProvider
             LogAgentTaskRated::class,
         ],
 
-        AgentChatStarted::class => [],
+        AgentChatStarted::class => [
+            LogAgentChatStarted::class,
+        ],
 
         AgentUpdated::class => [
             LogAgentUpdatedAudit::class,
