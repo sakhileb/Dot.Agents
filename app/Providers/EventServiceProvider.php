@@ -18,14 +18,18 @@ use App\Events\NegativeSentimentDetected;
 use App\Events\OrganizationCreated;
 use App\Events\OrganizationSettingsUpdated;
 use App\Events\PurchaseIntentDetected;
+use App\Events\SecurityEventResolved;
 use App\Events\SecurityThreatDetected;
 use App\Events\SkillApprovalRequested;
+use App\Events\SkillAssigned;
 use App\Events\SkillExecuted;
 use App\Events\SkillExecutionBlocked;
 use App\Events\SocialConversionAchieved;
 use App\Events\SocialLeadCaptured;
 use App\Events\SocialMessageReceived;
 use App\Events\SocialPostPublished;
+use App\Events\WorkflowCreated;
+use App\Events\WorkflowDeleted;
 use App\Listeners\AuditSkillExecution;
 use App\Listeners\HandleAgentTaskFailed;
 use App\Listeners\HandleSkillApprovalRequested;
@@ -37,12 +41,16 @@ use App\Listeners\LogAgentUpdatedAudit;
 use App\Listeners\LogDeploymentAudit;
 use App\Listeners\LogOrganizationSettingsUpdated;
 use App\Listeners\LogPurchaseIntentDetected;
+use App\Listeners\LogSecurityEventResolved;
 use App\Listeners\LogSecurityThreat;
+use App\Listeners\LogSkillAssigned;
 use App\Listeners\LogSkillBlockedEvent;
 use App\Listeners\LogSocialConversionAchieved;
 use App\Listeners\LogSocialLeadCaptured;
 use App\Listeners\LogSocialMessageReceived;
 use App\Listeners\LogSocialPostPublished;
+use App\Listeners\LogWorkflowCreated;
+use App\Listeners\LogWorkflowDeleted;
 use App\Listeners\NotifyOnAgentDrift;
 use App\Listeners\NotifyOnApprovalProcessed;
 use App\Listeners\NotifyOnNegativeSentiment;
@@ -128,6 +136,10 @@ class EventServiceProvider extends ServiceProvider
             LogSecurityThreat::class,
         ],
 
+        SecurityEventResolved::class => [
+            LogSecurityEventResolved::class,
+        ],
+
         ApprovalRequested::class => [
             SendApprovalNotification::class,
         ],
@@ -160,6 +172,19 @@ class EventServiceProvider extends ServiceProvider
         SkillApprovalRequested::class => [
             SendApprovalNotification::class,
             HandleSkillApprovalRequested::class,
+        ],
+
+        SkillAssigned::class => [
+            LogSkillAssigned::class,
+        ],
+
+        // ── Workflow events ──────────────────────────────────────────────────
+        WorkflowCreated::class => [
+            LogWorkflowCreated::class,
+        ],
+
+        WorkflowDeleted::class => [
+            LogWorkflowDeleted::class,
         ],
 
         // ── SCCS: Social Commerce & Customer Success events ──────────────────

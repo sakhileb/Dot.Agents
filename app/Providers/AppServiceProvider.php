@@ -64,6 +64,9 @@ use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\UsageRecord;
 use App\Models\User;
+use App\Models\AgentVersion;
+use App\Models\Webhook;
+use App\Models\WebhookDelivery;
 use App\Models\WorkflowConnection;
 use App\Models\WorkflowExecution;
 use App\Models\WorkflowNode;
@@ -129,6 +132,9 @@ use App\Policies\TeamInvitationPolicy;
 use App\Policies\TeamPolicy;
 use App\Policies\UsageRecordPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\AgentVersionPolicy;
+use App\Policies\WebhookPolicy;
+use App\Policies\WebhookDeliveryPolicy;
 use App\Policies\WorkflowConnectionPolicy;
 use App\Policies\WorkflowExecutionPolicy;
 use App\Policies\WorkflowNodePolicy;
@@ -232,6 +238,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(TeamInvitation::class, TeamInvitationPolicy::class);
         Gate::policy(WorkflowConnection::class, WorkflowConnectionPolicy::class);
         Gate::policy(WorkflowNode::class, WorkflowNodePolicy::class);
+        Gate::policy(AgentVersion::class, AgentVersionPolicy::class);
+        Gate::policy(Webhook::class, WebhookPolicy::class);
+        Gate::policy(WebhookDelivery::class, WebhookDeliveryPolicy::class);
 
         // Enforce strong password policy platform-wide (min 12 chars, mixed case, numbers, symbols)
         // In testing, use a relaxed rule so test factories and Jetstream tests still pass.
