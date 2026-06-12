@@ -12,7 +12,7 @@ use App\Http\Requests\ExecuteSkillRequest;
 use App\Http\Requests\ToggleSkillRequest;
 use App\Models\AgentDeployment;
 use App\Models\AgentSkill;
-use App\Models\AgentSkillScore;
+use App\Services\Skills\SkillQueryService;
 use App\Support\TaggableCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -132,19 +132,18 @@ class SkillController extends Controller
         return response()->json(['data' => $execution], $statusCode);
     }
 
-    public function scores(AgentDeployment $deployment, Request $request): JsonResponse
+    public function scores(AgentDeployment $deployment, Request $request, SkillQueryService $query): JsonResponse
     {
         $this->authorize('view', $deployment);
 
         $period = $request->input('period', now()->format('Y-m'));
         $orgId = session('current_organization_id');
 
-        $scores = AgentSkillScore::where('agent_deployment_id', $deployment->id)
-            ->where('organization_id', $orgId)
-            ->where('period', $period)
-            ->with('skill:id,name,key,department,risk_level')
-            ->orderByDesc('success_rate')
-            ->get();
+        $scores = $query->getDeploymentScores(
+            deploymentId: $deployment->id,
+            organizationId: $orgId,
+            period: $period,
+        );
 
         return response()->json(['data' => $scores]);
     }

@@ -301,6 +301,124 @@ class ServiceSizeLimitsTest extends TestCase
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    // ── Security Architecture Guards ─────────────────────────────────────────
+
+    /** @test */
+    public function controllers_do_not_contain_direct_eloquent_creates(): void
+    {
+        $violations = [];
+
+        $files = File::allFiles(app_path('Http/Controllers'));
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            if ($file->getFilename() === 'Controller.php') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getRealPath());
+            $path    = $this->relativePath($file->getRealPath());
+
+            // Flag multi-field Model::create([...]) in controllers
+            if (preg_match('/::create\s*\(\s*\[/', $content)) {
+                $violations[] = $path.' — contains Model::create([...])';
+            }
+        }
+
+        $this->assertEmpty(
+            $violations,
+            "Controllers must not call Model::create() directly — delegate to Action classes:\n"
+            .implode("\n", $violations)
+        );
+    }
+
+    /** @test */
+    public function actions_do_not_inject_http_request(): void
+    {
+        $violations = [];
+
+        $files = File::allFiles(app_path('Actions'));
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getRealPath());
+
+            // Fortify/Jetstream actions are framework-bound — they are allowed to use Request
+            if (
+                str_contains($file->getPathname(), '/Fortify/')
+                || str_contains($file->getPathname(), '/Jetstream/')
+            ) {
+                continue;
+            }
+
+            if (preg_match('/Illuminate\\\\Http\\\\Request/', $content) && preg_match('/function execute.*Request/', $content)) {
+                $violations[] = $this->relativePath($file->getRealPath());
+            }
+        }
+
+        $this->assertEmpty(
+            $violations,
+            "Action classes must receive DTOs, not raw HTTP Requests:\n"
+            .implode("\n", $violations)
+        );
+    }
+
+    /** @test */
+    public function every_action_has_a_corresponding_dto(): void
+    {
+        $violations = [];
+
+        $files = File::allFiles(app_path('Actions'));
+
+        $dtoFiles = collect(File::allFiles(app_path('DTOs')))
+            ->map(fn ($f) => $f->getFilenameWithoutExtension())
+            ->all();
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $actionName = $file->getFilenameWithoutExtension();
+
+            // Only Actions that follow the *Action naming convention
+            if (! str_ends_with($actionName, 'Action')) {
+                continue;
+            }
+
+            // Skip Fortify/Jetstream framework stubs which use interface contracts, not DTOs
+            if (
+                str_contains($file->getPathname(), '/Fortify/')
+                || str_contains($file->getPathname(), '/Jetstream/')
+            ) {
+                continue;
+            }
+
+            $dtoName = str_replace('Action', 'Data', $actionName);
+
+            if (! in_array($dtoName, $dtoFiles, true)) {
+                $violations[] = $actionName.' → expected DTO: '.$dtoName;
+            }
+        }
+
+        // Allow up to 5 Actions that legitimately share a parent DTO
+        // (e.g. PublishWorkflowAction shares WorkflowData with SaveWorkflowAction)
+        if (count($violations) > 5) {
+            $this->fail(
+                "Actions missing dedicated DTO (max 5 shared-DTO exceptions allowed):\n"
+                .implode("\n", $violations)
+            );
+        }
+
+        $this->assertTrue(true);
+    }
+
     private function relativePath(string $absolutePath): string
     {
         return str_replace(base_path().'/', '', $absolutePath);

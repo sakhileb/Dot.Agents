@@ -4,6 +4,7 @@ namespace App\Services\AI;
 
 use App\Models\ExecutiveCouncilSession;
 use App\Models\ExecutiveRecommendation;
+use App\Services\AI\AiInputSanitizer;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 use Throwable;
@@ -53,6 +54,10 @@ class ExecutiveCouncilService
         'cso' => 'long-term strategic fit, sustainability, competitive advantage, market trends',
     ];
 
+    public function __construct(
+        private readonly AiInputSanitizer $sanitizer,
+    ) {}
+
     /**
      * Convene a full executive council session.
      *
@@ -69,6 +74,10 @@ class ExecutiveCouncilService
         array $inputData = [],
         ?int $triggeredBy = null
     ): ExecutiveCouncilSession {
+        // SECURITY: sanitize user-supplied context/title before passing to AI models.
+        $this->sanitizer->assertSafe($context);
+        $this->sanitizer->assertSafe($title);
+
         $session = ExecutiveCouncilSession::create([
             'organization_id' => $organizationId,
             'triggered_by' => $triggeredBy,

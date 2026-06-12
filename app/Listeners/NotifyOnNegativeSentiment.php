@@ -14,7 +14,7 @@ class NotifyOnNegativeSentiment implements ShouldQueue
 {
     use InteractsWithQueue;
 
-    public string $queue = 'default';
+    public string $queue = 'governance';
 
     public int $tries = 3;
 
