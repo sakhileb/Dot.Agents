@@ -53,7 +53,7 @@
                     <div class="flex items-center gap-3">
                         <span class="w-24 text-xs text-gray-600 dark:text-gray-400 text-right">{{ $cfg['label'] }}</span>
                         <div class="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                            <div class="h-full rounded-full {{ $cfg['color'] }} transition-all duration-500" style="width: {{ $pct }}%"></div>
+                            <div class="h-full rounded-full {{ $cfg['color'] }} transition-all duration-500" :style="{ width: '{{ $pct }}%' }"></div>
                         </div>
                         <span class="w-12 text-xs text-gray-600 dark:text-gray-400">{{ number_format($count) }}</span>
                         <span class="w-10 text-xs font-semibold text-gray-900 dark:text-white text-right">{{ $pct }}%</span>

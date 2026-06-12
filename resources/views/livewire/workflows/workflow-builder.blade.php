@@ -308,7 +308,7 @@
 
 </div>
 
-{{-- workflowCanvas Alpine component is registered via Alpine.data() in
+<!-- workflowCanvas Alpine component is registered via Alpine.data() in
      resources/js/workflow-canvas.js (bundled by Vite). Using an external
-     asset avoids the CSP nonce mismatch that blocks inline <script> tags
-     when the Livewire navigate feature clones them across page transitions. --}}
+     asset avoids the CSP nonce mismatch that blocks inline script tags
+     when the Livewire navigate feature clones them across page transitions. -->
