@@ -4,14 +4,26 @@ namespace Database\Seeders;
 
 use App\Models\AgentSkill;
 use App\Skills\Core\ContextEngineeringSkill;
+use App\Skills\Core\ContextMemorySkill;
+use App\Skills\Core\ContextOptimizationSkill;
+use App\Skills\Meta\SkillCombinatorSkill;
+use App\Skills\Meta\SkillIntrospectionSkill;
 use App\Skills\Meta\SuperpowersSkill;
+use App\Skills\Platform\AudienceIntelligenceSkill;
+use App\Skills\Platform\CampaignIntelligenceSkill;
+use App\Skills\Platform\ContentBatchSkill;
+use App\Skills\Platform\ContentQualitySkill;
+use App\Skills\Platform\ExcelAnalysisSkill;
 use App\Skills\Platform\ExcelDataProcessingSkill;
+use App\Skills\Platform\ExcelExportSkill;
 use App\Skills\Platform\MarketingIntelligenceSkill;
 use App\Skills\Platform\MassContentGenerationSkill;
 use App\Skills\Platform\SeoAnalyserSkill;
 use App\Skills\Platform\SeoAuditSkill;
 use App\Skills\Platform\SeoOptimizationSkill;
+use App\Skills\Platform\VideoProductionSkill;
 use App\Skills\Platform\VideoScriptingSkill;
+use App\Skills\Platform\VideoScriptWriterSkill;
 use Illuminate\Database\Seeder;
 
 class EnterpriseSkillsSeeder extends Seeder
@@ -663,6 +675,308 @@ class EnterpriseSkillsSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => 106,
                 'class' => SuperpowersSkill::class,
+            ],
+
+            // ── Split skill children ──────────────────────────────────────────
+
+            // video-script-writer — extracted from video-scripting
+            [
+                'key' => 'video-script-writer',
+                'name' => 'Video Script Writer',
+                'description' => 'Generates timed video scripts and storyboards from a brief. Focused action class extracted from VideoScriptingSkill.',
+                'layer' => 'platform',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'content_agent',
+                'output_type' => 'document',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 85,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 200,
+                'class' => VideoScriptWriterSkill::class,
+            ],
+
+            // video-production — extracted from video-scripting
+            [
+                'key' => 'video-production',
+                'name' => 'Video Production',
+                'description' => 'Breaks scripts into timed scenes and generates Remotion-compatible render configs. Extracted from VideoScriptingSkill.',
+                'layer' => 'platform',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'content_agent',
+                'output_type' => 'record',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 90,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 201,
+                'class' => VideoProductionSkill::class,
+            ],
+
+            // context-optimization — extracted from context-engineering
+            [
+                'key' => 'context-optimization',
+                'name' => 'Context Optimization',
+                'description' => 'Scores and optimises context window items, with lossless compression to fit token budgets. Extracted from ContextEngineeringSkill.',
+                'layer' => 'core',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'meta_agent',
+                'output_type' => 'record',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => false,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 90,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 202,
+                'class' => ContextOptimizationSkill::class,
+            ],
+
+            // context-memory — extracted from context-engineering
+            [
+                'key' => 'context-memory',
+                'name' => 'Context Memory',
+                'description' => 'Prioritises context items and injects episodic memory into the active context window. Extracted from ContextEngineeringSkill.',
+                'layer' => 'core',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'meta_agent',
+                'output_type' => 'record',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => false,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 95,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 203,
+                'class' => ContextMemorySkill::class,
+            ],
+
+            // content-batch — extracted from mass-content-generation
+            [
+                'key' => 'content-batch',
+                'name' => 'Content Batch Generator',
+                'description' => 'Produces N content items from a template and variable sets, with parameterised template building. Extracted from MassContentGenerationSkill.',
+                'layer' => 'platform',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'content_agent',
+                'output_type' => 'list',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 85,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 204,
+                'class' => ContentBatchSkill::class,
+            ],
+
+            // content-quality — extracted from mass-content-generation
+            [
+                'key' => 'content-quality',
+                'name' => 'Content Quality Validator',
+                'description' => 'Scores batch content for uniqueness and quality, and produces per-channel distribution manifests. Extracted from MassContentGenerationSkill.',
+                'layer' => 'platform',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'content_agent',
+                'output_type' => 'record',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 90,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 205,
+                'class' => ContentQualitySkill::class,
+            ],
+
+            // campaign-intelligence — extracted from marketing-intelligence
+            [
+                'key' => 'campaign-intelligence',
+                'name' => 'Campaign Intelligence',
+                'description' => 'Scores campaign KPIs and generates structured content briefs from marketing goals. Extracted from MarketingIntelligenceSkill.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'analyst_agent',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 85,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 206,
+                'class' => CampaignIntelligenceSkill::class,
+            ],
+
+            // audience-intelligence — extracted from marketing-intelligence
+            [
+                'key' => 'audience-intelligence',
+                'name' => 'Audience Intelligence',
+                'description' => 'Segments audiences by industry and size, and calculates marketing ROI and ROAS. Extracted from MarketingIntelligenceSkill.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'analyst_agent',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 85,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 207,
+                'class' => AudienceIntelligenceSkill::class,
+            ],
+
+            // skill-introspection — extracted from superpowers
+            [
+                'key' => 'skill-introspection',
+                'name' => 'Skill Introspection',
+                'description' => 'Lists skills available to an agent with health scores, and dynamically activates additional skills. Extracted from SuperpowersSkill.',
+                'layer' => 'meta',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'meta_agent',
+                'output_type' => 'record',
+                'risk_level' => 'medium',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => false,
+                'required_permissions' => ['skills.read', 'skills.assign'],
+                'required_data_sources' => [],
+                'governance_rules' => ['cannot_activate_critical_risk_skills' => true],
+                'confidence_score' => 95,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 208,
+                'class' => SkillIntrospectionSkill::class,
+            ],
+
+            // skill-combinator — extracted from superpowers
+            [
+                'key' => 'skill-combinator',
+                'name' => 'Skill Combinator',
+                'description' => 'Executes multiple skills sequentially and merges outputs; augments skill inputs with contextual intelligence. Extracted from SuperpowersSkill.',
+                'layer' => 'meta',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'meta_agent',
+                'output_type' => 'record',
+                'risk_level' => 'medium',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => false,
+                'required_permissions' => ['skills.read'],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 88,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 209,
+                'class' => SkillCombinatorSkill::class,
+            ],
+
+            // excel-analysis — extracted from excel-data-processing
+            [
+                'key' => 'excel-analysis',
+                'name' => 'Excel Data Analysis',
+                'description' => 'Parses CSV/TSV/JSON into typed tables and computes descriptive statistics with data quality scoring. Extracted from ExcelDataProcessingSkill.',
+                'layer' => 'platform',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'analyst_agent',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 95,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 210,
+                'class' => ExcelAnalysisSkill::class,
+            ],
+
+            // excel-export — extracted from excel-data-processing
+            [
+                'key' => 'excel-export',
+                'name' => 'Excel Data Export',
+                'description' => 'Generates structured table schemas from natural-language specs and exports data to CSV, JSON, or Markdown. Extracted from ExcelDataProcessingSkill.',
+                'layer' => 'platform',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'analyst_agent',
+                'output_type' => 'document',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => true,
+                'required_permissions' => [],
+                'required_data_sources' => [],
+                'governance_rules' => [],
+                'confidence_score' => 98,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 211,
+                'class' => ExcelExportSkill::class,
             ],
         ];
     }

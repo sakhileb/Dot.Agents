@@ -9,6 +9,7 @@ use App\Livewire\Concerns\ManagesWorkflowCanvas;
 use App\Models\Agent;
 use App\Models\AgentWorkflow;
 use App\Services\AI\GraphWorkflowEngineService;
+use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
@@ -76,6 +77,10 @@ class WorkflowBuilder extends Component
      */
     public function save(): void
     {
+        if ($this->hasSuspiciousNodeInput()) {
+            return;
+        }
+
         app(SaveWorkflowAction::class)->execute(
             $this->workflow,
             new SaveWorkflowData($this->workflow->id, Auth::id(), $this->nodes, $this->connections)
@@ -99,6 +104,10 @@ class WorkflowBuilder extends Component
             return;
         }
 
+        if ($this->hasSuspiciousNodeInput()) {
+            return;
+        }
+
         app(SaveWorkflowAction::class)->execute(
             $this->workflow,
             new SaveWorkflowData($this->workflow->id, Auth::id(), $this->nodes, $this->connections)
@@ -109,6 +118,38 @@ class WorkflowBuilder extends Component
 
         $this->flashMessage = 'Workflow published and is now active.';
         $this->flashType = 'success';
+    }
+
+    /**
+     * Scan node labels and instruction configs for prompt injection attempts.
+     *
+     * Returns true and sets a flash error when suspicious content is detected,
+     * so the caller can abort the save/publish operation.
+     */
+    private function hasSuspiciousNodeInput(): bool
+    {
+        /** @var AuditService $auditService */
+        $auditService = app(AuditService::class);
+
+        foreach ($this->nodes as $node) {
+            $textFields = [
+                $node['label'] ?? '',
+                $node['config']['instructions'] ?? '',
+                $node['config']['system_prompt'] ?? '',
+                $node['config']['description'] ?? '',
+            ];
+
+            foreach ($textFields as $text) {
+                if (! empty($text) && $auditService->detectPromptInjection($text)) {
+                    $this->flashMessage = 'Security: Potential prompt injection detected in node configuration. Please review your input.';
+                    $this->flashType = 'error';
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
