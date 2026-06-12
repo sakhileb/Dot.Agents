@@ -48,13 +48,3 @@ class AgentVersionPolicy
         return $user->hasRole('platform_admin');
     }
 }
-
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, AgentVersion $agentVersion): bool
-    {
-        return false;
-    }
-}
