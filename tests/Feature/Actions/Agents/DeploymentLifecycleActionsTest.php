@@ -6,6 +6,7 @@ use App\Actions\Agents\DecommissionDeploymentAction;
 use App\Actions\Agents\PauseDeploymentAction;
 use App\Actions\Agents\StartAgentChatSessionAction;
 use App\Actions\Agents\UpdateDeploymentAction;
+use App\DTOs\Agents\UpdateDeploymentData;
 use App\Models\AgentDeployment;
 use App\Models\AgentSession;
 use App\Models\Organization;
@@ -95,11 +96,10 @@ class DeploymentLifecycleActionsTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $result = app(UpdateDeploymentAction::class)->execute($this->deployment, [
-            'name' => 'Updated Name',
-            'deployment_mode' => 'semi-autonomous',
-            'confidence_threshold' => 85.0,
-        ]);
+        $result = app(UpdateDeploymentAction::class)->execute(
+            $this->deployment,
+            new UpdateDeploymentData(name: 'Updated Name', deploymentMode: 'semi-autonomous', confidenceThreshold: 85.0)
+        );
 
         $this->assertSame('Updated Name', $result->name);
         $this->assertSame('semi-autonomous', $result->deployment_mode);
@@ -111,10 +111,10 @@ class DeploymentLifecycleActionsTest extends TestCase
         $this->actingAs($this->user);
         $originalOrgId = $this->deployment->organization_id;
 
-        app(UpdateDeploymentAction::class)->execute($this->deployment, [
-            'organization_id' => 9999,  // should be ignored
-            'name' => 'Allowed',
-        ]);
+        app(UpdateDeploymentAction::class)->execute(
+            $this->deployment,
+            new UpdateDeploymentData(name: 'Allowed')
+        );
 
         $this->assertSame($originalOrgId, $this->deployment->fresh()->organization_id);
     }
@@ -123,7 +123,7 @@ class DeploymentLifecycleActionsTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        app(UpdateDeploymentAction::class)->execute($this->deployment, ['name' => 'New Name']);
+        app(UpdateDeploymentAction::class)->execute($this->deployment, new UpdateDeploymentData(name: 'New Name'));
 
         $this->assertDatabaseHas('audit_logs', [
             'organization_id' => $this->organization->id,

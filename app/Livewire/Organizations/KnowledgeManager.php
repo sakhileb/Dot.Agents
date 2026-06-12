@@ -5,6 +5,7 @@ namespace App\Livewire\Organizations;
 use App\Actions\Organizations\DeleteKnowledgeArticleAction;
 use App\Actions\Organizations\SaveKnowledgeArticleAction;
 use App\Actions\Organizations\SaveKnowledgeBaseAction;
+use App\DTOs\Organizations\DeleteKnowledgeArticleData;
 use App\Models\KnowledgeArticle;
 use App\Models\KnowledgeBase;
 use App\Models\Organization;
@@ -143,7 +144,7 @@ class KnowledgeManager extends Component
 
     public function deleteArticle(int $id): void
     {
-        app(DeleteKnowledgeArticleAction::class)->execute($this->organization, $id);
+        app(DeleteKnowledgeArticleAction::class)->execute($this->organization, DeleteKnowledgeArticleData::fromId($id));
         unset($this->articles);
         session()->flash('kb_success', 'Article deleted.');
     }

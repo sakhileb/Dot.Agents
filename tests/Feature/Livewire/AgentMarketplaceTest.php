@@ -103,7 +103,7 @@ class AgentMarketplaceTest extends TestCase
 
         $component = Livewire::actingAs($this->user)
             ->test(AgentMarketplace::class)
-            ->call('previewAgent', $agent->id);
+            ->call('openPreview', $agent->id);
 
         $this->assertNotNull($component->get('previewAgent'));
         $this->assertSame($agent->id, $component->get('previewAgent')['id']);

@@ -4,14 +4,18 @@ namespace App\Livewire\Security;
 
 use App\Actions\Security\EmergencyKillSwitchAction;
 use App\Actions\Security\ResolveSecurityEventAction;
+use App\DTOs\Security\ResolveSecurityEventData;
 use App\Models\AgentDeployment;
 use App\Models\Organization;
 use App\Models\SecurityEvent;
 use App\Services\Governance\DigitalImmuneSystem;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Lazy]
 class SecurityCenter extends Component
 {
     use WithPagination;
@@ -28,12 +32,14 @@ class SecurityCenter extends Component
     #[Validate('nullable|string|max:100')]
     public string $killSwitchConfirmation = '';
 
-    public function getOrganizationIdProperty(): ?int
+    #[Computed]
+    public function organizationId(): ?int
     {
         return session('current_organization_id');
     }
 
-    public function getEventsProperty()
+    #[Computed]
+    public function events()
     {
         return SecurityEvent::where('organization_id', $this->organizationId)
             ->when($this->filterSeverity, fn ($q) => $q->where('severity', $this->filterSeverity))
@@ -42,7 +48,8 @@ class SecurityCenter extends Component
             ->paginate(15);
     }
 
-    public function getStatsProperty(): array
+    #[Computed]
+    public function stats(): array
     {
         $events = SecurityEvent::where('organization_id', $this->organizationId);
 
@@ -66,7 +73,9 @@ class SecurityCenter extends Component
 
     public function resolveEvent(int $id): void
     {
-        app(ResolveSecurityEventAction::class)->execute($id);
+        app(ResolveSecurityEventAction::class)->execute(
+            new ResolveSecurityEventData($id, auth()->id())
+        );
     }
 
     /** Kill a single agent deployment immediately. */

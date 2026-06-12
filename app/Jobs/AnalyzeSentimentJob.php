@@ -53,4 +53,13 @@ class AnalyzeSentimentJob implements ShouldQueue
             throw $e;
         }
     }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::critical('AnalyzeSentimentJob: all retries exhausted — moved to failed_jobs', [
+            'message_id' => $this->message->id,
+            'organization_id' => $this->message->organization_id,
+            'error' => $exception->getMessage(),
+        ]);
+    }
 }

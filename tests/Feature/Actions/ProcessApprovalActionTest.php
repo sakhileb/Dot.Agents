@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\Governance\ProcessApprovalAction;
+use App\DTOs\Governance\ProcessApprovalData;
 use App\Events\ApprovalProcessed;
 use App\Models\AgentApproval;
 use App\Models\User;
@@ -30,7 +31,7 @@ class ProcessApprovalActionTest extends TestCase
         $reviewer = User::factory()->create();
         $this->actingAs($reviewer);
 
-        app(ProcessApprovalAction::class)->execute($approval, 'approved', 'Looks good');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'approved', 'Looks good'));
 
         $this->assertDatabaseHas('agent_approvals', [
             'id' => $approval->id,
@@ -47,7 +48,7 @@ class ProcessApprovalActionTest extends TestCase
         $reviewer = User::factory()->create();
         $this->actingAs($reviewer);
 
-        app(ProcessApprovalAction::class)->execute($approval, 'rejected', 'Too risky');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'rejected', 'Too risky'));
 
         $this->assertDatabaseHas('agent_approvals', [
             'id' => $approval->id,
@@ -61,7 +62,7 @@ class ProcessApprovalActionTest extends TestCase
         $approval = AgentApproval::factory()->pending()->create();
         $this->actingAs(User::factory()->create());
 
-        app(ProcessApprovalAction::class)->execute($approval, 'approved');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'approved'));
 
         Event::assertDispatched(ApprovalProcessed::class, fn ($e) => $e->approval->id === $approval->id);
     }
@@ -73,7 +74,7 @@ class ProcessApprovalActionTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
 
-        app(ProcessApprovalAction::class)->execute($approval, 'approved');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'approved'));
     }
 
     public function test_cannot_process_expired_approval(): void
@@ -85,7 +86,7 @@ class ProcessApprovalActionTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
 
-        app(ProcessApprovalAction::class)->execute($approval, 'approved');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'approved'));
     }
 
     public function test_rejected_approval_sets_task_status_to_failed(): void
@@ -94,7 +95,7 @@ class ProcessApprovalActionTest extends TestCase
         $approval = AgentApproval::factory()->pending()->create();
         $this->actingAs(User::factory()->create());
 
-        app(ProcessApprovalAction::class)->execute($approval, 'rejected');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'rejected'));
 
         $this->assertDatabaseHas('agent_tasks', [
             'id' => $approval->task_id,

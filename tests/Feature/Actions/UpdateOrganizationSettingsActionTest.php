@@ -3,10 +3,12 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\Organizations\UpdateOrganizationSettingsAction;
+use App\Events\OrganizationSettingsUpdated;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
@@ -57,10 +59,10 @@ class UpdateOrganizationSettingsActionTest extends TestCase
         $this->actingAs($this->user);
         Gate::before(fn () => true);
 
+        Event::fake([OrganizationSettingsUpdated::class]);
+
         app(UpdateOrganizationSettingsAction::class)->execute($this->organization, ['name' => 'New Name']);
 
-        $this->assertDatabaseHas('audit_logs', [
-            'event' => 'organization.settings_updated',
-        ]);
+        Event::assertDispatched(OrganizationSettingsUpdated::class);
     }
 }

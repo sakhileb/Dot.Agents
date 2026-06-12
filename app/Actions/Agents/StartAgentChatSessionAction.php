@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\Events\AgentChatStarted;
 use App\Models\AgentDeployment;
 use App\Models\AgentMessage;
 use App\Models\AgentSession;
@@ -28,6 +29,8 @@ class StartAgentChatSessionAction
             'status' => 'active',
             'started_at' => now(),
         ]);
+
+        event(new AgentChatStarted($session));
 
         return $session;
     }

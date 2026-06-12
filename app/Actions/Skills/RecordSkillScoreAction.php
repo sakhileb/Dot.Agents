@@ -2,13 +2,18 @@
 
 namespace App\Actions\Skills;
 
+use App\Models\AgentDeployment;
 use App\Models\AgentSkillScore;
+use Illuminate\Support\Facades\Gate;
 
 class RecordSkillScoreAction
 {
     /**
      * Upsert monthly skill performance scores for a deployment.
      * Called after each execution completes.
+     *
+     * Security: verifies the deployment belongs to the given organization
+     * (domain integrity guard) so scores cannot be written for foreign deployments.
      */
     public function execute(
         int $skillId,
@@ -18,6 +23,17 @@ class RecordSkillScoreAction
         ?float $confidence = null,
         ?int $durationMs = null,
     ): void {
+        // Domain integrity — prevent cross-org scorecard pollution.
+        $deployment = AgentDeployment::withoutOrganizationScope()
+            ->where('id', $deploymentId)
+            ->where('organization_id', $organizationId)
+            ->firstOrFail();
+
+        // If running in an HTTP context, authorize via policy (no-op in queue).
+        if (auth()->check()) {
+            Gate::authorize('update', $deployment);
+        }
+
         $period = now()->format('Y-m');
 
         $score = AgentSkillScore::firstOrCreate(

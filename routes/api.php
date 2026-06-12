@@ -40,7 +40,10 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'org.context']
         // Enterprise skill assignments per deployment
         Route::post('/{deployment}/skills', [SkillController::class, 'assign'])->name('skills.assign');
         Route::patch('/{deployment}/skills/{skill}', [SkillController::class, 'toggleSkill'])->name('skills.toggle');
-        Route::post('/{deployment}/skills/{skill}/execute', [SkillController::class, 'execute'])->name('skills.execute');
+        // AI execution endpoint — most restrictive limit (10 calls/min per user)
+        Route::post('/{deployment}/skills/{skill}/execute', [SkillController::class, 'execute'])
+            ->middleware('throttle:ai-execution')
+            ->name('skills.execute');
         Route::get('/{deployment}/skills', [SkillController::class, 'deploymentSkills'])->name('skills.index');
         Route::get('/{deployment}/skill-scores', [SkillController::class, 'scores'])->name('skills.scores');
     });

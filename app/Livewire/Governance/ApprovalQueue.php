@@ -3,6 +3,7 @@
 namespace App\Livewire\Governance;
 
 use App\Actions\Governance\ProcessApprovalAction;
+use App\DTOs\Governance\ProcessApprovalData;
 use App\Livewire\Forms\ApprovalResponseForm;
 use App\Models\AgentApproval;
 use Livewire\Attributes\Computed;
@@ -78,8 +79,11 @@ class ApprovalQueue extends Component
 
         app(ProcessApprovalAction::class)->execute(
             $this->selectedApproval,
-            $verdict,
-            $this->responseForm->notes ?? $this->reviewerNotes ?: null,
+            new ProcessApprovalData(
+                $this->selectedApproval->id,
+                $verdict,
+                $this->responseForm->notes ?? $this->reviewerNotes ?: null,
+            ),
         );
 
         $this->selectedApproval = null;

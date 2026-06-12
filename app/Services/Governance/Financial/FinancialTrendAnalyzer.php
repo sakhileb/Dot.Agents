@@ -18,6 +18,16 @@ class FinancialTrendAnalyzer
     private const LOOKBACK_MONTHS = 3;
 
     /**
+     * Whitelist of DB-driver-aware date expressions for month grouping.
+     * Values are static SQL literals — never derived from user input.
+     */
+    private const DATE_EXPR_BY_DRIVER = [
+        'sqlite' => "strftime('%Y-%m', period_end)",
+        'mysql' => "DATE_FORMAT(period_end, '%Y-%m')",
+        'pgsql' => "TO_CHAR(period_end, 'YYYY-MM')",
+    ];
+
+    /**
      * Build a monthly cost/savings trend array for the given deployment IDs.
      * Groups AgentScorecard records by month over the last N months.
      *
@@ -29,10 +39,9 @@ class FinancialTrendAnalyzer
             return [];
         }
 
-        // Use DB-driver-aware date formatting: MySQL uses DATE_FORMAT, SQLite uses strftime.
-        $dateExpr = DB::getDriverName() === 'sqlite'
-            ? "strftime('%Y-%m', period_end)"
-            : "DATE_FORMAT(period_end, '%Y-%m')";
+        $driver = DB::getDriverName();
+        $dateExpr = self::DATE_EXPR_BY_DRIVER[$driver]
+            ?? throw new \RuntimeException("Unsupported DB driver '{$driver}' for FinancialTrendAnalyzer.");
 
         $rows = AgentScorecard::withoutGlobalScope('organization')
             ->whereHas('agentDeployment', fn ($q) => $q->whereIn('id', $deploymentIds))

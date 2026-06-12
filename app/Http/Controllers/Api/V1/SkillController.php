@@ -7,6 +7,9 @@ use App\Actions\Skills\ExecuteSkillAction;
 use App\DTOs\Skills\AssignSkillData;
 use App\DTOs\Skills\ExecuteSkillData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AssignSkillRequest;
+use App\Http\Requests\ExecuteSkillRequest;
+use App\Http\Requests\ToggleSkillRequest;
 use App\Models\AgentDeployment;
 use App\Models\AgentSkill;
 use App\Models\AgentSkillScore;
@@ -64,17 +67,11 @@ class SkillController extends Controller
     }
 
     public function assign(
-        Request $request,
+        AssignSkillRequest $request,
         AgentDeployment $deployment,
         AssignSkillToDeploymentAction $action
     ): JsonResponse {
         $this->authorize('update', $deployment);
-
-        $request->validate([
-            'skill_id' => ['required', 'integer', 'exists:agent_skills,id'],
-            'is_enabled' => ['boolean'],
-            'config' => ['nullable', 'array'],
-        ]);
 
         $orgId = session('current_organization_id');
 
@@ -92,13 +89,11 @@ class SkillController extends Controller
     }
 
     public function toggleSkill(
-        Request $request,
+        ToggleSkillRequest $request,
         AgentDeployment $deployment,
         AgentSkill $skill
     ): JsonResponse {
         $this->authorize('update', $deployment);
-
-        $request->validate(['is_enabled' => ['required', 'boolean']]);
 
         $assignment = $deployment->skillAssignments()
             ->where('skill_id', $skill->id)
@@ -110,19 +105,12 @@ class SkillController extends Controller
     }
 
     public function execute(
-        Request $request,
+        ExecuteSkillRequest $request,
         AgentDeployment $deployment,
         AgentSkill $skill,
         ExecuteSkillAction $action
     ): JsonResponse {
         $this->authorize('view', $deployment);
-
-        $request->validate([
-            'trigger' => ['required', 'string', 'in:on_demand,pre_task,post_task,scheduled,delegated'],
-            'input' => ['nullable', 'array'],
-            'task_id' => ['nullable', 'integer', 'exists:agent_tasks,id'],
-            'justification' => ['nullable', 'string', 'max:1000'],
-        ]);
 
         $orgId = session('current_organization_id');
 

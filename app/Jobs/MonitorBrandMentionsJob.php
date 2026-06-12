@@ -52,4 +52,13 @@ class MonitorBrandMentionsJob implements ShouldQueue
             throw $e;
         }
     }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::critical('MonitorBrandMentionsJob: all retries exhausted — brand monitoring skipped', [
+            'organization_id' => $this->organizationId,
+            'social_account_id' => $this->socialAccountId,
+            'error' => $exception->getMessage(),
+        ]);
+    }
 }

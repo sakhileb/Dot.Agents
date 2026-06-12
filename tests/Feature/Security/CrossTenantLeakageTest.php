@@ -3,10 +3,13 @@
 namespace Tests\Feature\Security;
 
 use App\Models\AgentDeployment;
+use App\Models\AgentReview;
 use App\Models\AuditLog;
 use App\Models\DecisionLog;
 use App\Models\Organization;
+use App\Models\OrganizationSocialCredential;
 use App\Models\SecurityEvent;
+use App\Models\SocialConnectionSettings;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -129,5 +132,48 @@ class CrossTenantLeakageTest extends TestCase
         // The owner of A is not in B's list (unless explicitly added)
         $this->assertFalse($orgBMemberIds->contains($this->userA->id));
         $this->assertFalse($orgAMemberIds->contains($this->userB->id));
+    }
+
+    public function test_social_credentials_cannot_leak_across_organizations(): void
+    {
+        $this->actingAs($this->userA);
+        session(['current_organization_id' => $this->orgA->id]);
+
+        OrganizationSocialCredential::factory()->create(['organization_id' => $this->orgA->id, 'platform' => 'facebook']);
+        OrganizationSocialCredential::factory()->create(['organization_id' => $this->orgB->id, 'platform' => 'instagram']);
+
+        $orgARecords = OrganizationSocialCredential::all();
+
+        $this->assertTrue($orgARecords->every(fn ($r) => $r->organization_id === $this->orgA->id));
+        $this->assertFalse($orgARecords->pluck('platform')->contains('instagram'));
+    }
+
+    public function test_social_connection_settings_cannot_leak_across_organizations(): void
+    {
+        $this->actingAs($this->userA);
+        session(['current_organization_id' => $this->orgA->id]);
+
+        SocialConnectionSettings::factory()->create(['organization_id' => $this->orgA->id, 'platform' => 'facebook']);
+        SocialConnectionSettings::factory()->create(['organization_id' => $this->orgB->id, 'platform' => 'twitter']);
+
+        $orgASettings = SocialConnectionSettings::all();
+
+        $this->assertTrue($orgASettings->every(fn ($s) => $s->organization_id === $this->orgA->id));
+        $this->assertFalse($orgASettings->pluck('platform')->contains('twitter'));
+    }
+
+    public function test_agent_reviews_cannot_leak_across_organizations(): void
+    {
+        $this->actingAs($this->userA);
+        session(['current_organization_id' => $this->orgA->id]);
+
+        $reviewA = AgentReview::factory()->create(['organization_id' => $this->orgA->id]);
+        AgentReview::factory()->create(['organization_id' => $this->orgB->id]);
+
+        $orgAReviews = AgentReview::all();
+
+        $this->assertTrue($orgAReviews->every(fn ($r) => $r->organization_id === $this->orgA->id));
+        $this->assertCount(1, $orgAReviews);
+        $this->assertEquals($reviewA->id, $orgAReviews->first()->id);
     }
 }

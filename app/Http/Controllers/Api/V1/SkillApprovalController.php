@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Skills\ProcessSkillApprovalAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReviewSkillApprovalRequest;
 use App\Models\AgentSkillApproval;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,15 +35,11 @@ class SkillApprovalController extends Controller
     }
 
     public function approve(
-        Request $request,
+        ReviewSkillApprovalRequest $request,
         AgentSkillApproval $approval,
         ProcessSkillApprovalAction $action
     ): JsonResponse {
         $this->authorize('review', $approval);
-
-        $request->validate([
-            'reviewer_notes' => ['nullable', 'string', 'max:1000'],
-        ]);
 
         $approval = $action->execute(
             approval: $approval,
@@ -55,15 +52,11 @@ class SkillApprovalController extends Controller
     }
 
     public function reject(
-        Request $request,
+        ReviewSkillApprovalRequest $request,
         AgentSkillApproval $approval,
         ProcessSkillApprovalAction $action
     ): JsonResponse {
         $this->authorize('review', $approval);
-
-        $request->validate([
-            'reviewer_notes' => ['required', 'string', 'max:1000'],
-        ]);
 
         $approval = $action->execute(
             approval: $approval,

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\DTOs\Agents\UpdateDeploymentData;
 use App\Events\AgentUpdated;
 use App\Models\AgentDeployment;
 use App\Services\Governance\AuditService;
@@ -13,7 +14,7 @@ class UpdateDeploymentAction
         private readonly AuditService $auditService
     ) {}
 
-    public function execute(AgentDeployment $deployment, array $data): AgentDeployment
+    public function execute(AgentDeployment $deployment, UpdateDeploymentData $data): AgentDeployment
     {
         Gate::authorize('update', $deployment);
 
@@ -27,7 +28,7 @@ class UpdateDeploymentAction
         ];
 
         $old = $deployment->only($allowed);
-        $updates = array_intersect_key($data, array_flip($allowed));
+        $updates = array_intersect_key($data->toArray(), array_flip($allowed));
 
         $deployment->update($updates);
 

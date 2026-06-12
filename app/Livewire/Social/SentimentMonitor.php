@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Social;
 
+use App\Actions\Social\MarkEscalationHandledAction;
+use App\DTOs\Social\MarkEscalationHandledData;
 use App\Models\SocialSentimentScore;
 use App\Services\Social\ReputationMonitoringService;
 use Carbon\Carbon;
@@ -72,9 +74,7 @@ class SentimentMonitor extends Component
 
     public function markHandled(int $scoreId): void
     {
-        SocialSentimentScore::where('organization_id', $this->orgId)
-            ->where('id', $scoreId)
-            ->update(['escalation_handled' => true]);
+        app(MarkEscalationHandledAction::class)->execute(MarkEscalationHandledData::from($this->orgId, $scoreId));
 
         $this->dispatch('escalation-handled');
     }

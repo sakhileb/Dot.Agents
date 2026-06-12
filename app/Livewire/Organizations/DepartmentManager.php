@@ -4,6 +4,7 @@ namespace App\Livewire\Organizations;
 
 use App\Actions\Organizations\DeleteDepartmentAction;
 use App\Actions\Organizations\SaveDepartmentAction;
+use App\DTOs\Organizations\DeleteDepartmentData;
 use App\Models\Department;
 use App\Models\Organization;
 use Livewire\Attributes\Computed;
@@ -93,7 +94,7 @@ class DepartmentManager extends Component
 
     public function deleteDepartment(): void
     {
-        app(DeleteDepartmentAction::class)->execute($this->organization, $this->deletingId);
+        app(DeleteDepartmentAction::class)->execute($this->organization, DeleteDepartmentData::fromId($this->deletingId));
         $this->deletingId = null;
         unset($this->departments);
         session()->flash('dept_success', 'Department deleted.');

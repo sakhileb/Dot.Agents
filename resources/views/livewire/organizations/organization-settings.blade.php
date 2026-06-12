@@ -5,12 +5,26 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your organization profile and preferences.</p>
     </div>
 
+    {{-- Tab nav --}}
+    <div class="flex gap-1 border-b border-gray-200 dark:border-gray-700">
+        <button wire:click="$set('tab','general')"
+                class="px-4 py-2 text-sm font-medium border-b-2 transition {{ $tab === 'general' ? 'border-purple-600 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200' }}">
+            General
+        </button>
+        <button wire:click="$set('tab','social')"
+                class="px-4 py-2 text-sm font-medium border-b-2 transition {{ $tab === 'social' ? 'border-purple-600 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200' }}">
+            Social Platform Credentials
+        </button>
+    </div>
+
     @if($saved)
     <div class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-sm">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
         Settings saved successfully.
     </div>
     @endif
+
+    @if($tab === 'general')
 
     <form wire:submit="save" class="space-y-6">
         {{-- Identity --}}
@@ -88,5 +102,10 @@
             </button>
         </div>
     </form>
+
+    @elseif($tab === 'social')
+        @livewire('organizations.social-credentials')
+    @endif
+
 </div>
 

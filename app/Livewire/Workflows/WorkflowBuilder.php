@@ -3,12 +3,14 @@
 namespace App\Livewire\Workflows;
 
 use App\Actions\Workflows\SaveWorkflowAction;
+use App\Actions\Workflows\UpdateWorkflowStatusAction;
+use App\DTOs\Workflows\SaveWorkflowData;
+use App\Livewire\Concerns\ManagesWorkflowCanvas;
 use App\Models\Agent;
 use App\Models\AgentWorkflow;
 use App\Services\AI\GraphWorkflowEngineService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -23,6 +25,8 @@ use Livewire\Component;
  */
 class WorkflowBuilder extends Component
 {
+    use ManagesWorkflowCanvas;
+
     public AgentWorkflow $workflow;
 
     /** Raw node array — synced from Alpine via save() */
@@ -48,32 +52,6 @@ class WorkflowBuilder extends Component
         $this->loadGraph();
     }
 
-    private function loadGraph(): void
-    {
-        $this->nodes = $this->workflow->nodes()
-            ->get(['uuid', 'agent_key', 'label', 'position_x', 'position_y', 'config'])
-            ->map(fn ($n) => [
-                'id' => $n->uuid,
-                'agent_key' => $n->agent_key,
-                'label' => $n->label ?? $n->agent_key,
-                'x' => $n->position_x,
-                'y' => $n->position_y,
-                'config' => $n->config ?? [],
-            ])
-            ->toArray();
-
-        $this->connections = $this->workflow->connections()
-            ->get(['uuid', 'from_node_uuid', 'to_node_uuid', 'condition', 'label'])
-            ->map(fn ($c) => [
-                'id' => $c->uuid,
-                'from' => $c->from_node_uuid,
-                'to' => $c->to_node_uuid,
-                'condition' => $c->condition,
-                'label' => $c->label,
-            ])
-            ->toArray();
-    }
-
     // ──────────────────────────────────────────────
     // Computed
     // ──────────────────────────────────────────────
@@ -90,108 +68,6 @@ class WorkflowBuilder extends Component
     }
 
     // ──────────────────────────────────────────────
-    // Canvas actions (called from Alpine via wire:call)
-    // ──────────────────────────────────────────────
-
-    /**
-     * Add a new node at the given canvas position.
-     */
-    public function addNode(string $agentKey, int $x = 200, int $y = 200): void
-    {
-        $this->nodes[] = [
-            'id' => (string) Str::uuid(),
-            'agent_key' => $agentKey,
-            'label' => $agentKey,
-            'x' => $x,
-            'y' => $y,
-            'config' => [],
-        ];
-
-        $this->syncCanvas();
-    }
-
-    /**
-     * Connect two nodes with an optional condition.
-     */
-    public function connectNodes(string $fromId, string $toId, ?array $condition = null): void
-    {
-        // Prevent self-loops
-        if ($fromId === $toId) {
-            return;
-        }
-
-        // Prevent duplicate connections
-        foreach ($this->connections as $existing) {
-            if ($existing['from'] === $fromId && $existing['to'] === $toId) {
-                return;
-            }
-        }
-
-        $this->connections[] = [
-            'id' => (string) Str::uuid(),
-            'from' => $fromId,
-            'to' => $toId,
-            'condition' => $condition,
-            'label' => null,
-        ];
-
-        $this->syncCanvas();
-    }
-
-    /**
-     * Update a node's canvas position (called after drag-end).
-     * Alpine already has the correct position from live drag — no sync needed.
-     */
-    public function moveNode(string $nodeId, int $x, int $y): void
-    {
-        foreach ($this->nodes as &$node) {
-            if ($node['id'] === $nodeId) {
-                $node['x'] = $x;
-                $node['y'] = $y;
-                break;
-            }
-        }
-    }
-
-    /**
-     * Remove a node and all its associated connections.
-     */
-    public function removeNode(string $nodeId): void
-    {
-        $this->nodes = array_values(
-            array_filter($this->nodes, fn ($n) => $n['id'] !== $nodeId)
-        );
-
-        $this->connections = array_values(
-            array_filter($this->connections, fn ($c) => $c['from'] !== $nodeId && $c['to'] !== $nodeId)
-        );
-
-        $this->syncCanvas();
-    }
-
-    /**
-     * Remove a single connection edge.
-     */
-    public function removeConnection(string $connectionId): void
-    {
-        $this->connections = array_values(
-            array_filter($this->connections, fn ($c) => $c['id'] !== $connectionId)
-        );
-
-        $this->syncCanvas();
-    }
-
-    /**
-     * Dispatch a browser event carrying the current canvas state so Alpine
-     * can update its local nodes/connections arrays synchronously.
-     * Called after every canvas-mutating server method.
-     */
-    private function syncCanvas(): void
-    {
-        $this->dispatch('canvas-synced', nodes: $this->nodes, connections: $this->connections);
-    }
-
-    // ──────────────────────────────────────────────
     // Persistence
     // ──────────────────────────────────────────────
 
@@ -200,7 +76,10 @@ class WorkflowBuilder extends Component
      */
     public function save(): void
     {
-        app(SaveWorkflowAction::class)->execute($this->workflow, $this->nodes, $this->connections);
+        app(SaveWorkflowAction::class)->execute(
+            $this->workflow,
+            new SaveWorkflowData($this->workflow->id, auth()->id(), $this->nodes, $this->connections)
+        );
 
         $this->flashMessage = 'Workflow saved as draft.';
         $this->flashType = 'success';
@@ -216,12 +95,16 @@ class WorkflowBuilder extends Component
         if (empty($this->nodes)) {
             $this->flashMessage = 'Add at least one agent node before publishing.';
             $this->flashType = 'warning';
+
             return;
         }
 
-        app(SaveWorkflowAction::class)->execute($this->workflow, $this->nodes, $this->connections);
+        app(SaveWorkflowAction::class)->execute(
+            $this->workflow,
+            new SaveWorkflowData($this->workflow->id, auth()->id(), $this->nodes, $this->connections)
+        );
 
-        $this->workflow->update(['status' => 'active']);
+        app(UpdateWorkflowStatusAction::class)->publish($this->workflow);
         $this->workflow->refresh();
 
         $this->flashMessage = 'Workflow published and is now active.';
@@ -233,7 +116,7 @@ class WorkflowBuilder extends Component
      */
     public function unpublish(): void
     {
-        $this->workflow->update(['status' => 'draft']);
+        app(UpdateWorkflowStatusAction::class)->unpublish($this->workflow);
         $this->workflow->refresh();
 
         $this->flashMessage = 'Workflow reverted to draft.';
@@ -268,6 +151,7 @@ class WorkflowBuilder extends Component
         if (empty($this->nodes)) {
             $this->flashMessage = 'Add at least one agent node to the canvas before running.';
             $this->flashType = 'warning';
+
             return;
         }
 
@@ -284,7 +168,7 @@ class WorkflowBuilder extends Component
 
             $this->dispatch('execution-started', executionId: $execution->id);
         } catch (\Throwable $e) {
-            $this->flashMessage = 'Workflow execution failed: ' . $e->getMessage();
+            $this->flashMessage = 'Workflow execution failed: '.$e->getMessage();
             $this->flashType = 'error';
         }
     }

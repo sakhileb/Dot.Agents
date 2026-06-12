@@ -159,6 +159,7 @@ class AuditService
         $criticalEvents = [
             'prompt_injection_detected', 'data_breach_attempt',
             'unauthorized_access', 'agent_quarantined',
+            'security.kill_switch', 'security.kill_switch.deployment',
         ];
 
         if (in_array($event, $criticalEvents)) {

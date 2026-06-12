@@ -2,6 +2,7 @@
 
 namespace App\Actions\Workflows;
 
+use App\DTOs\Workflows\SaveWorkflowData;
 use App\Models\AgentWorkflow;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -17,9 +18,12 @@ class SaveWorkflowAction
      * @param  array  $nodes  Raw node array from Alpine canvas
      * @param  array  $connections  Raw connection array from Alpine canvas
      */
-    public function execute(AgentWorkflow $workflow, array $nodes, array $connections): AgentWorkflow
+    public function execute(AgentWorkflow $workflow, SaveWorkflowData $data): AgentWorkflow
     {
         Gate::authorize('update', $workflow);
+
+        $nodes = $data->nodes;
+        $connections = $data->connections;
 
         // Validate inputs
         foreach ($nodes as $node) {

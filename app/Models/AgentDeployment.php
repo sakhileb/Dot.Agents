@@ -25,6 +25,7 @@ class AgentDeployment extends Model
         'risk_tolerance', 'allowed_actions', 'restricted_actions',
         'data_access_scope', 'custom_kpis', 'notification_config',
         'integration_config', 'metadata', 'deployed_at', 'last_active_at',
+        'decommissioned_at', 'paused_at',
     ];
 
     protected $casts = [

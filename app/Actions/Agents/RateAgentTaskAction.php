@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\Events\AgentTaskRated;
 use App\Models\AgentTask;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -43,6 +44,8 @@ class RateAgentTaskAction
             'user_feedback' => $feedback,
             'rated_at' => now(),
         ]);
+
+        event(new AgentTaskRated($task->fresh(), $rating, $feedback));
 
         return $task->fresh();
     }

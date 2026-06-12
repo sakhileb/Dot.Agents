@@ -6,6 +6,8 @@ use App\Models\AgentMemory;
 use App\Services\AI\VectorMemoryService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Asynchronously generates and stores the vector embedding for a memory.
@@ -26,5 +28,14 @@ class EmbedAgentMemoryJob implements ShouldQueue
     public function handle(VectorMemoryService $vectorService): void
     {
         $vectorService->embedAndStoreMemory($this->memory);
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::critical('EmbedAgentMemoryJob: all retries exhausted — memory embedding lost', [
+            'memory_id' => $this->memory->id,
+            'organization_id' => $this->memory->organization_id,
+            'error' => $exception->getMessage(),
+        ]);
     }
 }

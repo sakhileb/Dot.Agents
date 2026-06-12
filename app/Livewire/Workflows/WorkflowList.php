@@ -4,6 +4,7 @@ namespace App\Livewire\Workflows;
 
 use App\Actions\Workflows\CreateWorkflowAction;
 use App\Actions\Workflows\DeleteWorkflowAction;
+use App\DTOs\Workflows\CreateWorkflowData;
 use App\Models\AgentWorkflow;
 use App\Models\Organization;
 use Livewire\Attributes\Computed;
@@ -47,11 +48,11 @@ class WorkflowList extends Component
 
         $organization = Organization::findOrFail(session('current_organization_id'));
 
-        $workflow = app(CreateWorkflowAction::class)->execute($organization, [
-            'name' => $this->newName,
-            'description' => $this->newDescription ?: null,
-            'trigger_type' => $this->newTrigger,
-        ]);
+        $workflow = app(CreateWorkflowAction::class)->execute($organization, new CreateWorkflowData(
+            name: $this->newName,
+            triggerType: $this->newTrigger,
+            description: $this->newDescription ?: null,
+        ));
 
         $this->showCreateModal = false;
         $this->redirect(route('workflows.builder', $workflow), navigate: true);

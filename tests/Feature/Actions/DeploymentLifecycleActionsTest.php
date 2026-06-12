@@ -5,9 +5,11 @@ namespace Tests\Feature\Actions;
 use App\Actions\Agents\DecommissionDeploymentAction;
 use App\Actions\Agents\PauseDeploymentAction;
 use App\Actions\Agents\ResumeDeploymentAction;
+use App\Events\AgentResumed;
 use App\Models\AgentDeployment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
@@ -61,11 +63,11 @@ class DeploymentLifecycleActionsTest extends TestCase
     {
         $this->deployment->update(['status' => 'paused']);
 
+        Event::fake([AgentResumed::class]);
+
         app(ResumeDeploymentAction::class)->execute($this->deployment);
 
-        $this->assertDatabaseHas('audit_logs', [
-            'event' => 'deployment.resumed',
-        ]);
+        Event::assertDispatched(AgentResumed::class);
     }
 
     public function test_decommission_action_sets_status_to_decommissioned(): void

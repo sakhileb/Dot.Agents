@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Actions\Governance\CreateDecisionLogAction;
 use App\Actions\Governance\ProcessApprovalAction;
+use App\DTOs\Governance\ProcessApprovalData;
 use App\Events\ApprovalProcessed;
 use App\Models\AgentApproval;
 use App\Models\AgentDeployment;
@@ -145,7 +146,7 @@ class AgentTaskGovernanceFlowTest extends TestCase
 
         Event::fake([ApprovalProcessed::class]);
 
-        app(ProcessApprovalAction::class)->execute($approval, 'approved', 'Looks good to proceed');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'approved', 'Looks good to proceed'));
 
         $approval->refresh();
         $this->assertSame('approved', $approval->status);
@@ -183,7 +184,7 @@ class AgentTaskGovernanceFlowTest extends TestCase
 
         Event::fake([ApprovalProcessed::class]);
 
-        app(ProcessApprovalAction::class)->execute($approval, 'rejected', 'Data sources not verified');
+        app(ProcessApprovalAction::class)->execute($approval, new ProcessApprovalData($approval->id, 'rejected', 'Data sources not verified'));
 
         $task->refresh();
         $this->assertSame('failed', $task->status);

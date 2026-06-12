@@ -33,6 +33,8 @@ class OrganizationSettings extends Component
 
     public bool $saved = false;
 
+    public string $tab = 'general';
+
     public function mount(): void
     {
         $org = $this->currentOrganization;

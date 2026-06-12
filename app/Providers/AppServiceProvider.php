@@ -8,111 +8,136 @@ use App\Models\AgentCategory;
 use App\Models\AgentDepartment;
 use App\Models\AgentDeployment;
 use App\Models\AgentMemory;
+use App\Models\AgentMessage;
+use App\Models\AgentPersona;
+use App\Models\AgentPlugin;
 use App\Models\AgentPluginInstallation;
+use App\Models\AgentReview;
 use App\Models\AgentScorecard;
 use App\Models\AgentSession;
 use App\Models\AgentSkill;
 use App\Models\AgentSkillApproval;
+use App\Models\AgentSkillAssignment;
+use App\Models\AgentSkillAudit;
+use App\Models\AgentSkillExecution;
+use App\Models\AgentSkillPermission;
+use App\Models\AgentSkillRequirement;
+use App\Models\AgentSkillScore;
 use App\Models\AgentTask;
+use App\Models\AgentToolPermission;
 use App\Models\AgentWorkflow;
 use App\Models\AuditLog;
 use App\Models\DecisionLog;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\EnterpriseDecision;
+use App\Models\EnterpriseHealthScore;
+use App\Models\ExecutiveCouncilSession;
+use App\Models\ExecutiveRecommendation;
 use App\Models\Invoice;
 use App\Models\KnowledgeArticle;
 use App\Models\KnowledgeBase;
+use App\Models\Membership;
+use App\Models\MemoryEmbedding;
 use App\Models\Organization;
+use App\Models\OrganizationDNA;
+use App\Models\OrganizationSocialCredential;
+use App\Models\OrganizationSubscription;
+use App\Models\OrganizationTwin;
+use App\Models\PlatformMegaScorecard;
 use App\Models\PlatformNotification;
 use App\Models\SecurityEvent;
 use App\Models\SocialAccount;
+use App\Models\SocialCampaign;
+use App\Models\SocialConnectionSettings;
 use App\Models\SocialConversation;
 use App\Models\SocialConversion;
+use App\Models\SocialEngagement;
 use App\Models\SocialLead;
+use App\Models\SocialMessage;
+use App\Models\SocialPage;
 use App\Models\SocialPost;
+use App\Models\SocialReview;
+use App\Models\SocialSentimentScore;
+use App\Models\SubscriptionPlan;
 use App\Models\Team;
+use App\Models\TeamInvitation;
 use App\Models\UsageRecord;
 use App\Models\User;
+use App\Models\WorkflowConnection;
 use App\Models\WorkflowExecution;
+use App\Models\WorkflowNode;
 use App\Policies\AgentApprovalPolicy;
+use App\Policies\AgentCategoryPolicy;
+use App\Policies\AgentDepartmentPolicy;
 use App\Policies\AgentDeploymentPolicy;
 use App\Policies\AgentMemoryPolicy;
+use App\Policies\AgentMessagePolicy;
+use App\Policies\AgentPersonaPolicy;
 use App\Policies\AgentPluginInstallationPolicy;
+use App\Policies\AgentPluginPolicy;
 use App\Policies\AgentPolicy;
+use App\Policies\AgentReviewPolicy;
 use App\Policies\AgentScorecardPolicy;
 use App\Policies\AgentSessionPolicy;
 use App\Policies\AgentSkillApprovalPolicy;
+use App\Policies\AgentSkillAssignmentPolicy;
+use App\Policies\AgentSkillAuditPolicy;
+use App\Policies\AgentSkillExecutionPolicy;
+use App\Policies\AgentSkillPermissionPolicy;
 use App\Policies\AgentSkillPolicy;
+use App\Policies\AgentSkillRequirementPolicy;
+use App\Policies\AgentSkillScorePolicy;
 use App\Policies\AgentTaskPolicy;
+use App\Policies\AgentToolPermissionPolicy;
 use App\Policies\AgentWorkflowPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\DecisionLogPolicy;
 use App\Policies\DepartmentPolicy;
 use App\Policies\DivisionPolicy;
+use App\Policies\EnterpriseDecisionPolicy;
+use App\Policies\EnterpriseHealthScorePolicy;
+use App\Policies\ExecutiveCouncilSessionPolicy;
+use App\Policies\ExecutiveRecommendationPolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\KnowledgeArticlePolicy;
 use App\Policies\KnowledgeBasePolicy;
+use App\Policies\MembershipPolicy;
+use App\Policies\MemoryEmbeddingPolicy;
+use App\Policies\OrganizationDNAPolicy;
 use App\Policies\OrganizationPolicy;
+use App\Policies\OrganizationSocialCredentialPolicy;
+use App\Policies\OrganizationSubscriptionPolicy;
+use App\Policies\OrganizationTwinPolicy;
+use App\Policies\PlatformMegaScorecardPolicy;
 use App\Policies\PlatformNotificationPolicy;
 use App\Policies\SecurityEventPolicy;
 use App\Policies\SocialAccountPolicy;
+use App\Policies\SocialCampaignPolicy;
+use App\Policies\SocialConnectionSettingsPolicy;
 use App\Policies\SocialConversationPolicy;
 use App\Policies\SocialConversionPolicy;
+use App\Policies\SocialEngagementPolicy;
 use App\Policies\SocialLeadPolicy;
+use App\Policies\SocialMessagePolicy;
+use App\Policies\SocialPagePolicy;
 use App\Policies\SocialPostPolicy;
+use App\Policies\SocialReviewPolicy;
+use App\Policies\SocialSentimentScorePolicy;
+use App\Policies\SubscriptionPlanPolicy;
+use App\Policies\TeamInvitationPolicy;
 use App\Policies\TeamPolicy;
 use App\Policies\UsageRecordPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\WorkflowConnectionPolicy;
 use App\Policies\WorkflowExecutionPolicy;
-use App\Services\AI\AgentCertificationService;
-use App\Services\AI\AgentModelCaller;
-use App\Services\AI\AgentOrchestrationService;
-use App\Services\AI\AgentPluginService;
-use App\Services\AI\AgentQuotaGuard;
-use App\Services\AI\AgentSandboxService;
-use App\Services\AI\EnterpriseBrainService;
-use App\Services\AI\ExecutiveCouncilService;
-use App\Services\AI\GraphWorkflowEngineService;
-use App\Services\AI\MemoryService;
-use App\Services\AI\ModelRouterService;
-use App\Services\AI\OutputModerationService;
-use App\Services\AI\PromptBuilderService;
-use App\Services\AI\ResponseProcessorService;
-use App\Services\AI\SkillExecutionPipeline;
-use App\Services\AI\SkillRegistryService;
-use App\Services\AI\ToolPermissionService;
-use App\Services\AI\VectorMemoryService;
-use App\Services\AI\WorkflowRiskScoringService;
-use App\Services\AI\Workflow\WorkflowGraphResolver;
-use App\Services\Governance\AgentReliabilityAuditorService;
-use App\Services\Governance\AgentReputationService;
-use App\Services\Governance\AuditService;
-use App\Services\Governance\CustomerSuccessService;
-use App\Services\Governance\DataTrustScoreService;
-use App\Services\Governance\DelusionDetectionService;
-use App\Services\Governance\DigitalImmuneSystem;
-use App\Services\Governance\DWCAAuditService;
-use App\Services\Governance\EnterpriseConstitutionService;
-use App\Services\Governance\FinancialIntelligenceService;
-use App\Services\Governance\MegaV2ScorecardService;
-use App\Services\Governance\OrganizationalMemoryService;
-use App\Services\Governance\PredictionAccuracyTrackingService;
-use App\Services\Governance\Scorecard\ScorecardCertifier;
-use App\Services\Governance\Scorecard\ScorecardDomainScorer;
-use App\Services\Governance\Scorecard\ScorecardGateEvaluator;
-use App\Services\Governance\ScorecardService;
-use App\Services\Infrastructure\ObservabilityService;
-use App\Services\Resilience\CircuitBreakerService;
-use App\Services\Social\ConversationContinuationService;
-use App\Services\Social\LeadQualificationService;
-use App\Services\Social\ReputationMonitoringService;
-use App\Services\Social\SentimentAnalysisService;
-use App\Services\Social\SocialCommerceService;
-use App\Services\Social\SocialPublishingService;
-use App\Skills\Governance\AuditLoggingSkill;
+use App\Policies\WorkflowNodePolicy;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -120,148 +145,14 @@ class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
+     * Service bindings are handled by domain-scoped providers:
+     *  - AgentServiceProvider    → AI / Agent runtime services
+     *  - GovernanceServiceProvider → Governance, scoring, audit services
+     *  - SocialServiceProvider   → Social Commerce & Resilience services
      */
     public function register(): void
     {
-        $this->app->singleton(ModelRouterService::class);
-        $this->app->singleton(MemoryService::class);
-        $this->app->singleton(AuditService::class);
-        $this->app->singleton(DelusionDetectionService::class);
-        $this->app->singleton(ScorecardService::class);
-        $this->app->singleton(CircuitBreakerService::class);
-        $this->app->singleton(ToolPermissionService::class);
-        $this->app->singleton(OutputModerationService::class);
-        $this->app->singleton(ObservabilityService::class);
-        $this->app->singleton(DataTrustScoreService::class);
-        $this->app->singleton(PredictionAccuracyTrackingService::class);
-        $this->app->singleton(OrganizationalMemoryService::class);
-
-        $this->app->singleton(FinancialIntelligenceService::class);
-        $this->app->singleton(CustomerSuccessService::class);
-
-        $this->app->singleton(AgentReputationService::class);
-
-        $this->app->singleton(AgentReliabilityAuditorService::class, function ($app) {
-            return new AgentReliabilityAuditorService(
-                $app->make(AgentReputationService::class),
-            );
-        });
-
-        $this->app->singleton(AgentSandboxService::class, function ($app) {
-            return new AgentSandboxService(
-                $app->make(ToolPermissionService::class)
-            );
-        });
-
-        $this->app->singleton(AgentOrchestrationService::class, function ($app) {
-            return new AgentOrchestrationService(
-                $app->make(ModelRouterService::class),
-                $app->make(DelusionDetectionService::class),
-                $app->make(AuditService::class),
-                $app->make(MemoryService::class),
-                $app->make(AgentSandboxService::class),
-                $app->make(OutputModerationService::class),
-                $app->make(PromptBuilderService::class),
-                $app->make(ResponseProcessorService::class),
-                $app->make(AgentModelCaller::class),
-                $app->make(AgentQuotaGuard::class),
-            );
-        });
-
-        $this->app->singleton(DigitalImmuneSystem::class, function ($app) {
-            return new DigitalImmuneSystem($app->make(AuditService::class));
-        });
-
-        // Graph Workflow Engine (v2 — DAG-based)
-        $this->app->singleton(GraphWorkflowEngineService::class, function ($app) {
-            return new GraphWorkflowEngineService(
-                $app->make(AgentOrchestrationService::class),
-                $app->make(AuditService::class),
-                $app->make(WorkflowRiskScoringService::class),
-                $app->make(WorkflowGraphResolver::class),
-            );
-        });
-
-        // Agent Plugin Service (marketplace runtime)
-        $this->app->singleton(AgentPluginService::class);
-
-        // MEGA V2 Scorecard — depends on all intelligence services
-        $this->app->singleton(MegaV2ScorecardService::class, function ($app) {
-            return new MegaV2ScorecardService(
-                $app->make(DataTrustScoreService::class),
-                $app->make(AgentReliabilityAuditorService::class),
-                $app->make(PredictionAccuracyTrackingService::class),
-                $app->make(OrganizationalMemoryService::class),
-                $app->make(ObservabilityService::class),
-                $app->make(DigitalImmuneSystem::class),
-                $app->make(FinancialIntelligenceService::class),
-                $app->make(CustomerSuccessService::class),
-                $app->make(ScorecardDomainScorer::class),
-                $app->make(ScorecardGateEvaluator::class),
-                $app->make(ScorecardCertifier::class),
-            );
-        });
-
-        // ── Social Commerce & Customer Success (SCCS) ─────────────────────────
-        $this->app->singleton(SentimentAnalysisService::class);
-        $this->app->singleton(LeadQualificationService::class);
-        $this->app->singleton(SocialPublishingService::class);
-        $this->app->singleton(SocialCommerceService::class);
-        $this->app->singleton(ReputationMonitoringService::class, function ($app) {
-            return new ReputationMonitoringService(
-                $app->make(SentimentAnalysisService::class),
-            );
-        });
-        $this->app->singleton(ConversationContinuationService::class, function ($app) {
-            return new ConversationContinuationService(
-                $app->make(AuditService::class),
-                $app->make(DelusionDetectionService::class),
-            );
-        });
-
-        // ── DWCA — Digital Workforce Certification Audit ─────────────────────
-        $this->app->singleton(DWCAAuditService::class, function ($app) {
-            return new DWCAAuditService(
-                $app->make(AgentCertificationService::class),
-                $app->make(AuditService::class),
-                $app->make(DelusionDetectionService::class),
-                $app->make(DigitalImmuneSystem::class),
-            );
-        });
-
-        // ── AEC v2.0 — Enterprise Consciousness Layer ─────────────────────────
-        $this->app->singleton(VectorMemoryService::class, function ($app) {
-            return new VectorMemoryService(
-                $app->make(MemoryService::class),
-            );
-        });
-
-        $this->app->singleton(EnterpriseConstitutionService::class);
-
-        $this->app->singleton(ExecutiveCouncilService::class);
-
-        $this->app->singleton(EnterpriseBrainService::class, function ($app) {
-            return new EnterpriseBrainService(
-                $app->make(EnterpriseConstitutionService::class),
-                $app->make(AuditService::class),
-                $app->make(ScorecardService::class),
-            );
-        });
-
-        // ── Skill system ─────────────────────────────────────────────────────
-
-        // Skill Registry — singleton so built-in skill map is only built once
-        $this->app->singleton(SkillRegistryService::class);
-
-        // AuditLoggingSkill needs AuditService — explicit binding so DI resolves correctly
-        $this->app->bind(AuditLoggingSkill::class, function ($app) {
-            return new AuditLoggingSkill($app->make(AuditService::class));
-        });
-
-        // Skill Execution Pipeline — wraps task execution with skill hooks
-        $this->app->singleton(SkillExecutionPipeline::class, function ($app) {
-            return new SkillExecutionPipeline($app->make(SkillRegistryService::class));
-        });
+        // Intentionally empty — see domain providers above.
     }
 
     /**
@@ -298,10 +189,49 @@ class AppServiceProvider extends ServiceProvider
 
         // SCCS — Social Commerce & Customer Success policies
         Gate::policy(SocialAccount::class, SocialAccountPolicy::class);
+        Gate::policy(SocialCampaign::class, SocialCampaignPolicy::class);
+        Gate::policy(SocialConnectionSettings::class, SocialConnectionSettingsPolicy::class);
         Gate::policy(SocialConversation::class, SocialConversationPolicy::class);
+        Gate::policy(SocialEngagement::class, SocialEngagementPolicy::class);
         Gate::policy(SocialLead::class, SocialLeadPolicy::class);
+        Gate::policy(SocialMessage::class, SocialMessagePolicy::class);
+        Gate::policy(SocialPage::class, SocialPagePolicy::class);
         Gate::policy(SocialPost::class, SocialPostPolicy::class);
+        Gate::policy(SocialReview::class, SocialReviewPolicy::class);
+        Gate::policy(SocialSentimentScore::class, SocialSentimentScorePolicy::class);
         Gate::policy(SocialConversion::class, SocialConversionPolicy::class);
+
+        // Platform catalogue — super-admin managed
+        Gate::policy(AgentCategory::class, AgentCategoryPolicy::class);
+        Gate::policy(AgentDepartment::class, AgentDepartmentPolicy::class);
+        Gate::policy(AgentPersona::class, AgentPersonaPolicy::class);
+        Gate::policy(AgentPlugin::class, AgentPluginPolicy::class);
+        Gate::policy(AgentSkillPermission::class, AgentSkillPermissionPolicy::class);
+        Gate::policy(AgentSkillRequirement::class, AgentSkillRequirementPolicy::class);
+        Gate::policy(AgentToolPermission::class, AgentToolPermissionPolicy::class);
+        Gate::policy(SubscriptionPlan::class, SubscriptionPlanPolicy::class);
+
+        // Org-scoped AI domain models
+        Gate::policy(AgentMessage::class, AgentMessagePolicy::class);
+        Gate::policy(AgentReview::class, AgentReviewPolicy::class);
+        Gate::policy(AgentSkillAssignment::class, AgentSkillAssignmentPolicy::class);
+        Gate::policy(AgentSkillAudit::class, AgentSkillAuditPolicy::class);
+        Gate::policy(AgentSkillExecution::class, AgentSkillExecutionPolicy::class);
+        Gate::policy(AgentSkillScore::class, AgentSkillScorePolicy::class);
+        Gate::policy(EnterpriseDecision::class, EnterpriseDecisionPolicy::class);
+        Gate::policy(EnterpriseHealthScore::class, EnterpriseHealthScorePolicy::class);
+        Gate::policy(ExecutiveCouncilSession::class, ExecutiveCouncilSessionPolicy::class);
+        Gate::policy(ExecutiveRecommendation::class, ExecutiveRecommendationPolicy::class);
+        Gate::policy(Membership::class, MembershipPolicy::class);
+        Gate::policy(MemoryEmbedding::class, MemoryEmbeddingPolicy::class);
+        Gate::policy(OrganizationDNA::class, OrganizationDNAPolicy::class);
+        Gate::policy(OrganizationSocialCredential::class, OrganizationSocialCredentialPolicy::class);
+        Gate::policy(OrganizationSubscription::class, OrganizationSubscriptionPolicy::class);
+        Gate::policy(OrganizationTwin::class, OrganizationTwinPolicy::class);
+        Gate::policy(PlatformMegaScorecard::class, PlatformMegaScorecardPolicy::class);
+        Gate::policy(TeamInvitation::class, TeamInvitationPolicy::class);
+        Gate::policy(WorkflowConnection::class, WorkflowConnectionPolicy::class);
+        Gate::policy(WorkflowNode::class, WorkflowNodePolicy::class);
 
         // Enforce strong password policy platform-wide (min 12 chars, mixed case, numbers, symbols)
         // In testing, use a relaxed rule so test factories and Jetstream tests still pass.
@@ -327,5 +257,29 @@ class AppServiceProvider extends ServiceProvider
         AgentDepartment::deleted(fn () => Cache::forget('marketplace_departments'));
         AgentCategory::saved(fn () => Cache::forget('marketplace_categories'));
         AgentCategory::deleted(fn () => Cache::forget('marketplace_categories'));
+
+        // ── Named rate limiters ──────────────────────────────────────────────
+        // AI execution: 10 calls/minute per authenticated user
+        RateLimiter::for('ai-execution', function (Request $request) {
+            return Limit::perMinute(10)
+                ->by(optional($request->user())->id ?: $request->ip());
+        });
+
+        // Strict write operations: 30 creates/minute per authenticated user
+        RateLimiter::for('api-writes', function (Request $request) {
+            return Limit::perMinute(30)
+                ->by(optional($request->user())->id ?: $request->ip());
+        });
+
+        // General API: 200 requests/minute per authenticated user (org-level burst protection)
+        RateLimiter::for('api', function (Request $request) {
+            return [
+                Limit::perMinute(200)
+                    ->by(optional($request->user())->id ?: $request->ip()),
+                // Org-level burst cap — prevents one org drowning shared resources
+                Limit::perMinute(500)
+                    ->by('org:'.session('current_organization_id', 'anon')),
+            ];
+        });
     }
 }

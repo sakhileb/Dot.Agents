@@ -4,12 +4,15 @@ namespace App\Actions\Organizations;
 
 use App\Models\KnowledgeArticle;
 use App\Models\Organization;
+use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class SaveKnowledgeArticleAction
 {
+    public function __construct(private readonly AuditService $auditService) {}
+
     public function execute(Organization $organization, array $data, ?int $existingId = null): KnowledgeArticle
     {
         Gate::authorize('update', $organization);
@@ -28,15 +31,19 @@ class SaveKnowledgeArticleAction
 
         if ($existingId) {
             $article = KnowledgeArticle::findOrFail($existingId);
-
-            // Verify the article belongs to this organization
             abort_if($article->organization_id !== $organization->id, 403);
-
             $article->update($payload);
-
-            return $article->fresh();
+            $article = $article->fresh();
+        } else {
+            $article = KnowledgeArticle::create($payload);
         }
 
-        return KnowledgeArticle::create($payload);
+        $this->auditService->logUserAction(
+            event: $existingId ? 'knowledge_article.updated' : 'knowledge_article.created',
+            description: ($existingId ? 'Updated' : 'Created')." knowledge article '{$article->title}'",
+            subject: $article,
+        );
+
+        return $article;
     }
 }

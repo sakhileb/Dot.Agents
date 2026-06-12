@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\SocialAccountController;
 use App\Models\AgentDeployment;
 use App\Models\AgentWorkflow;
 use App\Models\User;
@@ -92,9 +93,6 @@ Route::middleware([
         })->name('builder');
     });
 
-    // Legacy workflows route kept for backward compat
-    Route::get('/workflows', fn () => view('workflows.index'))->name('workflows');
-
     // Governance
     Route::prefix('governance')->name('governance.')->group(function () {
         Route::get('/approvals', fn () => view('governance.approvals'))->name('approvals');
@@ -123,8 +121,8 @@ Route::middleware([
         Route::get('/settings', fn () => view('billing.settings'))->name('settings.billing');
     });
 
-    // Settings (catch-all for Jetstream profile routes)
-    Route::get('/settings/billing', fn () => view('billing.settings'))->name('settings.billing');
+    // Settings — canonical billing settings URL for Jetstream profile sidebar
+    Route::get('/settings/billing', fn () => view('billing.settings'))->name('settings.billing.alt');
 
     // ── Social Commerce & Customer Success (SCCS) ─────────────────────────────
     Route::prefix('social')->name('social.')->group(function () {
@@ -133,6 +131,13 @@ Route::middleware([
         Route::get('/leads', fn () => view('social.leads'))->name('leads');
         Route::get('/posts', fn () => view('social.posts'))->name('posts');
         Route::get('/sentiment', fn () => view('social.sentiment'))->name('sentiment');
+        Route::get('/accounts', fn () => view('social.accounts'))->name('accounts');
+        Route::get('/connect', fn () => view('social.connect'))->name('connect');
+        Route::delete('/accounts/{socialAccount}', [SocialAccountController::class, 'destroy'])->name('accounts.destroy');
+
+        // OAuth redirect + callback (platform = facebook|instagram|linkedin|twitter|tiktok)
+        Route::get('/auth/{platform}/redirect', [SocialAccountController::class, 'redirect'])->name('auth.redirect');
+        Route::get('/auth/{platform}/callback', [SocialAccountController::class, 'callback'])->name('auth.callback');
     });
 });
 

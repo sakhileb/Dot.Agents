@@ -6,16 +6,19 @@ use App\Models\Invoice;
 use App\Models\OrganizationSubscription;
 use App\Models\SubscriptionPlan;
 use App\Models\UsageRecord;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class BillingDashboard extends Component
 {
-    public function getOrganizationIdProperty(): ?int
+    #[Computed]
+    public function organizationId(): ?int
     {
         return session('current_organization_id');
     }
 
-    public function getSubscriptionProperty(): ?OrganizationSubscription
+    #[Computed]
+    public function subscription(): ?OrganizationSubscription
     {
         return OrganizationSubscription::with('plan')
             ->where('organization_id', $this->organizationId)
@@ -23,12 +26,14 @@ class BillingDashboard extends Component
             ->first();
     }
 
-    public function getPlansProperty()
+    #[Computed]
+    public function plans()
     {
         return SubscriptionPlan::where('is_active', true)->orderBy('price_monthly')->get();
     }
 
-    public function getCurrentMonthUsageProperty(): array
+    #[Computed]
+    public function currentMonthUsage(): array
     {
         $records = UsageRecord::where('organization_id', $this->organizationId)
             ->whereMonth('recorded_date', now()->month)
@@ -43,7 +48,8 @@ class BillingDashboard extends Component
         ];
     }
 
-    public function getInvoicesProperty()
+    #[Computed]
+    public function invoices()
     {
         return Invoice::where('organization_id', $this->organizationId)
             ->orderByDesc('created_at')

@@ -65,12 +65,13 @@ class AuditLog extends Model
     }
 
     /**
-     * Define the prunable query — keep 90 days of audit logs by default.
+     * Define the prunable query — keep 2 years of audit logs by default.
      * Override AUDIT_LOG_RETENTION_DAYS env var to adjust per deployment.
+     * Default: 730 days (2 years) to satisfy typical compliance requirements.
      */
     public function prunable(): Builder
     {
-        $days = (int) config('audit.retention_days', 90);
+        $days = (int) config('audit.retention_days', 730);
 
         return static::withoutGlobalScope('organization')
             ->where('created_at', '<', now()->subDays($days));

@@ -120,6 +120,19 @@ return [
                 'tries' => 3,
                 'timeout' => 60,
             ],
+
+            // Dead-letter queue — monitors failed_jobs table, alerts on accumulation
+            // Jobs land here after exhausting all retries on their primary queue.
+            'dlq-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['failed'],
+                'balance' => 'simple',
+                'maxProcesses' => 1,
+                'minProcesses' => 1,
+                'memory' => 64,
+                'tries' => 1,
+                'timeout' => 30,
+            ],
         ],
 
         'staging' => [

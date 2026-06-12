@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\Security\ResolveSecurityEventAction;
+use App\DTOs\Security\ResolveSecurityEventData;
 use App\Models\Organization;
 use App\Models\SecurityEvent;
 use App\Models\User;
@@ -41,8 +42,7 @@ class ResolveSecurityEventActionTest extends TestCase
         Gate::before(fn () => true);
 
         $resolved = app(ResolveSecurityEventAction::class)->execute(
-            $this->event->id,
-            'Pattern was a false positive; firewall rule updated.'
+            new ResolveSecurityEventData($this->event->id, $this->user->id, 'Pattern was a false positive; firewall rule updated.')
         );
 
         $this->assertEquals('resolved', $resolved->status);
@@ -58,7 +58,7 @@ class ResolveSecurityEventActionTest extends TestCase
         Gate::before(fn () => true);
 
         $notes = 'IP range blocked at perimeter firewall.';
-        $resolved = app(ResolveSecurityEventAction::class)->execute($this->event->id, $notes);
+        $resolved = app(ResolveSecurityEventAction::class)->execute(new ResolveSecurityEventData($this->event->id, $this->user->id, $notes));
 
         $this->assertEquals($notes, $resolved->remediation_notes);
     }
@@ -68,7 +68,7 @@ class ResolveSecurityEventActionTest extends TestCase
         $this->actingAs($this->user);
         Gate::before(fn () => true);
 
-        app(ResolveSecurityEventAction::class)->execute($this->event->id, 'Resolved.');
+        app(ResolveSecurityEventAction::class)->execute(new ResolveSecurityEventData($this->event->id, $this->user->id, 'Resolved.'));
 
         $this->assertDatabaseHas('audit_logs', [
             'event' => 'security_event.resolved',
@@ -81,6 +81,6 @@ class ResolveSecurityEventActionTest extends TestCase
         Gate::before(fn () => true);
 
         $this->expectException(ModelNotFoundException::class);
-        app(ResolveSecurityEventAction::class)->execute(999999);
+        app(ResolveSecurityEventAction::class)->execute(new ResolveSecurityEventData(999999, $this->user->id));
     }
 }

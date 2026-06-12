@@ -2,6 +2,7 @@
 
 namespace App\Actions\Agents;
 
+use App\Events\AgentResumed;
 use App\Models\AgentDeployment;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -16,11 +17,7 @@ class ResumeDeploymentAction
 
         $deployment->update(['status' => 'active']);
 
-        $this->auditService->logUserAction(
-            event: 'deployment.resumed',
-            description: "Deployment {$deployment->display_name} resumed",
-            subject: $deployment,
-        );
+        event(new AgentResumed($deployment));
 
         return $deployment->refresh();
     }

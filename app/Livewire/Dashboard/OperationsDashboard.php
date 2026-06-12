@@ -4,8 +4,10 @@ namespace App\Livewire\Dashboard;
 
 use App\Services\Infrastructure\PlatformMetricsService;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
+#[Lazy]
 /**
  * Platform Operations Center
  *

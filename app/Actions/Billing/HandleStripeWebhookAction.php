@@ -68,14 +68,14 @@ class HandleStripeWebhookAction
             OrganizationSubscription::updateOrCreate(
                 ['organization_id' => $organization->id],
                 [
-                    'subscription_plan_id' => $plan->id,
+                    'plan_id' => $plan->id,
                     'status' => 'active',
                     'billing_cycle' => $plan->billing_cycle ?? 'monthly',
                     'amount' => $plan->price,
                     'currency' => 'usd',
                     'current_period_start' => now()->setTimestamp($stripeSubscription->current_period_start),
                     'current_period_end' => now()->setTimestamp($stripeSubscription->current_period_end),
-                    'external_subscription_id' => $stripeSubscription->id,
+                    'stripe_subscription_id' => $stripeSubscription->id,
                     'metadata' => ['stripe_session_id' => $session->id],
                 ]
             );
@@ -101,7 +101,7 @@ class HandleStripeWebhookAction
         }
 
         $subscription = OrganizationSubscription::where('organization_id', $organizationId)
-            ->where('external_subscription_id', $stripeInvoice->subscription)
+            ->where('stripe_subscription_id', $stripeInvoice->subscription)
             ->first();
 
         $invoice = Invoice::create([
@@ -114,7 +114,7 @@ class HandleStripeWebhookAction
             'total' => $stripeInvoice->total / 100,
             'currency' => $stripeInvoice->currency,
             'paid_at' => now()->setTimestamp($stripeInvoice->status_transitions->paid_at ?? now()->timestamp),
-            'external_invoice_id' => $stripeInvoice->id,
+            'stripe_invoice_id' => $stripeInvoice->id,
             'pdf_url' => $stripeInvoice->invoice_pdf,
         ]);
 
@@ -150,7 +150,7 @@ class HandleStripeWebhookAction
             return;
         }
 
-        OrganizationSubscription::where('external_subscription_id', $stripeSubscription->id)
+        OrganizationSubscription::where('stripe_subscription_id', $stripeSubscription->id)
             ->update([
                 'status' => $stripeSubscription->status,
                 'current_period_start' => now()->setTimestamp($stripeSubscription->current_period_start),
@@ -166,7 +166,7 @@ class HandleStripeWebhookAction
             return;
         }
 
-        OrganizationSubscription::where('external_subscription_id', $stripeSubscription->id)
+        OrganizationSubscription::where('stripe_subscription_id', $stripeSubscription->id)
             ->update([
                 'status' => 'cancelled',
                 'cancelled_at' => now(),

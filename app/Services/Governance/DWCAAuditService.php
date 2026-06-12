@@ -4,19 +4,25 @@ namespace App\Services\Governance;
 
 use App\Models\Agent;
 use App\Models\AgentDeployment;
-use App\Models\AgentTask;
-use App\Models\AuditLog;
-use App\Models\DecisionLog;
-use App\Models\SecurityEvent;
 use App\Services\AI\AgentCertificationService;
+use App\Services\Governance\Audit\Phase01AgentDiscovery;
+use App\Services\Governance\Audit\Phase02SkillAudit;
+use App\Services\Governance\Audit\Phase04AgentQuality;
+use App\Services\Governance\Audit\Phase06Governance;
+use App\Services\Governance\Audit\Phase07DelusionRisk;
+use App\Services\Governance\Audit\Phase08Memory;
+use App\Services\Governance\Audit\Phase12Performance;
+use App\Services\Governance\Audit\Phase13Scorecard;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Digital Workforce Certification Audit (DWCA v1.0)
+ * Digital Workforce Certification Audit — Orchestrator (DWCA v1.0)
  *
- * Performs a 15-phase enterprise certification audit of every agent,
- * skill, workflow, governance control, and collaboration path.
+ * This service owns the audit lifecycle: scheduling phases, aggregating
+ * results, computing composite scores, and emitting the final report.
+ * Business logic for each phase lives in the dedicated Phase* strategy
+ * classes under App\Services\Governance\Audit\.
  *
  * Certification Levels:
  *   1 = Experimental
@@ -25,29 +31,13 @@ use Illuminate\Support\Facades\Log;
  *   4 = Enterprise Ready
  *   5 = Enterprise Certified
  *   6 = World Class Digital Workforce
- *
- * Agent Maturity Matrix (0–10):
- *   0 = Registered only
- *   1 = Skills defined
- *   2 = Skills executable
- *   3 = Governed
- *   4 = Multi-agent capable
- *   5 = Autonomous
- *   6 = Enterprise Certified (minimum for marketplace)
- *   7 = Self-Optimizing
- *   8 = Digital Department
- *   9 = Digital Executive
- *   10 = Autonomous Business Unit
  */
 class DWCAAuditService
 {
-    /** Minimum maturity level required for marketplace deployment. */
     public const MIN_MARKETPLACE_MATURITY = 6;
 
-    /** Minimum composite score to achieve Enterprise Ready (Level 4). */
     public const ENTERPRISE_READY_THRESHOLD = 80;
 
-    /** Minimum composite score to achieve Enterprise Certified (Level 5). */
     public const ENTERPRISE_CERTIFIED_THRESHOLD = 90;
 
     public function __construct(
@@ -55,15 +45,24 @@ class DWCAAuditService
         private readonly AuditService $auditService,
         private readonly DelusionDetectionService $delusionDetector,
         private readonly DigitalImmuneSystem $dis,
+        // ── Phase strategies ────────────────────────────────────────────────
+        private readonly Phase01AgentDiscovery $phase01,
+        private readonly Phase02SkillAudit $phase02,
+        private readonly Phase04AgentQuality $phase04,
+        private readonly Phase06Governance $phase06,
+        private readonly Phase07DelusionRisk $phase07,
+        private readonly Phase08Memory $phase08,
+        private readonly Phase12Performance $phase12,
+        private readonly Phase13Scorecard $phase13,
     ) {}
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     /**
      * Run the full 15-phase DWCA for all agents in an organization.
      */
     public function auditOrganization(int $organizationId): array
     {
-        $cacheKey = "dwca_audit_{$organizationId}";
-
         Log::info('[DWCA] Starting Digital Workforce Certification Audit', [
             'organization_id' => $organizationId,
         ]);
@@ -72,14 +71,9 @@ class DWCAAuditService
             ->with(['agent.skills', 'latestScorecard', 'tasks'])
             ->get();
 
-        $agentResults = [];
-        foreach ($deployments as $deployment) {
-            $agentResults[] = $this->auditDeployment($deployment);
-        }
-
+        $agentResults = $deployments->map(fn ($d) => $this->auditDeployment($d))->all();
         $report = $this->compileReport($organizationId, $agentResults);
 
-        // Persist DWCA certification levels back to agents
         foreach ($agentResults as $result) {
             if (isset($result['agent_id'])) {
                 Agent::where('id', $result['agent_id'])->update([
@@ -101,43 +95,27 @@ class DWCAAuditService
             ],
         );
 
-        Cache::put($cacheKey, $report, now()->addHours(1));
+        Cache::put("dwca_audit_{$organizationId}", $report, now()->addHours(1));
 
         return $report;
     }
 
     /**
-     * Audit a single agent deployment across all DWCA dimensions.
+     * Audit a single deployment across all DWCA phase strategies.
      */
     public function auditDeployment(AgentDeployment $deployment): array
     {
         $agent = $deployment->agent;
 
-        // ── Phase 1: Agent Discovery ──────────────────────────────────────
-        $phase1 = $this->phaseAgentDiscovery($deployment, $agent);
+        $phase1 = $this->phase01->execute($deployment);
+        $phase2 = $this->phase02->execute($deployment);
+        $phase4 = $this->phase04->execute($deployment);
+        $phase6 = $this->phase06->execute($deployment);
+        $phase7 = $this->phase07->execute($deployment);
+        $phase8 = $this->phase08->execute($deployment);
+        $phase12 = $this->phase12->execute($deployment);
+        $phase13 = $this->phase13->execute($deployment);
 
-        // ── Phase 2: Skill Audit ──────────────────────────────────────────
-        $phase2 = $this->phaseSkillAudit($deployment);
-
-        // ── Phase 4: Agent Quality ────────────────────────────────────────
-        $phase4 = $this->phaseAgentQuality($deployment);
-
-        // ── Phase 6: Governance ───────────────────────────────────────────
-        $phase6 = $this->phaseGovernance($deployment);
-
-        // ── Phase 7: Delusion ─────────────────────────────────────────────
-        $phase7 = $this->phaseDelusionRisk($deployment);
-
-        // ── Phase 8: Memory ───────────────────────────────────────────────
-        $phase8 = $this->phaseMemory($deployment);
-
-        // ── Phase 12: Performance ─────────────────────────────────────────
-        $phase12 = $this->phasePerformance($deployment);
-
-        // ── Phase 13: Scorecard ───────────────────────────────────────────
-        $phase13 = $this->phaseScorecard($deployment);
-
-        // ── Composite score ───────────────────────────────────────────────
         $compositeScore = $this->computeCompositeScore([
             $phase1['score'], $phase2['score'], $phase4['score'],
             $phase6['score'], $phase7['score'], $phase8['score'],
@@ -174,324 +152,15 @@ class DWCAAuditService
         ];
     }
 
-    // ── Phase implementations ─────────────────────────────────────────────────
-
-    private function phaseAgentDiscovery(AgentDeployment $deployment, ?Agent $agent): array
-    {
-        $checks = [
-            'has_department' => ! empty($agent?->department_id),
-            'has_skills' => ! empty($agent?->skills),
-            'has_capabilities' => ! empty($agent?->capabilities),
-            'has_governance_config' => ! empty($agent?->risk_controls),
-            'has_scorecard_config' => ! empty($agent?->kpis),
-            'has_version' => ! empty($agent?->version),
-            'has_description' => ! empty($agent?->description),
-            'has_deployment_mode' => ! empty($agent?->default_deployment_mode),
-        ];
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Agent Discovery',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
-    private function phaseSkillAudit(AgentDeployment $deployment): array
-    {
-        $assignedSkills = $deployment->skillAssignments()->with('skill')->get();
-        $checks = [
-            'has_assigned_skills' => $assignedSkills->isNotEmpty(),
-            'skills_have_action_class' => true, // validated by seeder structure
-            'skills_have_permissions' => $assignedSkills->every(
-                fn ($a) => ! empty($a->skill?->required_permissions)
-            ),
-            'skills_have_audit_required' => $assignedSkills->every(
-                fn ($a) => (bool) $a->skill?->audit_required
-            ),
-            'skills_have_confidence_score' => $assignedSkills->every(
-                fn ($a) => $a->skill?->confidence_score > 0
-            ),
-        ];
-
-        if ($assignedSkills->isEmpty()) {
-            $checks = array_fill_keys(array_keys($checks), false);
-            $checks['has_assigned_skills'] = false;
-        }
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Skill Audit',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'skill_count' => $assignedSkills->count(),
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
-    private function phaseAgentQuality(AgentDeployment $deployment): array
-    {
-        $recentTasks = AgentTask::where('agent_deployment_id', $deployment->id)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->get();
-
-        $recentDecisions = DecisionLog::where('agent_deployment_id', $deployment->id)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->get();
-
-        $totalTasks = $recentTasks->count();
-        $completedTasks = $recentTasks->where('status', 'completed')->count();
-        $taskCompletionRate = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 100;
-
-        $avgConfidence = $recentTasks->avg('confidence_score') ?? 75;
-        $avgDelusion = $recentDecisions->avg('delusion_risk_score') ?? 0;
-        $inputHashCoverage = $recentDecisions->count() > 0
-            ? ($recentDecisions->whereNotNull('input_hash')->count() / $recentDecisions->count()) * 100
-            : 0;
-
-        $hallucinationRate = $totalTasks > 0
-            ? ($recentTasks->where('delusion_risk_score', '>=', 60)->count() / $totalTasks) * 100
-            : 0;
-
-        $checks = [
-            'task_completion_rate_above_80' => $taskCompletionRate >= 80,
-            'avg_confidence_above_70' => $avgConfidence >= 70,
-            'hallucination_rate_below_5_percent' => $hallucinationRate <= 5,
-            'delusion_risk_below_40' => $avgDelusion <= 40,
-            'decision_logs_have_input_hash' => $inputHashCoverage >= 80 || $recentDecisions->isEmpty(),
-        ];
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Agent Quality',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'metrics' => [
-                'task_completion_rate' => round($taskCompletionRate, 1),
-                'avg_confidence_score' => round($avgConfidence, 1),
-                'hallucination_rate_percent' => round($hallucinationRate, 2),
-                'avg_delusion_risk' => round($avgDelusion, 1),
-                'input_hash_coverage_percent' => round($inputHashCoverage, 1),
-            ],
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
-    private function phaseGovernance(AgentDeployment $deployment): array
-    {
-        $recentAuditLogs = AuditLog::where('agent_deployment_id', $deployment->id)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->count();
-
-        $recentTasks = AgentTask::where('agent_deployment_id', $deployment->id)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->where('status', 'completed')
-            ->count();
-
-        $tasksWithAuditLogs = $recentTasks > 0 && $recentAuditLogs >= $recentTasks;
-
-        $securityEvents = SecurityEvent::where('agent_deployment_id', $deployment->id)
-            ->where('status', 'open')
-            ->where('severity', 'critical')
-            ->count();
-
-        $checks = [
-            'audit_logs_present' => $recentAuditLogs > 0 || $recentTasks === 0,
-            'no_open_critical_security_events' => $securityEvents === 0,
-            'deployment_has_confidence_threshold' => $deployment->confidence_threshold > 0,
-            'deployment_has_mode_configured' => ! empty($deployment->deployment_mode),
-            'approval_workflow_configured' => $deployment->confidence_threshold <= 90,
-        ];
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Governance',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
-    private function phaseDelusionRisk(AgentDeployment $deployment): array
-    {
-        $recentDecisions = DecisionLog::where('agent_deployment_id', $deployment->id)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->get();
-
-        if ($recentDecisions->isEmpty()) {
-            return [
-                'phase' => 'Delusion Risk',
-                'score' => 100,
-                'passed' => true,
-                'hallucination_rate' => 0.0,
-                'checks' => ['insufficient_data' => 'No decisions in last 30 days'],
-                'failures' => [],
-            ];
-        }
-
-        $highRiskCount = $recentDecisions->where('delusion_risk_score', '>=', 60)->count();
-        $totalCount = $recentDecisions->count();
-        $hallucinationRate = ($highRiskCount / $totalCount) * 100;
-
-        $avgDelusionRisk = $recentDecisions->avg('delusion_risk_score');
-        $avgRealityAlignment = $recentDecisions->avg('reality_alignment_score');
-
-        $checks = [
-            'hallucination_rate_below_5_percent' => $hallucinationRate <= 5,
-            'avg_delusion_risk_below_40' => $avgDelusionRisk <= 40,
-            'avg_reality_alignment_above_70' => $avgRealityAlignment >= 70,
-        ];
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Delusion Risk',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'hallucination_rate' => round($hallucinationRate, 2),
-            'avg_delusion_risk' => round($avgDelusionRisk, 1),
-            'avg_reality_alignment' => round($avgRealityAlignment ?? 100, 1),
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
-    private function phaseMemory(AgentDeployment $deployment): array
-    {
-        $memoryCount = $deployment->memories()->count();
-        $expiredCount = $deployment->memories()->where('expires_at', '<', now())->count();
-        $expiredRatio = $memoryCount > 0 ? $expiredCount / $memoryCount : 0;
-
-        $checks = [
-            'memory_enabled_when_needed' => $deployment->enable_memory || $memoryCount === 0,
-            'no_excessive_expired_memories' => $expiredRatio <= 0.2, // max 20% expired
-            'memory_scoped_to_deployment' => true, // enforced by AgentSandboxService
-        ];
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Memory',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'memory_count' => $memoryCount,
-            'expired_count' => $expiredCount,
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
-    private function phasePerformance(AgentDeployment $deployment): array
-    {
-        $recentTasks = AgentTask::where('agent_deployment_id', $deployment->id)
-            ->where('status', 'completed')
-            ->where('created_at', '>=', now()->subDays(7))
-            ->get();
-
-        $avgLatency = $recentTasks->avg('actual_duration_minutes');
-        $avgCost = $recentTasks->avg('cost') ?? 0;
-        $tokenBudgetViolations = $recentTasks->where('token_count', '>', 32000)->count();
-
-        $checks = [
-            'avg_latency_under_5min' => ($avgLatency ?? 0) <= 5,
-            'no_token_budget_violations' => $tokenBudgetViolations === 0,
-            'cost_per_task_reasonable' => $avgCost <= 1.0, // under $1 per task
-        ];
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Performance',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'metrics' => [
-                'avg_latency_minutes' => round($avgLatency ?? 0, 2),
-                'avg_cost_per_task_usd' => round($avgCost, 4),
-                'token_budget_violations' => $tokenBudgetViolations,
-            ],
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
-    private function phaseScorecard(AgentDeployment $deployment): array
-    {
-        $latestScorecard = $deployment->latestScorecard;
-
-        if (! $latestScorecard) {
-            return [
-                'phase' => 'Scorecard',
-                'score' => 0,
-                'passed' => false,
-                'checks' => ['scorecard_exists' => false],
-                'failures' => ['scorecard_exists'],
-                'recommendation' => 'Generate a scorecard by running GenerateAgentScorecard job.',
-            ];
-        }
-
-        $checks = [
-            'scorecard_exists' => true,
-            'overall_health_above_70' => $latestScorecard->overall_health_score >= 70,
-            'accuracy_above_70' => $latestScorecard->accuracy_score >= 70,
-            'compliance_above_70' => $latestScorecard->compliance_score >= 70,
-            'reliability_above_70' => $latestScorecard->reliability_score >= 70,
-        ];
-
-        $passed = array_sum(array_map(fn ($v) => (int) $v, $checks));
-        $score = (int) round(($passed / count($checks)) * 100);
-
-        return [
-            'phase' => 'Scorecard',
-            'score' => $score,
-            'passed' => $score >= 80,
-            'scorecard_scores' => [
-                'overall_health' => $latestScorecard->overall_health_score,
-                'accuracy' => $latestScorecard->accuracy_score,
-                'compliance' => $latestScorecard->compliance_score,
-                'reliability' => $latestScorecard->reliability_score,
-                'trustworthiness' => $latestScorecard->trustworthiness_score,
-            ],
-            'checks' => $checks,
-            'failures' => array_keys(array_filter($checks, fn ($v) => ! $v)),
-        ];
-    }
-
     // ── Report compilation ────────────────────────────────────────────────────
 
     private function compileReport(int $organizationId, array $agentResults): array
     {
         $compositeScores = collect($agentResults)->pluck('composite_score');
         $overallScore = $compositeScores->isNotEmpty() ? (int) $compositeScores->avg() : 0;
-
         $certificationLevel = $this->resolveCertificationLevel($overallScore);
 
-        $dimensionScores = $this->computeDimensionScores($agentResults);
-
-        // Rankings
         $sorted = collect($agentResults)->sortByDesc('composite_score');
-        $topAgents = $sorted->take(5)->values()->toArray();
-        $weakestAgents = $sorted->reverse()->take(5)->values()->toArray();
-
-        // Agents blocked from marketplace
-        $blocked = collect($agentResults)
-            ->filter(fn ($r) => ! $r['marketplace_eligible'])
-            ->values()->toArray();
 
         return [
             'audit_version' => 'DWCA v1.0',
@@ -501,11 +170,11 @@ class DWCAAuditService
             'composite_score' => $overallScore,
             'enterprise_certification_level' => $certificationLevel,
             'certification_label' => $this->certificationLabel($certificationLevel),
-            'dimension_scores' => $dimensionScores,
+            'dimension_scores' => $this->computeDimensionScores($agentResults),
             'agent_results' => $agentResults,
-            'top_agents' => $topAgents,
-            'weakest_agents' => $weakestAgents,
-            'marketplace_blocked' => $blocked,
+            'top_agents' => $sorted->take(5)->values()->all(),
+            'weakest_agents' => $sorted->reverse()->take(5)->values()->all(),
+            'marketplace_blocked' => collect($agentResults)->filter(fn ($r) => ! $r['marketplace_eligible'])->values()->all(),
             'certified_count' => collect($agentResults)->where('certification_level', '>=', 4)->count(),
             'experimental_count' => collect($agentResults)->where('certification_level', 1)->count(),
             'remediation_roadmap' => $this->buildRemediationRoadmap($agentResults),
@@ -514,10 +183,6 @@ class DWCAAuditService
 
     private function computeDimensionScores(array $agentResults): array
     {
-        $dimensions = [
-            'discovery', 'skills', 'quality', 'governance',
-            'delusion', 'memory', 'performance', 'scorecard',
-        ];
         $phaseKeys = [
             'discovery' => 'phase1_discovery',
             'skills' => 'phase2_skill_audit',
@@ -529,22 +194,15 @@ class DWCAAuditService
             'scorecard' => 'phase13_scorecard',
         ];
 
-        $scores = [];
-        foreach ($dimensions as $dim) {
-            $key = $phaseKeys[$dim];
-            $scores[$dim] = (int) collect($agentResults)
-                ->pluck("phases.{$key}.score")
-                ->filter()
-                ->avg() ?? 0;
-        }
-
-        return $scores;
+        return array_map(
+            fn ($key) => (int) (collect($agentResults)->pluck("phases.{$key}.score")->filter()->avg() ?? 0),
+            $phaseKeys,
+        );
     }
 
     private function buildRemediationRoadmap(array $agentResults): array
     {
         $roadmap = [];
-
         foreach ($agentResults as $result) {
             foreach ($result['failures'] ?? [] as $failure) {
                 $roadmap[] = [
@@ -566,7 +224,7 @@ class DWCAAuditService
     private function computeCompositeScore(array $phaseScores): int
     {
         $weights = [0.15, 0.20, 0.20, 0.20, 0.10, 0.05, 0.05, 0.05];
-        $weighted = 0;
+        $weighted = 0.0;
         foreach ($phaseScores as $i => $score) {
             $weighted += $score * ($weights[$i] ?? 0.05);
         }
@@ -577,12 +235,12 @@ class DWCAAuditService
     private function resolveCertificationLevel(int $score): int
     {
         return match (true) {
-            $score >= 95 => 6, // World Class
-            $score >= 90 => 5, // Enterprise Certified
-            $score >= 80 => 4, // Enterprise Ready
-            $score >= 65 => 3, // Production Ready
-            $score >= 50 => 2, // Internal Use
-            default => 1, // Experimental
+            $score >= 95 => 6,
+            $score >= 90 => 5,
+            $score >= 80 => 4,
+            $score >= 65 => 3,
+            $score >= 50 => 2,
+            default => 1,
         };
     }
 
@@ -598,12 +256,8 @@ class DWCAAuditService
         };
     }
 
-    private function resolveMaturityLevel(
-        AgentDeployment $deployment,
-        array $phase2,
-        array $phase6,
-        array $phase4
-    ): int {
+    private function resolveMaturityLevel(AgentDeployment $deployment, array $phase2, array $phase6, array $phase4): int
+    {
         if ($phase4['score'] >= 90 && $phase6['score'] >= 90 && $phase2['score'] >= 90) {
             return in_array($deployment->deployment_mode, ['autonomous', 'executive_approval']) ? 7 : 6;
         }
@@ -669,8 +323,7 @@ class DWCAAuditService
             str_contains($failure, 'has_assigned_skills') => 'Assign at least one skill via AssignSkillToDeploymentAction.',
             str_contains($failure, 'scorecard') => 'Run GenerateAgentScorecard::dispatch($deployment) to create initial scorecard.',
             str_contains($failure, 'confidence_threshold') => 'Set a confidence_threshold > 0 on the AgentDeployment record.',
-            str_contains($failure, 'input_hash') => 'Upgrade platform to capture input_hash (SHA-256) in DecisionLog. Migration 2026_06_11_100000 adds this column.',
-            str_contains($failure, 'hallucination_rate') => 'Review high-delusion decision logs and tune confidence thresholds. Target < 5% hallucination rate.',
+            str_contains($failure, 'input_hash') => 'Upgrade platform to capture input_hash (SHA-256) in DecisionLog.',
             default => "Review and remediate: {$failure}",
         };
     }

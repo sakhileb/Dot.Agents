@@ -21,7 +21,7 @@ class OrganizationFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
-            'domain' => fake()->domainName(),
+            'domain' => fake()->unique()->domainName(),
             'logo' => null,
             'industry' => fake()->randomElement([
                 'Technology', 'Finance', 'Healthcare', 'Retail',

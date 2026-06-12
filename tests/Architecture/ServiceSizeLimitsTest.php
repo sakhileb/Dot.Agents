@@ -219,6 +219,86 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
+    // ── Structural Guards ─────────────────────────────────────────────────────
+
+    /** @test */
+    public function action_classes_do_not_extend_eloquent_model(): void
+    {
+        $violations = [];
+
+        $files = File::allFiles(app_path('Actions'));
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getRealPath());
+
+            if (preg_match('/class\s+\w+\s+extends\s+Model\b/', $content)) {
+                $violations[] = $this->relativePath($file->getRealPath());
+            }
+        }
+
+        $this->assertEmpty(
+            $violations,
+            "Action classes must not extend Eloquent Model:\n".implode("\n", $violations)
+        );
+    }
+
+    /** @test */
+    public function service_classes_do_not_use_request_helper(): void
+    {
+        $violations = [];
+
+        $files = File::allFiles(app_path('Services'));
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getRealPath());
+
+            // Detect request() helper calls (Services should be stateless — HTTP context injected via DTOs)
+            if (preg_match('/\brequest\s*\(/', $content)) {
+                $violations[] = $this->relativePath($file->getRealPath());
+            }
+        }
+
+        $this->assertEmpty(
+            $violations,
+            "Service classes must not use the request() helper — pass data via DTOs or method arguments:\n"
+            .implode("\n", $violations)
+        );
+    }
+
+    /** @test */
+    public function livewire_components_do_not_use_raw_sql(): void
+    {
+        $violations = [];
+
+        $files = File::allFiles(app_path('Livewire'));
+
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getRealPath());
+
+            if (preg_match('/DB::select\s*\(\s*[\'"]SELECT/i', $content)) {
+                $violations[] = $this->relativePath($file->getRealPath());
+            }
+        }
+
+        $this->assertEmpty(
+            $violations,
+            "Livewire components must not execute raw SQL — use Eloquent or Action classes:\n"
+            .implode("\n", $violations)
+        );
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function relativePath(string $absolutePath): string

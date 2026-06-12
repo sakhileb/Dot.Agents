@@ -9,8 +9,10 @@ use App\Models\SecurityEvent;
 use App\Models\UsageRecord;
 use Carbon\Carbon;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
+#[Lazy]
 class AgentDashboard extends Component
 {
     public string $timeframe = '7d';

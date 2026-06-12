@@ -6,6 +6,10 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Social commerce, lead pipeline, reputation, and revenue operations</p>
         </div>
         <div class="flex items-center gap-2">
+            <a href="{{ route('social.accounts') }}"
+               class="px-3 py-1.5 text-xs font-medium rounded-lg border border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition">
+                + Connect Account
+            </a>
             @foreach(['7d' => '7 Days', '30d' => '30 Days', '90d' => '90 Days'] as $key => $label)
                 <button wire:click="setTimeframe('{{ $key }}')"
                     class="px-3 py-1.5 text-xs font-medium rounded-lg transition {{ $timeframe === $key ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700' }}">

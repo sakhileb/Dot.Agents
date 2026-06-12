@@ -2,6 +2,7 @@
 
 namespace App\Actions\Security;
 
+use App\DTOs\Security\ResolveSecurityEventData;
 use App\Models\SecurityEvent;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -10,16 +11,16 @@ class ResolveSecurityEventAction
 {
     public function __construct(private readonly AuditService $auditService) {}
 
-    public function execute(int $eventId, ?string $notes = null): SecurityEvent
+    public function execute(ResolveSecurityEventData $data): SecurityEvent
     {
         $event = SecurityEvent::withoutGlobalScope('organization')
-            ->findOrFail($eventId);
+            ->findOrFail($data->eventId);
 
         Gate::authorize('update', $event);
 
         $event->update([
             'status' => 'resolved',
-            'remediation_notes' => $notes,
+            'remediation_notes' => $data->remediationNotes,
         ]);
 
         $this->auditService->logUserAction(

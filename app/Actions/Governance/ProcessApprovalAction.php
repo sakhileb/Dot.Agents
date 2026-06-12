@@ -2,6 +2,7 @@
 
 namespace App\Actions\Governance;
 
+use App\DTOs\Governance\ProcessApprovalData;
 use App\Events\ApprovalProcessed;
 use App\Models\AgentApproval;
 use App\Models\DecisionLog;
@@ -16,7 +17,7 @@ class ProcessApprovalAction
         private readonly PredictionAccuracyTrackingService $predictionAccuracy,
     ) {}
 
-    public function execute(AgentApproval $approval, string $decision, ?string $notes = null): AgentApproval
+    public function execute(AgentApproval $approval, ProcessApprovalData $data): AgentApproval
     {
         Gate::authorize('review', $approval);
 
@@ -29,14 +30,14 @@ class ProcessApprovalAction
         }
 
         $approval->update([
-            'status' => $decision,
-            'reviewer_notes' => $notes,
+            'status' => $data->decision,
+            'reviewer_notes' => $data->reviewerNotes,
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 
         if ($approval->task_id) {
-            $newTaskStatus = match ($decision) {
+            $newTaskStatus = match ($data->decision) {
                 'approved' => 'in_progress',
                 'rejected' => 'failed',
                 'escalated' => 'pending_escalation',
@@ -44,16 +45,14 @@ class ProcessApprovalAction
             };
             $approval->task?->update(['status' => $newTaskStatus]);
 
-            // Record the outcome on the linked DecisionLog so prediction accuracy
-            // and data-trust dimensions receive real data.
-            $this->recordDecisionOutcome($approval->task_id, $decision);
+            $this->recordDecisionOutcome($approval->task_id, $data->decision);
         }
 
         $this->auditService->logUserAction(
-            event: "approval.{$decision}",
-            description: "Approval #{$approval->id} {$decision} by reviewer",
+            event: "approval.{$data->decision}",
+            description: "Approval #{$approval->id} {$data->decision} by reviewer",
             subject: $approval,
-            metadata: ['notes' => $notes],
+            metadata: ['notes' => $data->reviewerNotes],
         );
 
         event(new ApprovalProcessed($approval));

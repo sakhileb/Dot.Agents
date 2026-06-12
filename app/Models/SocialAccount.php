@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -58,6 +59,11 @@ class SocialAccount extends Model
     public function pages(): HasMany
     {
         return $this->hasMany(SocialPage::class);
+    }
+
+    public function connectionSettings(): HasOne
+    {
+        return $this->hasOne(SocialConnectionSettings::class);
     }
 
     public function conversations(): HasMany

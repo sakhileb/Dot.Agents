@@ -1,7 +1,7 @@
 <x-layouts.platform>
     <x-slot:header>
         <div class="flex items-center gap-3">
-            <a href="{{ route('workflows') }}" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            <a href="{{ route('workflows.index') }}" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                 Workflows
             </a>
             <svg class="w-4 h-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

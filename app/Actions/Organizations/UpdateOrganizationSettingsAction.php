@@ -2,6 +2,7 @@
 
 namespace App\Actions\Organizations;
 
+use App\Events\OrganizationSettingsUpdated;
 use App\Models\Organization;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -33,12 +34,7 @@ class UpdateOrganizationSettingsAction
 
         $organization->update($updates);
 
-        $this->auditService->logUserAction(
-            event: 'organization.settings_updated',
-            description: "Organization '{$organization->name}' settings updated",
-            subject: $organization,
-            metadata: ['old' => $old, 'new' => $updates]
-        );
+        event(new OrganizationSettingsUpdated($organization, ['old' => $old, 'new' => $updates]));
 
         return $organization->refresh();
     }

@@ -60,7 +60,7 @@ class BillingController extends Controller
 
         $session = $this->stripe->createBillingPortalSession(
             organization: $organization,
-            returnUrl: route('settings.billing'),
+            returnUrl: route('billing.settings.billing'),
         );
 
         return redirect($session->url);

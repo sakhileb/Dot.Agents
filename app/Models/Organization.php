@@ -46,6 +46,11 @@ class Organization extends Model
         return $this->hasMany(Department::class);
     }
 
+    public function socialCredentials(): HasMany
+    {
+        return $this->hasMany(OrganizationSocialCredential::class);
+    }
+
     public function divisions(): HasMany
     {
         return $this->hasMany(Division::class);

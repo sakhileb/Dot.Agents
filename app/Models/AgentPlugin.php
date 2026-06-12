@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\PluginOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +32,11 @@ class AgentPlugin extends Model
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new PluginOrganizationScope);
+    }
 
     // ──────────────────────────────────────────────
     // Scopes

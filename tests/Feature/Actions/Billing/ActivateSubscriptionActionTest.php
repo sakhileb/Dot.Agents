@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions\Billing;
 
 use App\Actions\Billing\ActivateSubscriptionAction;
+use App\DTOs\Billing\ActivateSubscriptionData;
 use App\Models\Organization;
 use App\Models\OrganizationSubscription;
 use App\Models\SubscriptionPlan;
@@ -37,7 +38,7 @@ class ActivateSubscriptionActionTest extends TestCase
         ]);
 
         $subscription = app(ActivateSubscriptionAction::class)
-            ->execute($this->organization, $plan, 'monthly');
+            ->execute(new ActivateSubscriptionData($this->organization->id, $plan->id, 'monthly'));
 
         $this->assertInstanceOf(OrganizationSubscription::class, $subscription);
         $this->assertSame('active', $subscription->status);
@@ -56,7 +57,7 @@ class ActivateSubscriptionActionTest extends TestCase
             'status' => 'active',
         ]);
 
-        app(ActivateSubscriptionAction::class)->execute($this->organization, $plan, 'monthly');
+        app(ActivateSubscriptionAction::class)->execute(new ActivateSubscriptionData($this->organization->id, $plan->id, 'monthly'));
 
         // The old subscription should be cancelled
         $this->assertDatabaseHas('organization_subscriptions', [
@@ -71,7 +72,7 @@ class ActivateSubscriptionActionTest extends TestCase
         $plan = SubscriptionPlan::factory()->create();
 
         $subscription = app(ActivateSubscriptionAction::class)
-            ->execute($this->organization, $plan, 'annual');
+            ->execute(new ActivateSubscriptionData($this->organization->id, $plan->id, 'annual'));
 
         $this->assertSame('annual', $subscription->billing_cycle);
         $this->assertTrue($subscription->current_period_end->isAfter(now()->addMonths(11)));
@@ -82,7 +83,7 @@ class ActivateSubscriptionActionTest extends TestCase
         $this->actingAs($this->user);
         $plan = SubscriptionPlan::factory()->create(['name' => 'Professional']);
 
-        app(ActivateSubscriptionAction::class)->execute($this->organization, $plan);
+        app(ActivateSubscriptionAction::class)->execute(new ActivateSubscriptionData($this->organization->id, $plan->id));
 
         $this->organization->refresh();
         $this->assertNotNull($this->organization->plan);

@@ -7,6 +7,7 @@ use App\Actions\Agents\PauseDeploymentAction;
 use App\Actions\Agents\ResumeDeploymentAction;
 use App\Models\AgentDeployment;
 use Illuminate\Auth\Access\AuthorizationException;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -22,7 +23,8 @@ class DeploymentManager extends Component
 
     public ?int $confirmingDecommission = null;
 
-    public function getDeploymentsProperty()
+    #[Computed]
+    public function deployments()
     {
         $orgId = session('current_organization_id');
 
