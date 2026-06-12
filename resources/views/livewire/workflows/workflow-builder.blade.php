@@ -311,4 +311,4 @@
 {{-- workflowCanvas Alpine component is registered via Alpine.data() in
      resources/js/workflow-canvas.js (bundled by Vite). Using an external
      asset avoids the CSP nonce mismatch that blocks inline <script> tags
-     when Livewire's navigate feature clones them across page transitions. --}}
+     when the Livewire navigate feature clones them across page transitions. --}}

@@ -2,14 +2,15 @@
 
 namespace App\Services\AI;
 
+use App\Models\AgentApproval;
 use App\Models\AgentDeployment;
 use App\Models\AgentScorecard;
 use App\Models\AgentTask;
-use App\Models\ApprovalQueue;
 use App\Models\EnterpriseHealthScore;
 use App\Models\OrganizationTwin;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\EnterpriseConstitutionService;
+use App\Services\Governance\ScorecardService;
 use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Cache;
 
@@ -141,11 +142,11 @@ class EnterpriseBrainService
             $riskScore = $this->constitutionService->getRiskAppetiteScore($organizationId);
 
             // Count pending approvals and overdue tasks as governance risk indicators
-            $pendingApprovals = ApprovalQueue::where('organization_id', $organizationId)
+            $pendingApprovals = AgentApproval::where('organization_id', $organizationId)
                 ->where('status', 'pending')
                 ->count();
 
-            $overdueApprovals = ApprovalQueue::where('organization_id', $organizationId)
+            $overdueApprovals = AgentApproval::where('organization_id', $organizationId)
                 ->where('status', 'pending')
                 ->where('created_at', '<', now()->subHours(24))
                 ->count();

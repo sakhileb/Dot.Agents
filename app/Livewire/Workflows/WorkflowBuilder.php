@@ -78,7 +78,7 @@ class WorkflowBuilder extends Component
     {
         app(SaveWorkflowAction::class)->execute(
             $this->workflow,
-            new SaveWorkflowData($this->workflow->id, auth()->id(), $this->nodes, $this->connections)
+            new SaveWorkflowData($this->workflow->id, Auth::id(), $this->nodes, $this->connections)
         );
 
         $this->flashMessage = 'Workflow saved as draft.';
@@ -101,7 +101,7 @@ class WorkflowBuilder extends Component
 
         app(SaveWorkflowAction::class)->execute(
             $this->workflow,
-            new SaveWorkflowData($this->workflow->id, auth()->id(), $this->nodes, $this->connections)
+            new SaveWorkflowData($this->workflow->id, Auth::id(), $this->nodes, $this->connections)
         );
 
         app(UpdateWorkflowStatusAction::class)->publish($this->workflow);

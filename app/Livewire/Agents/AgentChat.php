@@ -3,11 +3,13 @@
 namespace App\Livewire\Agents;
 
 use App\Actions\Agents\StartAgentChatSessionAction;
+use App\DTOs\Agents\StartAgentChatSessionData;
 use App\Models\AgentDeployment;
 use App\Models\AgentMessage;
 use App\Models\AgentSession;
 use App\Services\AI\AgentOrchestrationService;
 use App\Services\Governance\AuditService;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -100,8 +102,8 @@ class AgentChat extends Component
         $deployment = AgentDeployment::findOrFail($this->deploymentId);
         $session = app(StartAgentChatSessionAction::class)->execute(
             $deployment,
-            new \App\DTOs\Agents\StartAgentChatSessionData(
-                userId: auth()->id(),
+            new StartAgentChatSessionData(
+                userId: Auth::id(),
                 agentDeploymentId: $deployment->id,
                 organizationId: session('current_organization_id'),
             ),

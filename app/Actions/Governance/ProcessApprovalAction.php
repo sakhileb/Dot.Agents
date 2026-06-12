@@ -9,6 +9,7 @@ use App\Models\DecisionLog;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\PredictionAccuracyTrackingService;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class ProcessApprovalAction
@@ -47,7 +48,7 @@ class ProcessApprovalAction
         $approval->update([
             'status' => $data->decision,
             'reviewer_notes' => $data->reviewerNotes,
-            'reviewed_by' => auth()->id(),
+            'reviewed_by' => Auth::id(),
             'reviewed_at' => now(),
         ]);
 
