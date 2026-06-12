@@ -3,6 +3,7 @@
 namespace App\Actions\Skills;
 
 use App\DTOs\Skills\AssignSkillData;
+use App\Events\SkillAssigned;
 use App\Models\AgentSkill;
 use App\Models\AgentSkillAssignment;
 use Illuminate\Support\Facades\Gate;
@@ -33,6 +34,8 @@ class AssignSkillToDeploymentAction
                 'config' => $data->config ?: null,
             ]
         );
+
+        event(new SkillAssigned($assignment));
 
         return $assignment;
     }

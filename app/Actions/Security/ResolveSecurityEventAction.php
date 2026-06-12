@@ -3,6 +3,7 @@
 namespace App\Actions\Security;
 
 use App\DTOs\Security\ResolveSecurityEventData;
+use App\Events\SecurityEventResolved;
 use App\Models\SecurityEvent;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Gate;
@@ -28,6 +29,8 @@ class ResolveSecurityEventAction
             description: "Security event #{$event->id} ({$event->event_type}) resolved",
             subject: $event,
         );
+
+        event(new SecurityEventResolved($event));
 
         return $event;
     }

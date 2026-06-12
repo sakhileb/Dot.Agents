@@ -2,6 +2,7 @@
 
 namespace App\Actions\Organizations;
 
+use App\DTOs\Organizations\SaveDepartmentData;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Services\Governance\AuditService;
@@ -12,22 +13,25 @@ class SaveDepartmentAction
 {
     public function __construct(private readonly AuditService $auditService) {}
 
-    public function execute(Organization $organization, array $data, ?int $existingId = null): Department
+    public function execute(Organization $organization, SaveDepartmentData $data): Department
     {
         Gate::authorize('update', $organization);
 
         $payload = [
             'organization_id' => $organization->id,
-            'name' => $data['name'],
-            'slug' => Str::slug($data['name']),
-            'description' => $data['description'] ?? null,
-            'type' => $data['type'] ?? null,
-            'head_name' => $data['head_name'] ?? null,
+            'name' => $data->name,
+            'slug' => Str::slug($data->name),
+            'description' => $data->description,
+            'head_name' => $data->headName,
             'is_active' => true,
         ];
 
-        if ($existingId) {
-            $dept = Department::findOrFail($existingId);
+        if ($data->type !== null) {
+            $payload['type'] = $data->type;
+        }
+
+        if ($data->existingId) {
+            $dept = Department::findOrFail($data->existingId);
             abort_if($dept->organization_id !== $organization->id, 403);
             $dept->update($payload);
             $dept = $dept->fresh();
@@ -36,8 +40,8 @@ class SaveDepartmentAction
         }
 
         $this->auditService->logUserAction(
-            event: $existingId ? 'department.updated' : 'department.created',
-            description: ($existingId ? 'Updated' : 'Created')." department '{$dept->name}'",
+            event: $data->existingId ? 'department.updated' : 'department.created',
+            description: ($data->existingId ? 'Updated' : 'Created')." department '{$dept->name}'",
             subject: $dept,
         );
 

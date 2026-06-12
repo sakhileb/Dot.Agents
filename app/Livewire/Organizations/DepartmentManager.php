@@ -5,6 +5,7 @@ namespace App\Livewire\Organizations;
 use App\Actions\Organizations\DeleteDepartmentAction;
 use App\Actions\Organizations\SaveDepartmentAction;
 use App\DTOs\Organizations\DeleteDepartmentData;
+use App\DTOs\Organizations\SaveDepartmentData;
 use App\Models\Department;
 use App\Models\Organization;
 use Livewire\Attributes\Computed;
@@ -73,13 +74,13 @@ class DepartmentManager extends Component
 
         $action->execute(
             $this->organization,
-            [
+            SaveDepartmentData::fromArray([
                 'name' => $this->formName,
                 'description' => $this->formDescription,
                 'type' => $this->formType,
                 'head_name' => $this->formHeadName,
-            ],
-            $this->editingId
+                'existing_id' => $this->editingId,
+            ])
         );
 
         session()->flash('dept_success', $this->editingId ? 'Department updated.' : 'Department created.');

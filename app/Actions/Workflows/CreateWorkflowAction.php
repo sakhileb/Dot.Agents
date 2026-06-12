@@ -3,6 +3,7 @@
 namespace App\Actions\Workflows;
 
 use App\DTOs\Workflows\CreateWorkflowData;
+use App\Events\WorkflowCreated;
 use App\Models\AgentWorkflow;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class CreateWorkflowAction
     {
         Gate::authorize('update', $organization);
 
-        return AgentWorkflow::create([
+        $workflow = AgentWorkflow::create([
             'uuid' => (string) Str::uuid(),
             'organization_id' => $organization->id,
             'created_by' => Auth::id(),
@@ -24,5 +25,9 @@ class CreateWorkflowAction
             'trigger_type' => $data->triggerType,
             'status' => 'draft',
         ]);
+
+        event(new WorkflowCreated($workflow));
+
+        return $workflow;
     }
 }
