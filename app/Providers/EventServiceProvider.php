@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Events\AgentCapabilityContractChanged;
 use App\Events\AgentChatStarted;
 use App\Events\AgentDecommissioned;
 use App\Events\AgentDeployed;
@@ -36,6 +37,7 @@ use App\Listeners\HandleSkillApprovalRequested;
 use App\Listeners\LogAgentDecommissionedAudit;
 use App\Listeners\LogAgentPausedAudit;
 use App\Listeners\LogAgentChatStarted;
+use App\Listeners\TriggerCapabilityContractGovernanceReview;
 use App\Listeners\LogAgentResumedAudit;
 use App\Listeners\LogAgentTaskRated;
 use App\Listeners\LogAgentUpdatedAudit;
@@ -115,6 +117,10 @@ class EventServiceProvider extends ServiceProvider
 
         AgentChatStarted::class => [
             LogAgentChatStarted::class,
+        ],
+
+        AgentCapabilityContractChanged::class => [
+            TriggerCapabilityContractGovernanceReview::class,
         ],
 
         AgentUpdated::class => [

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\AgentCapabilityContractChanged;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -49,9 +50,15 @@ class AgentVersion extends Model
 
     /**
      * Publish this version and demote the previously current version.
+     * Fires AgentCapabilityContractChanged when breaking capability changes
+     * are detected, triggering a governance review workflow.
      */
     public function publish(): void
     {
+        $previousVersion = static::where('agent_id', $this->agent_id)
+            ->where('is_current', true)
+            ->first();
+
         // Demote existing current version
         static::where('agent_id', $this->agent_id)
             ->where('is_current', true)
@@ -62,6 +69,14 @@ class AgentVersion extends Model
             'is_current' => true,
             'published_at' => now(),
         ]);
+
+        // Fire governance event when capability contract breaks backward compatibility
+        if ($previousVersion && $this->hasBreakingCapabilityChanges(
+            $previousVersion->capabilities_snapshot ?? [],
+            $this->capabilities_snapshot ?? []
+        )) {
+            event(new AgentCapabilityContractChanged($this, $previousVersion));
+        }
     }
 
     /**
@@ -74,5 +89,47 @@ class AgentVersion extends Model
             'is_current' => false,
             'deprecated_at' => now(),
         ]);
+    }
+
+    /**
+     * Detect breaking capability changes between two capability snapshots.
+     *
+     * A change is considered breaking when:
+     *  - A capability key present in the previous version is absent in the new one
+     *    (removed capabilities break existing deployments that depend on them)
+     *  - A capability's required inputs change type (existing callers may break)
+     *
+     * Additive changes (new capabilities in the new version) are non-breaking.
+     */
+    public function hasBreakingCapabilityChanges(array $previous, array $current): bool
+    {
+        if (empty($previous)) {
+            return false;
+        }
+
+        $previousKeys = array_keys($previous);
+        $currentKeys  = array_keys($current);
+
+        // Removed capability keys are always breaking
+        $removedKeys = array_diff($previousKeys, $currentKeys);
+        if (! empty($removedKeys)) {
+            return true;
+        }
+
+        // Check whether any shared capability's input types changed
+        foreach ($previousKeys as $key) {
+            if (! isset($current[$key])) {
+                continue;
+            }
+
+            $prevInputType = $previous[$key]['input_type'] ?? null;
+            $currInputType = $current[$key]['input_type'] ?? null;
+
+            if ($prevInputType !== null && $prevInputType !== $currInputType) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

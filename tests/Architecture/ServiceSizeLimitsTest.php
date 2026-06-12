@@ -434,4 +434,102 @@ class ServiceSizeLimitsTest extends TestCase
     {
         return str_replace(base_path().'/', '', $absolutePath);
     }
+
+    // ── Event Coverage Guards ─────────────────────────────────────────────────
+
+    /** @test */
+    public function all_events_have_at_least_one_registered_listener(): void
+    {
+        $unhandled = [];
+
+        $eventFiles = File::allFiles(app_path('Events'));
+        $listenerDir = app_path('Listeners');
+
+        foreach ($eventFiles as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $eventClass = $file->getFilenameWithoutExtension();
+
+            // Check whether any listener file references this event class name
+            $listenerFiles = File::allFiles($listenerDir);
+            $hasListener = false;
+
+            foreach ($listenerFiles as $listener) {
+                if ($listener->getExtension() !== 'php') {
+                    continue;
+                }
+
+                if (str_contains(file_get_contents($listener->getRealPath()), $eventClass)) {
+                    $hasListener = true;
+                    break;
+                }
+            }
+
+            if (! $hasListener) {
+                $unhandled[] = $eventClass;
+            }
+        }
+
+        $this->assertEmpty(
+            $unhandled,
+            "Events with no registered listener — add an entry to EventServiceProvider:\n"
+            .implode("\n", $unhandled)
+        );
+    }
+
+    /** @test */
+    public function models_with_organization_id_have_organization_scoping(): void
+    {
+        $violations = [];
+
+        // Models that legitimately deviate from the HasOrganizationScope trait:
+        //  - AgentPlugin: uses a custom PluginOrganizationScope that also allows
+        //    null org (platform-level plugins shared across all tenants)
+        //  - Membership: scoped via a query scope method rather than a global scope
+        //    because membership records need to be looked up cross-org during invites
+        $allowedExceptions = ['AgentPlugin', 'Membership'];
+
+        $modelFiles = File::allFiles(app_path('Models'));
+
+        foreach ($modelFiles as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            // Skip sub-directories that aren't concrete models
+            if (str_contains($file->getPathname(), '/Concerns/')
+                || str_contains($file->getPathname(), '/Scopes/')
+            ) {
+                continue;
+            }
+
+            $className = $file->getFilenameWithoutExtension();
+            $content   = file_get_contents($file->getRealPath());
+
+            // Only inspect models that declare organization_id as a fillable or cast column
+            if (! preg_match("/'organization_id'/", $content)) {
+                continue;
+            }
+
+            if (in_array($className, $allowedExceptions, true)) {
+                continue;
+            }
+
+            // Model must either use HasOrganizationScope trait OR call addGlobalScope
+            $hasScoping = str_contains($content, 'HasOrganizationScope')
+                || str_contains($content, 'addGlobalScope');
+
+            if (! $hasScoping) {
+                $violations[] = $className.' — has organization_id but no global scope';
+            }
+        }
+
+        $this->assertEmpty(
+            $violations,
+            "Models with organization_id missing HasOrganizationScope (or equivalent global scope):\n"
+            .implode("\n", $violations)
+        );
+    }
 }
