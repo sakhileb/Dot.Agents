@@ -53,7 +53,7 @@
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" wire:click="$set('showForm', false)" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors">
+                <button type="submit" wire:loading.attr="disabled" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-75 text-white text-sm font-medium rounded-xl transition-colors">
                     {{ $editingId ? 'Update' : 'Create' }} Department
                 </button>
             </div>
@@ -66,7 +66,7 @@
     <div class="bg-white dark:bg-gray-900 rounded-2xl border border-red-200 dark:border-red-800 p-5 flex items-center justify-between gap-4">
         <p class="text-sm text-gray-700 dark:text-gray-300">Are you sure you want to delete this department?</p>
         <div class="flex gap-2">
-            <button wire:click="deleteDepartment" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl">Delete</button>
+            <button wire:click="deleteDepartment" wire:loading.attr="disabled" class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-75 text-white text-sm font-medium rounded-xl">Delete</button>
             <button wire:click="$set('deletingId', null)" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl">Cancel</button>
         </div>
     </div>

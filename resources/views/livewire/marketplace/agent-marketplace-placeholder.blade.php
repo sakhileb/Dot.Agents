@@ -1,4 +1,7 @@
 <div class="min-h-screen p-6">
+    {{-- Loading indicator --}}
+    <div wire:loading class="fixed top-0 inset-x-0 h-0.5 bg-purple-600 z-50 animate-pulse" role="status" aria-label="Loading"></div>
+
     {{-- ── Header skeleton ──────────────────────────────────────────── --}}
     <div class="mb-8 animate-pulse">
         <div class="h-8 w-64 rounded-lg bg-gray-200 dark:bg-gray-700"></div>

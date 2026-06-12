@@ -4,15 +4,7 @@ namespace App\Services\Governance;
 
 use App\Models\Agent;
 use App\Models\AgentDeployment;
-use App\Services\AI\AgentCertificationService;
-use App\Services\Governance\Audit\Phase01AgentDiscovery;
-use App\Services\Governance\Audit\Phase02SkillAudit;
-use App\Services\Governance\Audit\Phase04AgentQuality;
-use App\Services\Governance\Audit\Phase06Governance;
-use App\Services\Governance\Audit\Phase07DelusionRisk;
-use App\Services\Governance\Audit\Phase08Memory;
-use App\Services\Governance\Audit\Phase12Performance;
-use App\Services\Governance\Audit\Phase13Scorecard;
+use App\Services\Governance\Audit\DWCAPhaseRunner;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -41,19 +33,8 @@ class DWCAAuditService
     public const ENTERPRISE_CERTIFIED_THRESHOLD = 90;
 
     public function __construct(
-        private readonly AgentCertificationService $certificationService,
         private readonly AuditService $auditService,
-        private readonly DelusionDetectionService $delusionDetector,
-        private readonly DigitalImmuneSystem $dis,
-        // ── Phase strategies ────────────────────────────────────────────────
-        private readonly Phase01AgentDiscovery $phase01,
-        private readonly Phase02SkillAudit $phase02,
-        private readonly Phase04AgentQuality $phase04,
-        private readonly Phase06Governance $phase06,
-        private readonly Phase07DelusionRisk $phase07,
-        private readonly Phase08Memory $phase08,
-        private readonly Phase12Performance $phase12,
-        private readonly Phase13Scorecard $phase13,
+        private readonly DWCAPhaseRunner $phaseRunner,
     ) {}
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -107,23 +88,15 @@ class DWCAAuditService
     {
         $agent = $deployment->agent;
 
-        $phase1 = $this->phase01->execute($deployment);
-        $phase2 = $this->phase02->execute($deployment);
-        $phase4 = $this->phase04->execute($deployment);
-        $phase6 = $this->phase06->execute($deployment);
-        $phase7 = $this->phase07->execute($deployment);
-        $phase8 = $this->phase08->execute($deployment);
-        $phase12 = $this->phase12->execute($deployment);
-        $phase13 = $this->phase13->execute($deployment);
-
-        $compositeScore = $this->computeCompositeScore([
-            $phase1['score'], $phase2['score'], $phase4['score'],
-            $phase6['score'], $phase7['score'], $phase8['score'],
-            $phase12['score'], $phase13['score'],
-        ]);
-
+        $phases = $this->phaseRunner->run($deployment);
+        $compositeScore = $this->computeCompositeScore($this->phaseRunner->scores($phases));
         $certificationLevel = $this->resolveCertificationLevel($compositeScore);
-        $maturityLevel = $this->resolveMaturityLevel($deployment, $phase2, $phase6, $phase4);
+        $maturityLevel = $this->resolveMaturityLevel(
+            $deployment,
+            $phases['phase2_skill_audit'],
+            $phases['phase6_governance'],
+            $phases['phase4_quality'],
+        );
 
         return [
             'deployment_id' => $deployment->id,
@@ -136,19 +109,8 @@ class DWCAAuditService
             'maturity_level' => $maturityLevel,
             'maturity_label' => $this->maturityLabel($maturityLevel),
             'marketplace_eligible' => $maturityLevel >= self::MIN_MARKETPLACE_MATURITY,
-            'phases' => [
-                'phase1_discovery' => $phase1,
-                'phase2_skill_audit' => $phase2,
-                'phase4_quality' => $phase4,
-                'phase6_governance' => $phase6,
-                'phase7_delusion' => $phase7,
-                'phase8_memory' => $phase8,
-                'phase12_performance' => $phase12,
-                'phase13_scorecard' => $phase13,
-            ],
-            'failures' => $this->collectFailures([
-                $phase1, $phase2, $phase4, $phase6, $phase7, $phase8, $phase12, $phase13,
-            ]),
+            'phases' => $phases,
+            'failures' => $this->collectFailures(array_values($phases)),
         ];
     }
 

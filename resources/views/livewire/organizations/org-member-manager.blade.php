@@ -46,7 +46,7 @@
                 </select>
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors">
+                <button type="submit" wire:loading.attr="disabled" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-75 text-white text-sm font-medium rounded-xl transition-colors">
                     Add Member
                 </button>
                 <button type="button" wire:click="$set('showInviteForm', false)" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl transition-colors">
@@ -62,7 +62,7 @@
     <div class="bg-white dark:bg-gray-900 rounded-2xl border border-red-200 dark:border-red-800 p-5 flex items-center justify-between gap-4">
         <p class="text-sm text-gray-700 dark:text-gray-300">Are you sure you want to remove this member?</p>
         <div class="flex gap-2">
-            <button wire:click="removeMember" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors">Remove</button>
+            <button wire:click="removeMember" wire:loading.attr="disabled" class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-75 text-white text-sm font-medium rounded-xl transition-colors">Remove</button>
             <button wire:click="$set('removingUserId', null)" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl transition-colors">Cancel</button>
         </div>
     </div>

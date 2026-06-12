@@ -1,4 +1,7 @@
 <div class="space-y-5">
+    {{-- Loading indicator --}}
+    <div wire:loading class="fixed top-0 inset-x-0 h-0.5 bg-purple-600 z-50 animate-pulse" role="status" aria-label="Loading"></div>
+
     {{-- Filters bar --}}
     <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5">
         <div class="flex flex-wrap gap-3">

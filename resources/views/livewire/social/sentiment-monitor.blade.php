@@ -8,6 +8,7 @@
         <div class="flex items-center gap-2">
             @foreach(['1h' => '1h', '24h' => '24h', '7d' => '7 Days', '30d' => '30 Days'] as $key => $label)
                 <button wire:click="setTimeframe('{{ $key }}')"
+                    wire:loading.attr="disabled"
                     class="px-3 py-1.5 text-xs font-medium rounded-lg transition {{ $timeframe === $key ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700' }}">
                     {{ $label }}
                 </button>
@@ -84,7 +85,8 @@
                             {{ round($score->score) }}/100
                         </span>
                         <button wire:click="markHandled({{ $score->id }})"
-                            class="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition">
+                            wire:loading.attr="disabled"
+                            class="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition">
                             Mark Handled
                         </button>
                     </div>

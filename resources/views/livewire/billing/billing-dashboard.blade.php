@@ -1,4 +1,7 @@
 <div class="space-y-6">
+    {{-- Loading indicator --}}
+    <div wire:loading class="fixed top-0 inset-x-0 h-0.5 bg-purple-600 z-50 animate-pulse" role="status" aria-label="Loading"></div>
+
     {{-- Current Plan --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div class="md:col-span-2 bg-gradient-to-br from-purple-700 to-purple-900 rounded-2xl p-6 text-white">

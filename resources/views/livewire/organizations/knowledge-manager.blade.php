@@ -46,7 +46,7 @@
         </div>
         <div class="flex justify-end gap-2 pt-2">
             <button wire:click="$set('showBaseForm', false)" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl">Cancel</button>
-            <button wire:click="saveBase" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors">Create</button>
+            <button wire:click="saveBase" wire:loading.attr="disabled" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-75 text-white text-sm font-medium rounded-xl transition-colors">Create</button>
         </div>
     </div>
     @endif
@@ -111,7 +111,7 @@
                     </div>
                     <div class="flex justify-end gap-2 pt-1">
                         <button wire:click="$set('showArticleForm', false)" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl">Cancel</button>
-                        <button wire:click="saveArticle" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors">Save Article</button>
+                        <button wire:click="saveArticle" wire:loading.attr="disabled" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-75 text-white text-sm font-medium rounded-xl transition-colors">Save Article</button>
                     </div>
                 </div>
                 @endif

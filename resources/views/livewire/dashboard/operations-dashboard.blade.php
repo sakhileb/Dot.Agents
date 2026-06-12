@@ -1,4 +1,7 @@
 <div class="space-y-6" wire:poll.30s="refresh">
+    {{-- Loading indicator --}}
+    <div wire:loading class="fixed top-0 inset-x-0 h-0.5 bg-purple-600 z-50 animate-pulse" role="status" aria-label="Loading"></div>
+
     {{-- Platform Health Banner --}}
     @php
         $healthColors = ['green' => 'bg-green-100 border-green-400 text-green-800 dark:bg-green-900/30 dark:border-green-500 dark:text-green-300',

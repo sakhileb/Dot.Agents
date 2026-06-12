@@ -4,9 +4,9 @@ namespace App\Services\Governance;
 
 use App\Models\Organization;
 use App\Services\Governance\Scorecard\ScorecardCertifier;
+use App\Services\Governance\Scorecard\ScorecardDataCollector;
 use App\Services\Governance\Scorecard\ScorecardDomainScorer;
 use App\Services\Governance\Scorecard\ScorecardGateEvaluator;
-use App\Services\Infrastructure\ObservabilityService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -22,14 +22,7 @@ class MegaV2ScorecardService
     private const CACHE_TTL = 3600;
 
     public function __construct(
-        private readonly DataTrustScoreService $dataTrust,
-        private readonly AgentReliabilityAuditorService $reliabilityAuditor,
-        private readonly PredictionAccuracyTrackingService $predictionAccuracy,
-        private readonly OrganizationalMemoryService $orgMemory,
-        private readonly ObservabilityService $observability,
-        private readonly DigitalImmuneSystem $dis,
-        private readonly FinancialIntelligenceService $financial,
-        private readonly CustomerSuccessService $customerSuccess,
+        private readonly ScorecardDataCollector $dataCollector,
         private readonly ScorecardDomainScorer $domainScorer,
         private readonly ScorecardGateEvaluator $gateEvaluator,
         private readonly ScorecardCertifier $certifier,
@@ -51,14 +44,16 @@ class MegaV2ScorecardService
 
     private function compute(Organization $organization): array
     {
-        $dataTrust = $this->dataTrust->calculate($organization);
-        $agentReliability = $this->reliabilityAuditor->auditOrganization($organization);
-        $predictionAcc = $this->predictionAccuracy->calculateForOrganization($organization);
-        $orgMemoryScore = $this->orgMemory->calculate($organization);
-        $observability = $this->observability->observabilityScore();
-        $disResult = $this->dis->runHealthCheck($organization->id);
-        $financialScore = $this->financial->calculate($organization);
-        $csScore = $this->customerSuccess->calculate($organization);
+        $data = $this->dataCollector->collect($organization);
+
+        $dataTrust        = $data['dataTrust'];
+        $agentReliability = $data['agentReliability'];
+        $predictionAcc    = $data['predictionAcc'];
+        $orgMemoryScore   = $data['orgMemoryScore'];
+        $observability    = $data['observability'];
+        $disResult        = $data['disResult'];
+        $financialScore   = $data['financialScore'];
+        $csScore          = $data['csScore'];
 
         $technicalScores = $this->domainScorer->computeTechnicalDomains($dataTrust, $observability, $disResult);
         $technicalRaw = $this->domainScorer->weightedAverage($technicalScores);
