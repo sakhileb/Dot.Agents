@@ -5,6 +5,7 @@ namespace App\Services\AI;
 use App\Models\AgentDeployment;
 use App\Models\AgentSkill;
 use App\Skills\Contracts\SkillContract;
+use App\Skills\Core\ContextEngineeringSkill;
 use App\Skills\Core\MemoryManagementSkill;
 use App\Skills\Governance\AuditLoggingSkill;
 use App\Skills\Governance\ConfidenceScoringSkill;
@@ -12,6 +13,12 @@ use App\Skills\Governance\RiskAssessmentSkill;
 use App\Skills\Governance\SelfVerificationSkill;
 use App\Skills\Meta\AgentAuditorSkill;
 use App\Skills\Meta\AgentEvaluatorSkill;
+use App\Skills\Meta\SuperpowersSkill;
+use App\Skills\Platform\ExcelDataProcessingSkill;
+use App\Skills\Platform\MarketingIntelligenceSkill;
+use App\Skills\Platform\MassContentGenerationSkill;
+use App\Skills\Platform\SeoOptimizationSkill;
+use App\Skills\Platform\VideoScriptingSkill;
 use App\Skills\Platform\WorkflowOptimizationSkill;
 use App\Skills\Workforce\CollaborationSkill;
 use App\Skills\Workforce\DelegationSkill;
@@ -138,6 +145,21 @@ class SkillRegistryService
             // ── Meta-Agent Skills ───────────────────────
             'agent-evaluator' => AgentEvaluatorSkill::class,
             'agent-auditor' => AgentAuditorSkill::class,
+            // ── Community-Sourced Skills ────────────────
+            // excel-data-processing   (haris-musa/excel-mcp-server)
+            'excel-data-processing' => ExcelDataProcessingSkill::class,
+            // marketing-intelligence  (coreyhaines31/marketingskills)
+            'marketing-intelligence' => MarketingIntelligenceSkill::class,
+            // seo-optimization        (agricidaniel/claude-seo)
+            'seo-optimization' => SeoOptimizationSkill::class,
+            // video-scripting         (remotion-dev/remotion)
+            'video-scripting' => VideoScriptingSkill::class,
+            // context-engineering     (muratcankoylan/agent-skills-for-context-engineering)
+            'context-engineering' => ContextEngineeringSkill::class,
+            // mass-content-generation (massgen/massgen)
+            'mass-content-generation' => MassContentGenerationSkill::class,
+            // superpowers             (obra/superpowers)
+            'superpowers' => SuperpowersSkill::class,
         ];
 
         foreach ($builtIns as $key => $class) {

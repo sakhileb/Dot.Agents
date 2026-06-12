@@ -3,6 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\AgentSkill;
+use App\Skills\Core\ContextEngineeringSkill;
+use App\Skills\Meta\SuperpowersSkill;
+use App\Skills\Platform\ExcelDataProcessingSkill;
+use App\Skills\Platform\MarketingIntelligenceSkill;
+use App\Skills\Platform\MassContentGenerationSkill;
+use App\Skills\Platform\SeoOptimizationSkill;
+use App\Skills\Platform\VideoScriptingSkill;
 use Illuminate\Database\Seeder;
 
 class EnterpriseSkillsSeeder extends Seeder
@@ -44,6 +51,7 @@ class EnterpriseSkillsSeeder extends Seeder
             $this->agentTrainerSkills(),
             $this->agentMarketplaceManagerSkills(),
             $this->socialCommerceSkills(),
+            $this->communitySourcedSkills(),
         );
     }
 
@@ -413,6 +421,197 @@ class EnterpriseSkillsSeeder extends Seeder
             'is_built_in' => true,
             'is_active' => true,
             'sort_order' => 0,
+        ];
+    }
+
+    // ─── Community-Sourced Skills ─────────────────────────────────────────────
+    // Each skill is backed by an open-source project reference.
+    // PHP implementations live in app/Skills/{layer}/.
+
+    private function communitySourcedSkills(): array
+    {
+        return [
+            // excel-data-processing — haris-musa/excel-mcp-server
+            // Spreadsheet intelligence: parse, analyze, generate, export
+            [
+                'key' => 'excel-data-processing',
+                'name' => 'Excel Data Processing',
+                'description' => 'Parse, analyse, generate, and export tabular data (CSV/Excel/JSON). Powered by the excel-mcp-server pattern.',
+                'layer' => 'platform',
+                'category' => 'technical',
+                'department' => 'it',
+                'agent_type' => 'data_analyst',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => true,
+                'required_permissions' => ['data.read', 'data.export'],
+                'required_data_sources' => [],
+                'governance_rules' => null,
+                'confidence_score' => 85,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 100,
+                'class' => ExcelDataProcessingSkill::class,
+            ],
+
+            // marketing-intelligence — coreyhaines31/marketingskills
+            // Campaign analysis, content briefs, audience segmentation, ROI
+            [
+                'key' => 'marketing-intelligence',
+                'name' => 'Marketing Intelligence',
+                'description' => 'Analyse campaigns, generate content briefs, segment audiences, and measure marketing ROI.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'marketing_strategist',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => true,
+                'required_permissions' => ['marketing.read', 'marketing.analyse'],
+                'required_data_sources' => ['crm.campaigns', 'analytics.platform'],
+                'governance_rules' => null,
+                'confidence_score' => 80,
+                'requires_ai' => true,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 101,
+                'class' => MarketingIntelligenceSkill::class,
+            ],
+
+            // seo-optimization — agricidaniel/claude-seo
+            // On-page analysis, keyword research, technical audit, content scoring
+            [
+                'key' => 'seo-optimization',
+                'name' => 'SEO Optimization',
+                'description' => 'Audit on-page SEO, research keywords, run technical checklists, and score content against search best practices.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'marketing_strategist',
+                'output_type' => 'report',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => true,
+                'required_permissions' => ['content.read', 'content.analyse'],
+                'required_data_sources' => ['cms.pages', 'analytics.search'],
+                'governance_rules' => null,
+                'confidence_score' => 82,
+                'requires_ai' => true,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 102,
+                'class' => SeoOptimizationSkill::class,
+            ],
+
+            // video-scripting — remotion-dev/remotion
+            // Script, storyboard, scene breakdown, Remotion render config
+            [
+                'key' => 'video-scripting',
+                'name' => 'Video Scripting',
+                'description' => 'Generate timed video scripts, storyboards, scene breakdowns, and Remotion-compatible render configs from a brief.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'content_creator',
+                'output_type' => 'record',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => true,
+                'required_permissions' => ['content.create'],
+                'required_data_sources' => [],
+                'governance_rules' => null,
+                'confidence_score' => 78,
+                'requires_ai' => true,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 103,
+                'class' => VideoScriptingSkill::class,
+            ],
+
+            // context-engineering — muratcankoylan/agent-skills-for-context-engineering
+            // Optimize, compress, prioritize, and inject agent context
+            [
+                'key' => 'context-engineering',
+                'name' => 'Context Engineering',
+                'description' => 'Optimise, compress, prioritise, and inject memory into agent context windows for maximum task relevance.',
+                'layer' => 'core',
+                'category' => 'technical',
+                'department' => 'platform',
+                'agent_type' => 'platform_agent',
+                'output_type' => 'record',
+                'risk_level' => 'low',
+                'approval_required' => false,
+                'audit_required' => false,
+                'delegation_capable' => false,
+                'required_permissions' => ['memory.read'],
+                'required_data_sources' => ['agent.memory'],
+                'governance_rules' => null,
+                'confidence_score' => 90,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 104,
+                'class' => ContextEngineeringSkill::class,
+            ],
+
+            // mass-content-generation — massgen/massgen
+            // Batch generation, template building, quality validation, distribution
+            [
+                'key' => 'mass-content-generation',
+                'name' => 'Mass Content Generation',
+                'description' => 'Generate, validate, and distribute content at scale using parameterised templates and quality guardrails.',
+                'layer' => 'platform',
+                'category' => 'marketing',
+                'department' => 'marketing',
+                'agent_type' => 'content_creator',
+                'output_type' => 'record',
+                'risk_level' => 'medium',
+                'approval_required' => true,
+                'audit_required' => true,
+                'delegation_capable' => true,
+                'required_permissions' => ['content.create', 'content.publish'],
+                'required_data_sources' => ['cms.templates'],
+                'governance_rules' => ['max_batch_size' => 500, 'quality_check_required' => true],
+                'confidence_score' => 75,
+                'requires_ai' => true,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 105,
+                'class' => MassContentGenerationSkill::class,
+            ],
+
+            // superpowers — obra/superpowers
+            // Introspect, extend, combine, and augment agent capabilities at runtime
+            [
+                'key' => 'superpowers',
+                'name' => 'Superpowers',
+                'description' => 'Meta-capability framework: introspect skills, dynamically activate capabilities, combine multiple skills, and augment inputs with contextual intelligence.',
+                'layer' => 'meta',
+                'category' => 'governance',
+                'department' => 'platform',
+                'agent_type' => 'meta_agent',
+                'output_type' => 'record',
+                'risk_level' => 'medium',
+                'approval_required' => false,
+                'audit_required' => true,
+                'delegation_capable' => false,
+                'required_permissions' => ['skills.read', 'skills.assign'],
+                'required_data_sources' => [],
+                'governance_rules' => ['cannot_activate_critical_risk_skills' => true],
+                'confidence_score' => 88,
+                'requires_ai' => false,
+                'is_built_in' => true,
+                'is_active' => true,
+                'sort_order' => 106,
+                'class' => SuperpowersSkill::class,
+            ],
         ];
     }
 
