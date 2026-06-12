@@ -4,6 +4,7 @@ namespace App\Actions\Compliance;
 
 use App\Models\User;
 use App\Services\Governance\AuditService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,11 @@ class EraseUserDataAction
      *  - Audit trail integrity (legal requirement)
      *  - Referential integrity (foreign keys)
      *  - Financial records (7-year retention requirement)
+     *
+     * @param  User  $requester  Actor requesting the erasure (must be the subject or an admin).
+     * @param  User  $subject  The user whose personal data will be erased.
+     *
+     * @throws AuthorizationException When requester is not authorized.
      */
     public function execute(User $requester, User $subject): void
     {

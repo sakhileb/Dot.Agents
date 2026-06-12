@@ -127,4 +127,67 @@ class CircuitBreakerServiceTest extends TestCase
         $this->assertSame('closed', $this->breaker->status('service_b')['state']);
         $this->assertSame('open', $this->breaker->status('service_a')['state']);
     }
+
+    // ── HALF-OPEN state transitions ───────────────────────────────────────────
+
+    public function test_half_open_probe_success_closes_circuit_after_threshold(): void
+    {
+        $service = 'half-open-recover';
+
+        // Force the circuit into HALF-OPEN state by seeding the cache key directly
+        Cache::put("circuit_breaker_{$service}_state", 'half_open', 300);
+
+        // successThreshold = 2 — two successful probes should close the circuit
+        $this->breaker->call($service, fn () => 'probe-1');
+        $this->breaker->call($service, fn () => 'probe-2');
+
+        $this->assertSame('closed', $this->breaker->status($service)['state'],
+            'Circuit should be CLOSED after successThreshold consecutive probe successes.'
+        );
+    }
+
+    public function test_half_open_probe_failure_reopens_circuit(): void
+    {
+        $service = 'half-open-fail';
+
+        // Force HALF-OPEN
+        Cache::put("circuit_breaker_{$service}_state", 'half_open', 300);
+
+        try {
+            $this->breaker->call($service, fn () => throw new \RuntimeException('probe failed'));
+        } catch (\RuntimeException) {
+            // expected — probe throws
+        }
+
+        $this->assertSame('open', $this->breaker->status($service)['state'],
+            'Circuit should return to OPEN when a HALF-OPEN probe fails.'
+        );
+    }
+
+    public function test_circuit_transitions_to_half_open_after_timeout_elapses(): void
+    {
+        $service = 'timeout-elapsed';
+
+        // Seed an "open" circuit whose half-open window has already passed.
+        // When a HALF-OPEN probe fails, recordFailure() sets state back to OPEN and
+        // then calls maybeMoveToHalfOpen(). Since _half_open_at is in the past it
+        // immediately re-transitions to HALF_OPEN — confirming the elapsed-timeout logic.
+        Cache::put("circuit_breaker_{$service}_state", 'half_open', 300);
+        Cache::put(
+            "circuit_breaker_{$service}_state_half_open_at",
+            now()->subSeconds(10)->timestamp,  // already elapsed
+            300
+        );
+
+        try {
+            $this->breaker->call($service, fn () => throw new \RuntimeException('timed-out probe'));
+        } catch (\RuntimeException) {
+            // expected
+        }
+
+        // recordFailure(HALF_OPEN) → sets OPEN → maybeMoveToHalfOpen finds elapsed _half_open_at → HALF_OPEN
+        $this->assertSame('half_open', $this->breaker->status($service)['state'],
+            'Circuit should re-enter HALF-OPEN immediately when _half_open_at has already elapsed.'
+        );
+    }
 }

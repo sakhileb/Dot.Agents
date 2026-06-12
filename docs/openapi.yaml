@@ -85,6 +85,237 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  # ─── Agent Versions ──────────────────────────────────────────────────────────
+
+  /agents/{agent}/versions:
+    parameters:
+      - name: agent
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Agent ID
+
+    get:
+      summary: List published versions of an agent
+      description: Returns all published AgentVersion records for the specified agent, ordered by published_at descending.
+      operationId: listAgentVersions
+      tags: [Agents]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, deprecated]
+          description: Filter by version status (omit for all statuses)
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Paginated list of agent versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAgentVersions'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create a new agent version (draft)
+      description: |
+        Creates a new AgentVersion in 'draft' status, capturing the agent's
+        current config and capability contract as a snapshot.
+        Call the publish endpoint to promote this to the active version.
+      operationId: createAgentVersion
+      tags: [Agents]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, capabilities_snapshot]
+              properties:
+                version:
+                  type: string
+                  example: '2.0.0'
+                  description: Semantic version string (must be unique per agent)
+                release_notes:
+                  type: string
+                  example: 'Added PDF analysis capability, improved confidence scoring'
+                config_snapshot:
+                  type: object
+                  description: Snapshot of agent configuration at time of versioning
+                capabilities_snapshot:
+                  type: object
+                  description: Map of capability names to their contract definitions
+                  additionalProperties:
+                    type: object
+                    required: [input_type]
+                    properties:
+                      input_type:
+                        type: string
+                        example: string
+                      description:
+                        type: string
+      responses:
+        '201':
+          description: AgentVersion draft created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentVersion'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /agents/{agent}/versions/{version}/publish:
+    parameters:
+      - name: agent
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Agent ID
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: AgentVersion ID
+
+    post:
+      summary: Publish an agent version
+      description: |
+        Promotes a draft AgentVersion to 'published' status and marks it as the
+        current version. Automatically detects breaking capability contract changes
+        against the previously published version.
+
+        When breaking changes are detected the `AgentCapabilityContractChanged`
+        event is fired, triggering a governance review workflow. The response
+        includes a `breaking_changes_detected` flag so callers can surface an
+        appropriate warning in the UI.
+      operationId: publishAgentVersion
+      tags: [Agents]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Version published successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/AgentVersion'
+                  - type: object
+                    properties:
+                      breaking_changes_detected:
+                        type: boolean
+                        description: True when the new capabilities_snapshot introduces breaking changes
+                      governance_review_id:
+                        type: integer
+                        nullable: true
+                        description: ID of the triggered governance review, if any
+        '409':
+          description: Version is not in draft status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /agents/{agent}/versions/{version}/diff:
+    parameters:
+      - name: agent
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Agent ID
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: AgentVersion ID to compare against its predecessor
+
+    get:
+      summary: Compare an agent version against its predecessor
+      description: |
+        Returns a diff of the capabilities_snapshot between this version and the
+        immediately previous published version. Identifies added, removed, and
+        modified capabilities and flags whether the changes constitute a breaking
+        contract change.
+      operationId: diffAgentVersions
+      tags: [Agents]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Capability diff between versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    $ref: '#/components/schemas/AgentVersion'
+                  previous_version:
+                    $ref: '#/components/schemas/AgentVersion'
+                  breaking_changes:
+                    type: boolean
+                    description: True if any removed or type-changed capabilities detected
+                  diff:
+                    type: object
+                    properties:
+                      added:
+                        type: array
+                        items:
+                          type: string
+                        description: Capability keys added in this version (non-breaking)
+                      removed:
+                        type: array
+                        items:
+                          type: string
+                        description: Capability keys removed in this version (breaking)
+                      modified:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            capability:
+                              type: string
+                            previous_input_type:
+                              type: string
+                            current_input_type:
+                              type: string
+                        description: Capabilities whose input_type changed (breaking)
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   # ─── Deployments ────────────────────────────────────────────────────────────
 
   /deployments:
@@ -1283,6 +1514,64 @@ components:
           type: string
           format: date-time
           nullable: true
+
+    AgentVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+        agent_id:
+          type: integer
+        version:
+          type: string
+          example: '2.1.0'
+        status:
+          type: string
+          enum: [draft, published, deprecated]
+        release_notes:
+          type: string
+          nullable: true
+        capabilities_snapshot:
+          type: object
+          description: Map of capability names to their contract definitions
+          additionalProperties:
+            type: object
+            properties:
+              input_type:
+                type: string
+              description:
+                type: string
+        config_snapshot:
+          type: object
+          nullable: true
+          description: Agent configuration at time of versioning
+        is_current:
+          type: boolean
+          description: Whether this is the currently active published version
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        deprecated_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_by:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    PaginatedAgentVersions:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentVersion'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
 
     AgentDeployment:
       type: object

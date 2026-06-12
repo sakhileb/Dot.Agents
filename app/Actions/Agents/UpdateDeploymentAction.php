@@ -6,6 +6,7 @@ use App\DTOs\Agents\UpdateDeploymentData;
 use App\Events\AgentUpdated;
 use App\Models\AgentDeployment;
 use App\Services\Governance\AuditService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 
 class UpdateDeploymentAction
@@ -14,6 +15,19 @@ class UpdateDeploymentAction
         private readonly AuditService $auditService
     ) {}
 
+    /**
+     * Update allowed configuration fields on an AgentDeployment.
+     *
+     * Only attributes listed in the allowlist are written; all others are ignored.
+     * Fires AgentUpdated with old/new snapshots so audit and notification listeners
+     * can react to configuration drift.
+     *
+     * @param  AgentDeployment  $deployment  The deployment to update.
+     * @param  UpdateDeploymentData  $data  Typed DTO carrying updated field values.
+     * @return AgentDeployment The refreshed deployment after update.
+     *
+     * @throws AuthorizationException When actor lacks 'update' permission.
+     */
     public function execute(AgentDeployment $deployment, UpdateDeploymentData $data): AgentDeployment
     {
         Gate::authorize('update', $deployment);

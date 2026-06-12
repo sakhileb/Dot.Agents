@@ -4,6 +4,7 @@ namespace App\Actions\Compliance;
 
 use App\Models\User;
 use App\Services\Governance\AuditService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 
 class ExportUserDataAction
@@ -14,6 +15,15 @@ class ExportUserDataAction
 
     /**
      * Export all personal data for a user (GDPR Article 20 — Right to Data Portability).
+     *
+     * Collects profile, session, task, and audit data into a structured array
+     * suitable for JSON export. The result is logged via AuditService.
+     *
+     * @param  User  $requester  Actor requesting the export (must be the subject or an admin).
+     * @param  User  $subject  The user whose data will be exported.
+     * @return array Structured personal data export payload.
+     *
+     * @throws AuthorizationException When requester is not authorized.
      */
     public function execute(User $requester, User $subject): array
     {

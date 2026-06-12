@@ -32,6 +32,7 @@ class EnterpriseBrainService
         private readonly EnterpriseConstitutionService $constitutionService,
         private readonly AuditService $auditService,
         private readonly ScorecardService $scorecardService,
+        private readonly EnterpriseBrainScorer $scorer,
     ) {}
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -75,21 +76,14 @@ class EnterpriseBrainService
         $monthlyCost = $twin?->monthly_ai_spend_usd ?? 0;
         $roi = $twin?->estimated_ai_roi ?? 0;
 
-        $score = match (true) {
-            $roi > 300 => 95,
-            $roi > 200 => 85,
-            $roi > 100 => 75,
-            $roi > 50 => 65,
-            $roi > 0 => 55,
-            default => 40,
-        };
+        $score = $this->scorer->computeEconomicScore($roi);
 
         return [
             'core' => 'economic',
             'health_score' => $score,
             'monthly_ai_spend_usd' => $monthlyCost,
             'estimated_roi_pct' => $roi,
-            'status' => $score >= 75 ? 'healthy' : ($score >= 55 ? 'monitor' : 'critical'),
+            'status' => $this->scorer->computeEconomicStatus($score),
         ];
     }
 
@@ -155,8 +149,7 @@ class EnterpriseBrainService
                 ->where('created_at', '<', now()->subHours(24))
                 ->count();
 
-            $governanceScore = 100 - ($pendingApprovals * 2) - ($overdueApprovals * 5);
-            $governanceScore = max(0, min(100, $governanceScore));
+            $governanceScore = $this->scorer->computeGovernanceScore($pendingApprovals, $overdueApprovals);
 
             return [
                 'core' => 'governance',
@@ -164,7 +157,7 @@ class EnterpriseBrainService
                 'pending_approvals' => $pendingApprovals,
                 'overdue_approvals' => $overdueApprovals,
                 'risk_appetite_score' => $riskScore,
-                'status' => $governanceScore >= 80 ? 'compliant' : ($governanceScore >= 60 ? 'review_needed' : 'non_compliant'),
+                'status' => $this->scorer->computeGovernanceStatus($governanceScore),
             ];
         });
     }
@@ -300,20 +293,14 @@ class EnterpriseBrainService
             ? max(0, 100 - ($learning['declining_agents'] / $learning['total_active_agents']) * 100)
             : 50.0;
 
-        $workflowHealth = max(0, 100 - ($operational['bottlenecks_detected'] * 5));
+        $domainScores = $this->scorer->buildDomainScores(
+            economicScore: $economic['health_score'],
+            agentHealthPct: $agentHealth,
+            bottlenecksDetected: $operational['bottlenecks_detected'],
+            governanceScore: $governance['health_score'],
+        );
 
-        $domainScores = [
-            'revenue_health' => $economic['health_score'],
-            'customer_health' => 75.0, // Derived from SCCS conversion metrics (placeholder)
-            'security_health' => $governance['health_score'],
-            'agent_health' => round($agentHealth, 2),
-            'workflow_health' => round($workflowHealth, 2),
-            'compliance_health' => $governance['health_score'],
-            'operational_health' => round($workflowHealth, 2),
-            'technology_health' => 80.0, // Derived from uptime / latency SLAs
-        ];
-
-        $composite = round(array_sum($domainScores) / count($domainScores), 2);
+        $composite = $this->scorer->computeCompositeScore($domainScores);
 
         return EnterpriseHealthScore::updateOrCreate(
             ['organization_id' => $organizationId, 'scored_at' => today()],

@@ -8,6 +8,7 @@ use App\Models\AgentApproval;
 use App\Models\DecisionLog;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\PredictionAccuracyTrackingService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 
 class ProcessApprovalAction
@@ -17,6 +18,20 @@ class ProcessApprovalAction
         private readonly PredictionAccuracyTrackingService $predictionAccuracy,
     ) {}
 
+    /**
+     * Process a human approval decision on a pending AgentApproval.
+     *
+     * Validates that the approval is still pending and unexpired, persists the
+     * decision, fires ApprovalProcessed so the originating agent task can resume,
+     * and records a PredictionAccuracy entry to track the governance model quality.
+     *
+     * @param  AgentApproval  $approval  The pending approval to process.
+     * @param  ProcessApprovalData  $data  DTO carrying the decision and reviewer notes.
+     * @return AgentApproval The updated approval record.
+     *
+     * @throws \RuntimeException When approval is not in 'pending' state or has expired.
+     * @throws AuthorizationException When actor lacks 'review' permission.
+     */
     public function execute(AgentApproval $approval, ProcessApprovalData $data): AgentApproval
     {
         Gate::authorize('review', $approval);

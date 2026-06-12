@@ -5,11 +5,24 @@ namespace App\Actions\Agents;
 use App\DTOs\Agents\DeployAgentData;
 use App\Events\AgentDeployed;
 use App\Models\AgentDeployment;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class DeployAgentAction
 {
+    /**
+     * Deploy an Agent for an Organization.
+     *
+     * Creates an AgentDeployment record, assigns a UUID, and fires the
+     * AgentDeployed domain event so downstream listeners can bootstrap
+     * memory, scoring, and governance hooks.
+     *
+     * @param  DeployAgentData  $data  Typed DTO carrying all deployment configuration.
+     * @return AgentDeployment The newly created, persisted deployment.
+     *
+     * @throws AuthorizationException When actor lacks 'create' permission.
+     */
     public function execute(DeployAgentData $data): AgentDeployment
     {
         Gate::authorize('create', [AgentDeployment::class, $data->organizationId]);
