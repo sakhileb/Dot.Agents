@@ -23,7 +23,7 @@ class Membership extends Model
 
     public function organization(): BelongsTo
     {
-        return $this->belongsTo(Organization::class);
+        return $this->belongsTo(Organization::class, 'team_id');
     }
 
     public function user(): BelongsTo
@@ -38,7 +38,7 @@ class Membership extends Model
 
     public function scopeForOrganization($query, int $organizationId)
     {
-        return $query->where('organization_id', $organizationId);
+        return $query->where('team_id', $organizationId);
     }
 
     public function scopeAdmins($query)

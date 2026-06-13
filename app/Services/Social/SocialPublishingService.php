@@ -2,6 +2,7 @@
 
 namespace App\Services\Social;
 
+use App\Models\OrganizationSocialCredential;
 use App\Models\SocialPost;
 use Illuminate\Support\Facades\Log;
 
@@ -38,5 +39,12 @@ class SocialPublishingService
 
         // Stub: return a fake platform post ID
         return 'platform_post_'.$post->uuid;
+    }
+
+    public function findCredential(int $organizationId, string $platform): ?OrganizationSocialCredential
+    {
+        return OrganizationSocialCredential::where('organization_id', $organizationId)
+            ->where('platform', $platform)
+            ->first();
     }
 }

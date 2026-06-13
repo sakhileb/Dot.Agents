@@ -7,8 +7,8 @@ use App\Actions\Social\ConnectSocialAccountAction;
 use App\DTOs\Organizations\SaveConnectionSettingsData;
 use App\DTOs\Social\ConnectSocialAccountData;
 use App\Http\Requests\ConnectSocialAccountRequest;
-use App\Models\OrganizationSocialCredential;
 use App\Models\SocialAccount;
+use App\Services\Social\SocialPublishingService;
 use App\Support\SocialPlatformConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -79,9 +79,7 @@ class SocialOAuthController extends Controller
         $driver = SocialPlatformConfig::driverFor($platform);
         $orgId = (int) session('current_organization_id');
 
-        $orgCred = OrganizationSocialCredential::where('organization_id', $orgId)
-            ->where('platform', $platform)
-            ->first();
+        $orgCred = app(SocialPublishingService::class)->findCredential($orgId, $platform);
 
         if ($orgCred) {
             $callbackUrl = $orgCred->redirect_uri ?? route('social.auth.callback', ['platform' => $platform]);

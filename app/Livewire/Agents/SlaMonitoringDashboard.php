@@ -4,13 +4,86 @@ declare(strict_types=1);
 
 namespace App\Livewire\Agents;
 
-use App\Models\AgentDeployment;
-use App\Models\AgentTask;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
+use App\Services\AI\SlaAnalyticsService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
+
+#[Lazy]
+class SlaMonitoringDashboard extends Component
+{
+    public string $timeframe = '7d';
+
+    public ?int $deploymentId = null;
+
+    public function updatedTimeframe(): void
+    {
+        unset($this->slaMetrics, $this->deployments, $this->latencyBreakdown);
+    }
+
+    public function updatedDeploymentId(): void
+    {
+        unset($this->slaMetrics, $this->latencyBreakdown);
+    }
+
+    #[Computed]
+    public function organizationId(): ?int
+    {
+        return session('current_organization_id');
+    }
+
+    #[Computed]
+    public function deployments()
+    {
+        return app(SlaAnalyticsService::class)->getDeployments($this->organizationId);
+    }
+
+    #[Computed]
+    public function slaMetrics(): array
+    {
+        return app(SlaAnalyticsService::class)->getSlaMetrics(
+            $this->organizationId,
+            $this->sinceDate(),
+            $this->deploymentId,
+        );
+    }
+
+    #[Computed]
+    public function latencyBreakdown()
+    {
+        return app(SlaAnalyticsService::class)->getLatencyBreakdown(
+            $this->organizationId,
+            $this->sinceDate(),
+            $this->deploymentId,
+        );
+    }
+
+    #[Computed]
+    public function slaBreaches(): array
+    {
+        return app(SlaAnalyticsService::class)->getSlaBreaches(
+            $this->organizationId,
+            $this->sinceDate(),
+            $this->deploymentId,
+            (float) config('ai.sla_threshold_minutes', 10.0),
+        );
+    }
+
+    private function sinceDate(): string
+    {
+        return match ($this->timeframe) {
+            '24h' => now()->subDay()->toDateTimeString(),
+            '30d' => now()->subDays(30)->toDateTimeString(),
+            '90d' => now()->subDays(90)->toDateTimeString(),
+            default => now()->subDays(7)->toDateTimeString(),
+        };
+    }
+
+    public function render()
+    {
+        return view('livewire.agents.sla-monitoring-dashboard');
+    }
+}
 
 #[Lazy]
 class SlaMonitoringDashboard extends Component
