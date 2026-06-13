@@ -23,7 +23,7 @@ class UpdateOrganizationSettingsAction
             'country', 'timezone', 'currency', 'settings', 'billing_address',
         ];
 
-        $old     = $organization->only($allowed);
+        $old = $organization->only($allowed);
         $updates = $data->toArray();
 
         if (isset($updates['settings'])) {

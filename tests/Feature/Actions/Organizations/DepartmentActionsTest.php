@@ -9,6 +9,7 @@ use App\DTOs\Organizations\SaveDepartmentData;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -104,7 +105,7 @@ class DepartmentActionsTest extends TestCase
 
         // The Department model has a global org scope: findOrFail won't find
         // a department belonging to a different org, enforcing tenant isolation.
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
 
         app(SaveDepartmentAction::class)->execute(
             $this->organization,
@@ -147,7 +148,7 @@ class DepartmentActionsTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
 
         app(DeleteDepartmentAction::class)->execute(
             $this->organization,

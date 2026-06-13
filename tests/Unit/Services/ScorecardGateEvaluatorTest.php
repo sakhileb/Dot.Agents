@@ -23,15 +23,15 @@ class ScorecardGateEvaluatorTest extends TestCase
     private function passingInputs(): array
     {
         return [
-            'dataTrust'       => ['score' => 95],
-            'agentReliability'=> ['score' => 92],
-            'predictionAcc'   => [
-                'score'            => 92,
-                'total_decisions'  => 10,
-                'dimensions'       => ['realityAlign' => ['avg_alignment' => 90]],
+            'dataTrust' => ['score' => 95],
+            'agentReliability' => ['score' => 92],
+            'predictionAcc' => [
+                'score' => 92,
+                'total_decisions' => 10,
+                'dimensions' => ['realityAlign' => ['avg_alignment' => 90]],
             ],
-            'observability'   => ['score' => 70],
-            'disResult'       => ['quarantined' => 0, 'critical' => 0, 'total_agents' => 5, 'healthy' => 5],
+            'observability' => ['score' => 70],
+            'disResult' => ['quarantined' => 0, 'critical' => 0, 'total_agents' => 5, 'healthy' => 5],
         ];
     }
 
@@ -98,7 +98,7 @@ class ScorecardGateEvaluatorTest extends TestCase
         $p = $this->passingInputs();
         // Zero decisions → grace pass regardless of score
         $p['predictionAcc']['total_decisions'] = 0;
-        $p['predictionAcc']['score']           = 50; // Would fail if data existed
+        $p['predictionAcc']['score'] = 50; // Would fail if data existed
 
         $result = $this->evaluator->evaluate(
             90, $p['dataTrust'], $p['agentReliability'],

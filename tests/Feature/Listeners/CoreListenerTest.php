@@ -109,8 +109,8 @@ class CoreListenerTest extends TestCase
 
         $task = AgentTask::factory()->create([
             'agent_deployment_id' => $this->deployment->id,
-            'organization_id'     => $this->organization->id,
-            'status'              => 'completed',
+            'organization_id' => $this->organization->id,
+            'status' => 'completed',
         ]);
 
         $listener = new UpdateScorecardOnTaskComplete;
@@ -124,8 +124,8 @@ class CoreListenerTest extends TestCase
     {
         $task = AgentTask::factory()->create([
             'agent_deployment_id' => $this->deployment->id,
-            'organization_id'     => $this->organization->id,
-            'status'              => 'completed',
+            'organization_id' => $this->organization->id,
+            'status' => 'completed',
         ]);
 
         Log::shouldReceive('error')->once()->with(
@@ -150,15 +150,15 @@ class CoreListenerTest extends TestCase
         // Create 2 prior failed tasks in the last hour to hit the threshold of 3
         AgentTask::factory()->count(2)->create([
             'agent_deployment_id' => $this->deployment->id,
-            'organization_id'     => $this->organization->id,
-            'status'              => 'failed',
-            'created_at'          => now()->subMinutes(10),
+            'organization_id' => $this->organization->id,
+            'status' => 'failed',
+            'created_at' => now()->subMinutes(10),
         ]);
 
         $task = AgentTask::factory()->create([
             'agent_deployment_id' => $this->deployment->id,
-            'organization_id'     => $this->organization->id,
-            'status'              => 'failed',
+            'organization_id' => $this->organization->id,
+            'status' => 'failed',
         ]);
 
         $listener = new HandleAgentTaskFailed;
@@ -174,8 +174,8 @@ class CoreListenerTest extends TestCase
 
         $task = AgentTask::factory()->create([
             'agent_deployment_id' => $this->deployment->id,
-            'organization_id'     => $this->organization->id,
-            'status'              => 'failed',
+            'organization_id' => $this->organization->id,
+            'status' => 'failed',
         ]);
 
         $listener = new HandleAgentTaskFailed;

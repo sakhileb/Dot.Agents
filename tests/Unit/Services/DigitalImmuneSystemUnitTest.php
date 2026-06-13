@@ -4,10 +4,8 @@ namespace Tests\Unit\Services;
 
 use App\Models\AgentDeployment;
 use App\Models\AgentTask;
-use App\Models\DecisionLog;
 use App\Models\Organization;
 use App\Models\User;
-use App\Models\UsageRecord;
 use App\Services\Governance\AuditService;
 use App\Services\Governance\DigitalImmuneSystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,11 +37,11 @@ class DigitalImmuneSystemUnitTest extends TestCase
     private function makeDeployment(array $overrides = []): AgentDeployment
     {
         $user = User::factory()->create();
-        $org  = Organization::factory()->create(['owner_id' => $user->id]);
+        $org = Organization::factory()->create(['owner_id' => $user->id]);
 
         return AgentDeployment::factory()->create(array_merge([
             'organization_id' => $org->id,
-            'status'          => 'active',
+            'status' => 'active',
         ], $overrides));
     }
 
@@ -79,16 +77,16 @@ class DigitalImmuneSystemUnitTest extends TestCase
         // Create 8 failed tasks and 2 completed to produce 80% failure rate (>50% threshold)
         AgentTask::factory()->count(8)->create([
             'agent_deployment_id' => $deployment->id,
-            'organization_id'     => $deployment->organization_id,
-            'status'              => 'failed',
-            'created_at'          => now()->subMinutes(5),
+            'organization_id' => $deployment->organization_id,
+            'status' => 'failed',
+            'created_at' => now()->subMinutes(5),
         ]);
 
         AgentTask::factory()->count(2)->create([
             'agent_deployment_id' => $deployment->id,
-            'organization_id'     => $deployment->organization_id,
-            'status'              => 'completed',
-            'created_at'          => now()->subMinutes(5),
+            'organization_id' => $deployment->organization_id,
+            'status' => 'completed',
+            'created_at' => now()->subMinutes(5),
         ]);
 
         $result = $this->dis->checkDeployment($deployment);
@@ -100,11 +98,11 @@ class DigitalImmuneSystemUnitTest extends TestCase
     public function run_health_check_returns_correct_aggregate_structure(): void
     {
         $user = User::factory()->create();
-        $org  = Organization::factory()->create(['owner_id' => $user->id]);
+        $org = Organization::factory()->create(['owner_id' => $user->id]);
 
         AgentDeployment::factory()->count(2)->create([
             'organization_id' => $org->id,
-            'status'          => 'active',
+            'status' => 'active',
         ]);
 
         $report = $this->dis->runHealthCheck($org->id);

@@ -3,7 +3,6 @@
 namespace Tests\Unit\Services;
 
 use App\Models\AgentDeployment;
-use App\Models\AgentSession;
 use App\Models\AgentTask;
 use App\Models\Organization;
 use App\Models\User;
@@ -28,8 +27,8 @@ class CustomerSuccessServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->service      = app(CustomerSuccessService::class);
-        $user               = User::factory()->create();
+        $this->service = app(CustomerSuccessService::class);
+        $user = User::factory()->create();
         $this->organization = Organization::factory()->create(['owner_id' => $user->id]);
     }
 
@@ -76,16 +75,16 @@ class CustomerSuccessServiceTest extends TestCase
     {
         $deployment = AgentDeployment::factory()->create([
             'organization_id' => $this->organization->id,
-            'status'          => 'active',
+            'status' => 'active',
         ]);
 
         // Create rated completed tasks — service should produce a valid score
         AgentTask::factory()->count(10)->create([
             'agent_deployment_id' => $deployment->id,
-            'organization_id'     => $this->organization->id,
-            'status'              => 'completed',
-            'user_rating'         => 5,
-            'created_at'          => now()->subDays(2),
+            'organization_id' => $this->organization->id,
+            'status' => 'completed',
+            'user_rating' => 5,
+            'created_at' => now()->subDays(2),
         ]);
 
         $this->service->invalidate($this->organization);

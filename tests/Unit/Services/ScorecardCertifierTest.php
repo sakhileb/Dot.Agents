@@ -25,7 +25,7 @@ class ScorecardCertifierTest extends TestCase
         $this->certifier = new ScorecardCertifier;
 
         $this->allPassGates = ['all_pass' => true];
-        $this->failedGates  = ['all_pass' => false];
+        $this->failedGates = ['all_pass' => false];
     }
 
     public function test_gate_failure_overrides_to_level_1_regardless_of_score(): void

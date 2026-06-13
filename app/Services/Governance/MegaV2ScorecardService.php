@@ -46,14 +46,14 @@ class MegaV2ScorecardService
     {
         $data = $this->dataCollector->collect($organization);
 
-        $dataTrust        = $data['dataTrust'];
+        $dataTrust = $data['dataTrust'];
         $agentReliability = $data['agentReliability'];
-        $predictionAcc    = $data['predictionAcc'];
-        $orgMemoryScore   = $data['orgMemoryScore'];
-        $observability    = $data['observability'];
-        $disResult        = $data['disResult'];
-        $financialScore   = $data['financialScore'];
-        $csScore          = $data['csScore'];
+        $predictionAcc = $data['predictionAcc'];
+        $orgMemoryScore = $data['orgMemoryScore'];
+        $observability = $data['observability'];
+        $disResult = $data['disResult'];
+        $financialScore = $data['financialScore'];
+        $csScore = $data['csScore'];
 
         $technicalScores = $this->domainScorer->computeTechnicalDomains($dataTrust, $observability, $disResult);
         $technicalRaw = $this->domainScorer->weightedAverage($technicalScores);

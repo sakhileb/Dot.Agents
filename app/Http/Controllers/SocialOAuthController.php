@@ -12,9 +12,10 @@ use App\Models\SocialAccount;
 use App\Support\SocialPlatformConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Socialite\Contracts\Factory as Socialite;
-use Laravel\Socialite\Contracts\Provider;
+use Laravel\Socialite\Two\AbstractProvider;
 
 class SocialOAuthController extends Controller
 {
@@ -51,7 +52,7 @@ class SocialOAuthController extends Controller
 
         $account = $action->execute(ConnectSocialAccountData::fromArray([
             'organization_id' => (int) session('current_organization_id'),
-            'connected_by' => auth()->id(),
+            'connected_by' => Auth::id(),
             'platform' => $platform,
             'platform_account_id' => (string) $oauthUser->getId(),
             'account_name' => $oauthUser->getName() ?? $oauthUser->getNickname() ?? $oauthUser->getEmail(),
@@ -73,7 +74,7 @@ class SocialOAuthController extends Controller
             ->with('success', "Connected {$account->account_name} on ".ucfirst($platform).'.');
     }
 
-    private function resolveDriver(string $platform): Provider
+    private function resolveDriver(string $platform): AbstractProvider
     {
         $driver = SocialPlatformConfig::driverFor($platform);
         $orgId = (int) session('current_organization_id');

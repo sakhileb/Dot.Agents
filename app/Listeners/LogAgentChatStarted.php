@@ -23,15 +23,15 @@ class LogAgentChatStarted implements ShouldQueue
 
     public function handle(AgentChatStarted $event): void
     {
-        $session    = $event->session;
+        $session = $event->session;
         $deployment = $session->agentDeployment;
 
         $this->auditService->logAgentAction($deployment, 'agent_chat_started', [
-            'session_id'          => $session->id,
-            'user_id'             => $session->user_id,
-            'organization_id'     => $session->organization_id,
-            'session_type'        => $session->session_type,
-            'started_at'          => $session->started_at?->toIso8601String(),
+            'session_id' => $session->id,
+            'user_id' => $session->user_id,
+            'organization_id' => $session->organization_id,
+            'session_type' => $session->session_type,
+            'started_at' => $session->started_at?->toIso8601String(),
         ]);
     }
 
@@ -39,7 +39,7 @@ class LogAgentChatStarted implements ShouldQueue
     {
         Log::error('[LogAgentChatStarted] Failed to log chat session start', [
             'session_id' => $event->session->id,
-            'error'      => $exception->getMessage(),
+            'error' => $exception->getMessage(),
         ]);
     }
 }

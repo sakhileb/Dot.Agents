@@ -46,15 +46,15 @@ readonly class UpdateOrganizationSettingsData
     public function toArray(): array
     {
         $map = [
-            'name'            => $this->name,
-            'domain'          => $this->domain,
-            'logo'            => $this->logo,
-            'industry'        => $this->industry,
-            'size'            => $this->size,
-            'country'         => $this->country,
-            'timezone'        => $this->timezone,
-            'currency'        => $this->currency,
-            'settings'        => $this->settings,
+            'name' => $this->name,
+            'domain' => $this->domain,
+            'logo' => $this->logo,
+            'industry' => $this->industry,
+            'size' => $this->size,
+            'country' => $this->country,
+            'timezone' => $this->timezone,
+            'currency' => $this->currency,
+            'settings' => $this->settings,
             'billing_address' => $this->billingAddress,
         ];
 

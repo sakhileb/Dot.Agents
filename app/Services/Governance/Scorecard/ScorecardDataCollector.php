@@ -47,14 +47,14 @@ class ScorecardDataCollector
     public function collect(Organization $organization): array
     {
         return [
-            'dataTrust'        => $this->dataTrust->calculate($organization),
+            'dataTrust' => $this->dataTrust->calculate($organization),
             'agentReliability' => $this->reliabilityAuditor->auditOrganization($organization),
-            'predictionAcc'    => $this->predictionAccuracy->calculateForOrganization($organization),
-            'orgMemoryScore'   => $this->orgMemory->calculate($organization),
-            'observability'    => $this->observability->observabilityScore(),
-            'disResult'        => $this->dis->runHealthCheck($organization->id),
-            'financialScore'   => $this->financial->calculate($organization),
-            'csScore'          => $this->customerSuccess->calculate($organization),
+            'predictionAcc' => $this->predictionAccuracy->calculateForOrganization($organization),
+            'orgMemoryScore' => $this->orgMemory->calculate($organization),
+            'observability' => $this->observability->observabilityScore(),
+            'disResult' => $this->dis->runHealthCheck($organization->id),
+            'financialScore' => $this->financial->calculate($organization),
+            'csScore' => $this->customerSuccess->calculate($organization),
         ];
     }
 }

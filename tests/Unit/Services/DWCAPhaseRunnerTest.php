@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Models\AgentDeployment;
 use App\Services\Governance\Audit\DWCAPhaseRunner;
 use App\Services\Governance\Audit\Phase01AgentDiscovery;
 use App\Services\Governance\Audit\Phase02SkillAudit;
@@ -11,7 +12,6 @@ use App\Services\Governance\Audit\Phase07DelusionRisk;
 use App\Services\Governance\Audit\Phase08Memory;
 use App\Services\Governance\Audit\Phase12Performance;
 use App\Services\Governance\Audit\Phase13Scorecard;
-use App\Models\AgentDeployment;
 use Mockery;
 use Tests\TestCase;
 
@@ -87,13 +87,13 @@ class DWCAPhaseRunnerTest extends TestCase
         // Assign distinct scores per phase to verify ordering
         $runner = new DWCAPhaseRunner(
             phase01: tap(Mockery::mock(Phase01AgentDiscovery::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p01', 'score' => 10, 'failures' => []])),
-            phase02: tap(Mockery::mock(Phase02SkillAudit::class),    fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p02', 'score' => 20, 'failures' => []])),
-            phase04: tap(Mockery::mock(Phase04AgentQuality::class),  fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p04', 'score' => 30, 'failures' => []])),
-            phase06: tap(Mockery::mock(Phase06Governance::class),    fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p06', 'score' => 40, 'failures' => []])),
-            phase07: tap(Mockery::mock(Phase07DelusionRisk::class),  fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p07', 'score' => 50, 'failures' => []])),
-            phase08: tap(Mockery::mock(Phase08Memory::class),        fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p08', 'score' => 60, 'failures' => []])),
-            phase12: tap(Mockery::mock(Phase12Performance::class),   fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p12', 'score' => 70, 'failures' => []])),
-            phase13: tap(Mockery::mock(Phase13Scorecard::class),     fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p13', 'score' => 80, 'failures' => []])),
+            phase02: tap(Mockery::mock(Phase02SkillAudit::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p02', 'score' => 20, 'failures' => []])),
+            phase04: tap(Mockery::mock(Phase04AgentQuality::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p04', 'score' => 30, 'failures' => []])),
+            phase06: tap(Mockery::mock(Phase06Governance::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p06', 'score' => 40, 'failures' => []])),
+            phase07: tap(Mockery::mock(Phase07DelusionRisk::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p07', 'score' => 50, 'failures' => []])),
+            phase08: tap(Mockery::mock(Phase08Memory::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p08', 'score' => 60, 'failures' => []])),
+            phase12: tap(Mockery::mock(Phase12Performance::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p12', 'score' => 70, 'failures' => []])),
+            phase13: tap(Mockery::mock(Phase13Scorecard::class), fn ($m) => $m->shouldReceive('execute')->andReturn(['phase' => 'p13', 'score' => 80, 'failures' => []])),
         );
 
         $phases = $runner->run($deployment);

@@ -27,8 +27,8 @@ class PredictionAccuracyTrackingServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->service      = app(PredictionAccuracyTrackingService::class);
-        $user               = User::factory()->create();
+        $this->service = app(PredictionAccuracyTrackingService::class);
+        $user = User::factory()->create();
         $this->organization = Organization::factory()->create(['owner_id' => $user->id]);
     }
 
@@ -84,11 +84,11 @@ class PredictionAccuracyTrackingServiceTest extends TestCase
         ]);
 
         $decision = DecisionLog::factory()->create([
-            'agent_deployment_id'     => $deployment->id,
-            'organization_id'         => $this->organization->id,
-            'confidence_score'        => 85.0,
+            'agent_deployment_id' => $deployment->id,
+            'organization_id' => $this->organization->id,
+            'confidence_score' => 85.0,
             'reality_alignment_score' => 90.0,
-            'final_outcome'           => 'implemented',
+            'final_outcome' => 'implemented',
         ]);
 
         // Should not throw

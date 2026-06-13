@@ -3,7 +3,6 @@
 namespace Tests\Unit\Services;
 
 use App\Models\AgentDeployment;
-use App\Models\AgentMemory;
 use App\Models\DecisionLog;
 use App\Models\Organization;
 use App\Models\User;
@@ -28,8 +27,8 @@ class MemoryScoreCalculatorTest extends TestCase
     {
         parent::setUp();
 
-        $this->calculator   = new MemoryScoreCalculator;
-        $user               = User::factory()->create();
+        $this->calculator = new MemoryScoreCalculator;
+        $user = User::factory()->create();
         $this->organization = Organization::factory()->create(['owner_id' => $user->id]);
     }
 
@@ -60,7 +59,7 @@ class MemoryScoreCalculatorTest extends TestCase
 
     public function test_dimensions_contain_all_five_areas(): void
     {
-        $result     = $this->calculator->compute($this->organization->id);
+        $result = $this->calculator->compute($this->organization->id);
         $dimensions = $result['dimensions'];
 
         // All 5 scoring dimensions should be present
@@ -85,8 +84,8 @@ class MemoryScoreCalculatorTest extends TestCase
         ]);
 
         DecisionLog::factory()->count(5)->create([
-            'agent_deployment_id'     => $deployment->id,
-            'organization_id'         => $this->organization->id,
+            'agent_deployment_id' => $deployment->id,
+            'organization_id' => $this->organization->id,
             'reality_alignment_score' => 95.0,
         ]);
 

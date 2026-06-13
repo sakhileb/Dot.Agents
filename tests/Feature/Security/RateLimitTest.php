@@ -40,9 +40,9 @@ class RateLimitTest extends TestCase
     {
         parent::setUp();
 
-        $this->user         = User::factory()->create();
+        $this->user = User::factory()->create();
         $this->organization = Organization::factory()->create(['owner_id' => $this->user->id]);
-        $this->deployment   = AgentDeployment::factory()->create([
+        $this->deployment = AgentDeployment::factory()->create([
             'organization_id' => $this->organization->id,
         ]);
         $this->skill = AgentSkill::factory()->create();
@@ -51,9 +51,9 @@ class RateLimitTest extends TestCase
         // Assign the skill to the deployment so the route model binding resolves
         AgentSkillAssignment::factory()->create([
             'agent_deployment_id' => $this->deployment->id,
-            'skill_id'            => $this->skill->id,
-            'organization_id'     => $this->organization->id,
-            'is_enabled'          => true,
+            'skill_id' => $this->skill->id,
+            'organization_id' => $this->organization->id,
+            'is_enabled' => true,
         ]);
     }
 

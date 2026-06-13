@@ -5,6 +5,8 @@ namespace App\Services\Governance;
 use App\Models\AgentDeployment;
 use App\Models\AuditLog;
 use App\Models\SecurityEvent;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -38,12 +40,16 @@ class AuditService
     ): AuditLog {
         $mergedData = array_merge($data, $metadata);
 
+        /** @var User|null $currentUser */
+        $currentUser = Auth::user();
+        $orgId = session('current_organization_id')
+            ?? $currentUser?->currentOrganization()?->id
+            ?? (($subject && isset($subject->organization_id)) ? (int) $subject->organization_id : null);
+
         return AuditLog::create([
             'uuid' => (string) Str::uuid(),
-            'organization_id' => session('current_organization_id')
-                ?? auth()->user()?->currentOrganization()?->id
-                ?? (($subject && isset($subject->organization_id)) ? (int) $subject->organization_id : null),
-            'user_id' => auth()->id(),
+            'organization_id' => $orgId,
+            'user_id' => Auth::id(),
             'auditable_type' => $subject ? get_class($subject) : null,
             'auditable_id' => $subject?->getKey(),
             'event' => $event,
@@ -69,7 +75,7 @@ class AuditService
         $event = SecurityEvent::create([
             'organization_id' => $organizationId,
             'agent_deployment_id' => $deploymentId,
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'event_type' => $eventType,
             'severity' => $severity,
             'title' => $title,

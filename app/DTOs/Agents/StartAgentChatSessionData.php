@@ -26,11 +26,11 @@ readonly class StartAgentChatSessionData
     public function toArray(): array
     {
         return array_filter([
-            'user_id'             => $this->userId,
+            'user_id' => $this->userId,
             'agent_deployment_id' => $this->agentDeploymentId,
-            'organization_id'     => $this->organizationId,
-            'title'               => $this->title,
-            'initial_message'     => $this->initialMessage,
+            'organization_id' => $this->organizationId,
+            'title' => $this->title,
+            'initial_message' => $this->initialMessage,
         ], fn ($v) => $v !== null);
     }
 }

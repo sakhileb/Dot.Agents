@@ -71,9 +71,9 @@ class SendPlatformNotification implements ShouldQueue
         ?string $actionUrl = null
     ): void {
         $admins = User::whereHas('organizations', fn ($q) => $q
-                ->where('organizations.id', $organizationId)
-                ->whereIn('organization_user.role', ['owner', 'admin'])
-            )
+            ->where('organizations.id', $organizationId)
+            ->whereIn('organization_user.role', ['owner', 'admin'])
+        )
             ->select('id')
             ->get();
 

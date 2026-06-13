@@ -27,8 +27,8 @@ class AgentReliabilityAuditorServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->service      = app(AgentReliabilityAuditorService::class);
-        $user               = User::factory()->create();
+        $this->service = app(AgentReliabilityAuditorService::class);
+        $user = User::factory()->create();
         $this->organization = Organization::factory()->create(['owner_id' => $user->id]);
     }
 
@@ -61,7 +61,7 @@ class AgentReliabilityAuditorServiceTest extends TestCase
     {
         AgentDeployment::factory()->count(2)->create([
             'organization_id' => $this->organization->id,
-            'status'          => 'active',
+            'status' => 'active',
         ]);
 
         $result = $this->service->auditOrganization($this->organization);
@@ -83,14 +83,14 @@ class AgentReliabilityAuditorServiceTest extends TestCase
     {
         $deployment = AgentDeployment::factory()->create([
             'organization_id' => $this->organization->id,
-            'status'          => 'active',
+            'status' => 'active',
         ]);
 
         AgentTask::factory()->count(10)->create([
             'agent_deployment_id' => $deployment->id,
-            'organization_id'     => $this->organization->id,
-            'status'              => 'completed',
-            'created_at'          => now()->subDays(5),
+            'organization_id' => $this->organization->id,
+            'status' => 'completed',
+            'created_at' => now()->subDays(5),
         ]);
 
         $this->service->invalidate($deployment);

@@ -60,9 +60,9 @@ class ScorecardDomainScorerTest extends TestCase
     /** @test */
     public function compute_technical_domains_returns_all_required_keys(): void
     {
-        $dataTrust    = ['score' => 85];
+        $dataTrust = ['score' => 85];
         $observability = ['score' => 90, 'sentry_configured' => true];
-        $disResult    = ['total_agents' => 10, 'healthy' => 9];
+        $disResult = ['total_agents' => 10, 'healthy' => 9];
 
         $domains = $this->scorer->computeTechnicalDomains($dataTrust, $observability, $disResult);
 
@@ -95,13 +95,13 @@ class ScorecardDomainScorerTest extends TestCase
             'score' => 80,
             'dimensions' => [
                 'realityAlign' => ['avg_alignment' => 88],
-                'hitRate'      => ['hit_rate' => 85],
-                'calibration'  => ['ece' => null],
+                'hitRate' => ['hit_rate' => 85],
+                'calibration' => ['ece' => null],
             ],
         ];
-        $reliability   = ['score' => 75];
-        $orgMemory     = ['score' => 70];
-        $disResult     = ['total_agents' => 5, 'healthy' => 5, 'warnings' => 0, 'critical' => 0, 'quarantined' => 0];
+        $reliability = ['score' => 75];
+        $orgMemory = ['score' => 70];
+        $disResult = ['total_agents' => 5, 'healthy' => 5, 'warnings' => 0, 'critical' => 0, 'quarantined' => 0];
 
         $domains = $this->scorer->computeIntelligenceDomains(
             $predictionAcc,
@@ -119,9 +119,9 @@ class ScorecardDomainScorerTest extends TestCase
     /** @test */
     public function compute_business_domains_returns_all_required_keys(): void
     {
-        $orgMemory  = ['score' => 70];
-        $financial  = ['score' => 65];
-        $csScore    = ['score' => 80, 'satisfaction_score' => 4.2];
+        $orgMemory = ['score' => 70];
+        $financial = ['score' => 65];
+        $csScore = ['score' => 80, 'satisfaction_score' => 4.2];
 
         $domains = $this->scorer->computeBusinessDomains($orgMemory, $financial, $csScore);
 
@@ -134,9 +134,9 @@ class ScorecardDomainScorerTest extends TestCase
     /** @test */
     public function weighted_average_of_technical_domains_is_between_0_and_100(): void
     {
-        $dataTrust    = ['score' => 100];
+        $dataTrust = ['score' => 100];
         $observability = ['score' => 100, 'sentry_configured' => true];
-        $disResult    = ['total_agents' => 5, 'healthy' => 5];
+        $disResult = ['total_agents' => 5, 'healthy' => 5];
 
         $domains = $this->scorer->computeTechnicalDomains($dataTrust, $observability, $disResult);
         $average = $this->scorer->weightedAverage($domains);

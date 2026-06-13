@@ -4,7 +4,6 @@ namespace App\Services\AI;
 
 use App\Models\ExecutiveCouncilSession;
 use App\Models\ExecutiveRecommendation;
-use App\Services\AI\AiInputSanitizer;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 use Throwable;

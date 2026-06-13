@@ -39,14 +39,14 @@ class DWCAPhaseRunner
     public function run(AgentDeployment $deployment): array
     {
         return [
-            'phase1_discovery'   => $this->phase01->execute($deployment),
+            'phase1_discovery' => $this->phase01->execute($deployment),
             'phase2_skill_audit' => $this->phase02->execute($deployment),
-            'phase4_quality'     => $this->phase04->execute($deployment),
-            'phase6_governance'  => $this->phase06->execute($deployment),
-            'phase7_delusion'    => $this->phase07->execute($deployment),
-            'phase8_memory'      => $this->phase08->execute($deployment),
-            'phase12_performance'=> $this->phase12->execute($deployment),
-            'phase13_scorecard'  => $this->phase13->execute($deployment),
+            'phase4_quality' => $this->phase04->execute($deployment),
+            'phase6_governance' => $this->phase06->execute($deployment),
+            'phase7_delusion' => $this->phase07->execute($deployment),
+            'phase8_memory' => $this->phase08->execute($deployment),
+            'phase12_performance' => $this->phase12->execute($deployment),
+            'phase13_scorecard' => $this->phase13->execute($deployment),
         ];
     }
 

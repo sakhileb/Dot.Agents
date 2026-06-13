@@ -4,6 +4,8 @@ namespace App\Services\Skills;
 
 use App\Models\AgentSkillApproval;
 use App\Models\AgentSkillScore;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * SkillQueryService — read-only query layer for skill-related data.
@@ -22,7 +24,7 @@ class SkillQueryService
         ?string $status = null,
         ?string $riskLevel = null,
         int $perPage = 20,
-    ): \Illuminate\Contracts\Pagination\LengthAwarePaginator {
+    ): LengthAwarePaginator {
         return AgentSkillApproval::where('organization_id', $organizationId)
             ->when($status !== null, fn ($q) => $q->where('status', $status))
             ->when($riskLevel !== null, fn ($q) => $q->forRisk($riskLevel))
@@ -38,7 +40,7 @@ class SkillQueryService
         int $deploymentId,
         int $organizationId,
         string $period,
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         return AgentSkillScore::where('agent_deployment_id', $deploymentId)
             ->where('organization_id', $organizationId)
             ->where('period', $period)
