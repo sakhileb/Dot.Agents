@@ -16,6 +16,27 @@ use Stripe\Subscription;
 
 class HandleStripeWebhookAction
 {
+    /**
+     * Process a verified Stripe webhook event.
+     *
+     * SECURITY NOTE — No Gate authorization is intentional.
+     *
+     * This action is invoked exclusively from BillingController::webhook(),
+     * which is on a public route (Stripe cannot authenticate as a platform
+     * user). Authorization is enforced at the transport layer instead:
+     *
+     *   1. BillingController::webhook() calls $this->stripe->constructWebhookEvent()
+     *      which calls \Stripe\Webhook::constructEvent() with the raw payload and
+     *      the Stripe-Signature header, verifying the HMAC-SHA256 signature using
+     *      STRIPE_WEBHOOK_SECRET from .env.
+     *   2. A SignatureVerificationException results in an immediate 400 response
+     *      before this action is ever reached.
+     *
+     * Adding a Gate authorization check here would be incorrect — it would
+     * require an authenticated platform user and would reject all legitimate
+     * Stripe events. See the webhook_actions_must_not_have_gate_authorize
+     * architecture guard test which enforces this exemption.
+     */
     public function __construct(
         private readonly StripeService $stripe,
     ) {}

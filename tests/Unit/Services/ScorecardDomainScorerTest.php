@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services;
 
 use App\Services\Governance\Scorecard\ScorecardDomainScorer;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -21,7 +22,7 @@ class ScorecardDomainScorerTest extends TestCase
         $this->scorer = new ScorecardDomainScorer;
     }
 
-    /** @test */
+    #[Test]
     public function weighted_average_returns_correct_score_for_equal_weights(): void
     {
         $domains = [
@@ -35,7 +36,7 @@ class ScorecardDomainScorerTest extends TestCase
         $this->assertEqualsWithDelta(80.0, $result, 0.01);
     }
 
-    /** @test */
+    #[Test]
     public function weighted_average_returns_correct_score_for_unequal_weights(): void
     {
         $domains = [
@@ -49,7 +50,7 @@ class ScorecardDomainScorerTest extends TestCase
         $this->assertEqualsWithDelta(83.33, $result, 0.01);
     }
 
-    /** @test */
+    #[Test]
     public function weighted_average_returns_zero_when_total_weight_is_zero(): void
     {
         $result = $this->scorer->weightedAverage([]);
@@ -57,7 +58,7 @@ class ScorecardDomainScorerTest extends TestCase
         $this->assertSame(0.0, $result);
     }
 
-    /** @test */
+    #[Test]
     public function compute_technical_domains_returns_all_required_keys(): void
     {
         $dataTrust = ['score' => 85];
@@ -74,7 +75,7 @@ class ScorecardDomainScorerTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function compute_technical_domains_handles_zero_agents(): void
     {
         $domains = $this->scorer->computeTechnicalDomains(
@@ -88,7 +89,7 @@ class ScorecardDomainScorerTest extends TestCase
         $this->assertGreaterThanOrEqual(0, $domains['security_cyber_defense']['score']);
     }
 
-    /** @test */
+    #[Test]
     public function compute_intelligence_domains_returns_all_required_keys(): void
     {
         $predictionAcc = [
@@ -116,7 +117,7 @@ class ScorecardDomainScorerTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function compute_business_domains_returns_all_required_keys(): void
     {
         $orgMemory = ['score' => 70];
@@ -131,7 +132,7 @@ class ScorecardDomainScorerTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function weighted_average_of_technical_domains_is_between_0_and_100(): void
     {
         $dataTrust = ['score' => 100];

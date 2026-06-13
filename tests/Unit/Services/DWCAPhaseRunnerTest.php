@@ -13,6 +13,7 @@ use App\Services\Governance\Audit\Phase08Memory;
 use App\Services\Governance\Audit\Phase12Performance;
 use App\Services\Governance\Audit\Phase13Scorecard;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -46,7 +47,7 @@ class DWCAPhaseRunnerTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function run_returns_all_eight_phase_keys(): void
     {
         $deployment = Mockery::mock(AgentDeployment::class);
@@ -64,7 +65,7 @@ class DWCAPhaseRunnerTest extends TestCase
         $this->assertArrayHasKey('phase13_scorecard', $result);
     }
 
-    /** @test */
+    #[Test]
     public function scores_returns_eight_numeric_values(): void
     {
         $deployment = Mockery::mock(AgentDeployment::class);
@@ -79,7 +80,7 @@ class DWCAPhaseRunnerTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function scores_preserves_phase_order(): void
     {
         $deployment = Mockery::mock(AgentDeployment::class);

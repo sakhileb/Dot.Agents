@@ -3,6 +3,7 @@
 namespace Tests\Architecture;
 
 use Illuminate\Support\Facades\File;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -18,7 +19,7 @@ class ServiceSizeLimitsTest extends TestCase
 {
     // ── Services ─────────────────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function no_service_file_exceeds_200_lines(): void
     {
         $violations = [];
@@ -80,7 +81,7 @@ class ServiceSizeLimitsTest extends TestCase
 
     // ── Controllers ───────────────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function no_controller_file_exceeds_100_lines(): void
     {
         $violations = [];
@@ -122,7 +123,7 @@ class ServiceSizeLimitsTest extends TestCase
 
     // ── Livewire Components ───────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function no_livewire_component_exceeds_200_lines(): void
     {
         $violations = [];
@@ -155,7 +156,7 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function livewire_components_do_not_contain_direct_eloquent_writes(): void
     {
         $violations = [];
@@ -198,7 +199,7 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function action_classes_do_not_exceed_200_lines(): void
     {
         $violations = [];
@@ -229,7 +230,7 @@ class ServiceSizeLimitsTest extends TestCase
 
     // ── Structural Guards ─────────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function action_classes_do_not_extend_eloquent_model(): void
     {
         $violations = [];
@@ -254,7 +255,7 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function service_classes_do_not_use_request_helper(): void
     {
         $violations = [];
@@ -281,7 +282,7 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function livewire_components_do_not_use_raw_sql(): void
     {
         $violations = [];
@@ -311,7 +312,7 @@ class ServiceSizeLimitsTest extends TestCase
 
     // ── Security Architecture Guards ─────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function controllers_do_not_contain_direct_eloquent_creates(): void
     {
         $violations = [];
@@ -343,7 +344,7 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function actions_do_not_inject_http_request(): void
     {
         $violations = [];
@@ -377,7 +378,7 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function every_action_has_a_corresponding_dto(): void
     {
         $violations = [];
@@ -445,7 +446,7 @@ class ServiceSizeLimitsTest extends TestCase
 
     // ── Event Coverage Guards ─────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function all_events_have_at_least_one_registered_listener(): void
     {
         $unhandled = [];
@@ -487,7 +488,7 @@ class ServiceSizeLimitsTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function models_with_organization_id_have_organization_scoping(): void
     {
         $violations = [];
@@ -539,5 +540,45 @@ class ServiceSizeLimitsTest extends TestCase
             "Models with organization_id missing HasOrganizationScope (or equivalent global scope):\n"
             .implode("\n", $violations)
         );
+    }
+
+    // ── Webhook Action Auth Exemption ─────────────────────────────────────────
+
+    #[Test]
+    public function webhook_actions_must_not_have_gate_authorize_and_must_document_their_auth_strategy(): void
+    {
+        /**
+         * Webhook-facing actions cannot use Gate::authorize() because the caller
+         * (e.g. Stripe) is not an authenticated platform user. Authorization for
+         * these actions is enforced at the transport layer (signature verification).
+         *
+         * This test asserts that:
+         *   1. The known webhook actions do NOT call Gate::authorize() — adding it
+         *      would silently break production webhook processing.
+         *   2. They DO contain the expected "SECURITY NOTE" docblock confirming
+         *      the intentional exemption is documented and reviewed.
+         */
+        $webhookActions = [
+            app_path('Actions/Billing/HandleStripeWebhookAction.php'),
+        ];
+
+        foreach ($webhookActions as $path) {
+            $this->assertFileExists($path, "Webhook action file missing: $path");
+            $content = file_get_contents($path);
+
+            $this->assertStringNotContainsString(
+                'Gate::authorize(',
+                $content,
+                basename($path).' must NOT call Gate::authorize() — webhook routes have no authenticated user. '.
+                'Authorization is performed via signature verification in the controller.'
+            );
+
+            $this->assertStringContainsString(
+                'SECURITY NOTE',
+                $content,
+                basename($path).' must contain a "SECURITY NOTE" docblock explaining why Gate::authorize() '.
+                'is intentionally absent and what transport-layer auth mechanism is used instead.'
+            );
+        }
     }
 }

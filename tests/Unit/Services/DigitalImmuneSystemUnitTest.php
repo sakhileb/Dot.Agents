@@ -10,6 +10,7 @@ use App\Services\Governance\AuditService;
 use App\Services\Governance\DigitalImmuneSystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -45,7 +46,7 @@ class DigitalImmuneSystemUnitTest extends TestCase
         ], $overrides));
     }
 
-    /** @test */
+    #[Test]
     public function check_deployment_returns_required_keys(): void
     {
         $deployment = $this->makeDeployment();
@@ -57,7 +58,7 @@ class DigitalImmuneSystemUnitTest extends TestCase
         $this->assertContains($result['health'], ['healthy', 'warnings', 'critical', 'quarantined']);
     }
 
-    /** @test */
+    #[Test]
     public function check_deployment_returns_healthy_when_no_anomalies(): void
     {
         $deployment = $this->makeDeployment();
@@ -69,7 +70,7 @@ class DigitalImmuneSystemUnitTest extends TestCase
         $this->assertEmpty($result['events']);
     }
 
-    /** @test */
+    #[Test]
     public function check_deployment_detects_high_failure_rate(): void
     {
         $deployment = $this->makeDeployment();
@@ -94,7 +95,7 @@ class DigitalImmuneSystemUnitTest extends TestCase
         $this->assertNotSame('healthy', $result['health']);
     }
 
-    /** @test */
+    #[Test]
     public function run_health_check_returns_correct_aggregate_structure(): void
     {
         $user = User::factory()->create();

@@ -24,6 +24,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
@@ -84,7 +85,7 @@ class SkillActionTestSuite extends TestCase
 
     // 1. Skill Authorization
 
-    /** @test */
+    #[Test]
     public function assign_skill_creates_assignment_for_active_skill(): void
     {
         $data = new AssignSkillData(
@@ -108,7 +109,7 @@ class SkillActionTestSuite extends TestCase
 
     // 2. Skill Governance
 
-    /** @test */
+    #[Test]
     public function assign_skill_is_idempotent_on_second_call(): void
     {
         $data = new AssignSkillData(
@@ -126,7 +127,7 @@ class SkillActionTestSuite extends TestCase
             ->count());
     }
 
-    /** @test */
+    #[Test]
     public function assign_skill_rejects_inactive_skill(): void
     {
         $inactiveSkill = AgentSkill::factory()->create(['is_active' => false]);
@@ -144,7 +145,7 @@ class SkillActionTestSuite extends TestCase
 
     // 3. Skill Approval Workflow
 
-    /** @test */
+    #[Test]
     public function execute_skill_with_approval_required_creates_pending_approval(): void
     {
         Event::fake([
@@ -186,7 +187,7 @@ class SkillActionTestSuite extends TestCase
         Event::assertDispatched(SkillApprovalRequested::class);
     }
 
-    /** @test */
+    #[Test]
     public function process_approval_approved_advances_execution_to_running(): void
     {
         Event::fake([
@@ -218,7 +219,7 @@ class SkillActionTestSuite extends TestCase
         Event::assertDispatched(SkillExecuted::class);
     }
 
-    /** @test */
+    #[Test]
     public function process_approval_rejected_marks_execution_as_skipped(): void
     {
         Event::fake([
@@ -249,7 +250,7 @@ class SkillActionTestSuite extends TestCase
         $this->assertEquals('skipped', $execution->fresh()->status);
     }
 
-    /** @test */
+    #[Test]
     public function process_approval_rejects_already_processed_approval(): void
     {
         $approval = AgentSkillApproval::factory()->create([
@@ -267,7 +268,7 @@ class SkillActionTestSuite extends TestCase
 
     // 4. Skill Audit Logging
 
-    /** @test */
+    #[Test]
     public function execute_skill_creates_audit_trail_when_audit_required(): void
     {
         Event::fake([
@@ -300,7 +301,7 @@ class SkillActionTestSuite extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function process_approval_writes_audit_record(): void
     {
         Event::fake([
@@ -334,7 +335,7 @@ class SkillActionTestSuite extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function skill_audit_trail_is_immutable(): void
     {
         $audit = AgentSkillAudit::create([
@@ -356,7 +357,7 @@ class SkillActionTestSuite extends TestCase
 
     // 5. Skill Scoring
 
-    /** @test */
+    #[Test]
     public function record_skill_score_creates_monthly_score_record(): void
     {
         app(RecordSkillScoreAction::class)->execute(
@@ -378,7 +379,7 @@ class SkillActionTestSuite extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function record_skill_score_increments_on_second_execution(): void
     {
         $action = app(RecordSkillScoreAction::class);
@@ -399,7 +400,7 @@ class SkillActionTestSuite extends TestCase
 
     // 6. Skill Failure Recovery
 
-    /** @test */
+    #[Test]
     public function record_skill_score_tracks_blocked_executions(): void
     {
         app(RecordSkillScoreAction::class)->execute(
@@ -417,7 +418,7 @@ class SkillActionTestSuite extends TestCase
 
     // 7. Skill Delegation
 
-    /** @test */
+    #[Test]
     public function execute_skill_creates_running_execution_and_fires_event(): void
     {
         Event::fake([
@@ -449,7 +450,7 @@ class SkillActionTestSuite extends TestCase
         Event::assertDispatched(SkillExecuted::class);
     }
 
-    /** @test */
+    #[Test]
     public function execute_skill_is_blocked_for_inactive_skill(): void
     {
         $inactiveSkill = AgentSkill::factory()->create(['is_active' => false]);
@@ -469,7 +470,7 @@ class SkillActionTestSuite extends TestCase
 
     // 8. Skill Tenant Isolation
 
-    /** @test */
+    #[Test]
     public function skill_executions_are_scoped_to_organization(): void
     {
         Event::fake([
@@ -508,7 +509,7 @@ class SkillActionTestSuite extends TestCase
         $this->assertEquals(0, AgentSkillExecution::count());
     }
 
-    /** @test */
+    #[Test]
     public function skill_approvals_are_scoped_to_organization(): void
     {
         Event::fake([
