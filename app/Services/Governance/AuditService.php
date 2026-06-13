@@ -22,8 +22,8 @@ class AuditService
             'event_category' => 'agent_action',
             'description' => "Agent '{$deployment->display_name}' performed: {$event}",
             'new_values' => $data,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
+            'ip_address' => app('request')->ip(),
+            'user_agent' => app('request')->userAgent(),
             'session_id' => session()->getId(),
             'risk_level' => $this->assessRiskLevel($event, $data),
         ]);
@@ -50,8 +50,8 @@ class AuditService
             'event_category' => 'user_action',
             'description' => $description,
             'new_values' => $mergedData,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
+            'ip_address' => app('request')->ip(),
+            'user_agent' => app('request')->userAgent(),
             'session_id' => session()->getId(),
             'risk_level' => $this->assessRiskLevel($event, $mergedData),
         ]);
@@ -75,7 +75,7 @@ class AuditService
             'title' => $title,
             'description' => $description,
             'event_data' => $data,
-            'source_ip' => request()->ip(),
+            'source_ip' => app('request')->ip(),
             'status' => 'open',
             'auto_remediated' => false,
         ]);

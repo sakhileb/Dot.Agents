@@ -65,14 +65,23 @@ jobs:
           echo "SESSION_DRIVER=array" >> .env
 
       - name: Run PHPUnit tests with coverage
-        run: php artisan test --compact --coverage --min=80
+        run: php artisan test --compact --coverage --min=80 --coverage-clover=storage/logs/coverage.xml
         env:
           XDEBUG_MODE: coverage
+
+      - name: Upload coverage XML artifact
+        uses: actions/upload-artifact@v4
+        if: always() && matrix.php == '8.4'
+        with:
+          name: coverage-report
+          path: storage/logs/coverage.xml
+          retention-days: 14
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
         if: matrix.php == '8.4'
         with:
+          files: storage/logs/coverage.xml
           fail_ci_if_error: false
 
   pint:

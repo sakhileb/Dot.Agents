@@ -3,6 +3,7 @@
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\SocialAccountController;
+use App\Http\Controllers\SocialOAuthController;
 use App\Models\AgentDeployment;
 use App\Models\AgentWorkflow;
 use App\Models\User;
@@ -136,8 +137,8 @@ Route::middleware([
         Route::delete('/accounts/{socialAccount}', [SocialAccountController::class, 'destroy'])->name('accounts.destroy');
 
         // OAuth redirect + callback (platform = facebook|instagram|linkedin|twitter|tiktok)
-        Route::get('/auth/{platform}/redirect', [SocialAccountController::class, 'redirect'])->name('auth.redirect');
-        Route::get('/auth/{platform}/callback', [SocialAccountController::class, 'callback'])->name('auth.callback');
+        Route::get('/auth/{platform}/redirect', [SocialOAuthController::class, 'redirect'])->name('auth.redirect');
+        Route::get('/auth/{platform}/callback', [SocialOAuthController::class, 'callback'])->name('auth.callback');
     });
 });
 
