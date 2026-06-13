@@ -20,6 +20,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CoreListenerTest extends TestCase
@@ -52,7 +53,7 @@ class CoreListenerTest extends TestCase
 
     // ── LogDeploymentAudit ────────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function log_deployment_audit_calls_audit_service_on_handle(): void
     {
         Bus::fake([SendPlatformNotification::class]);
@@ -68,7 +69,7 @@ class CoreListenerTest extends TestCase
         Bus::assertDispatched(SendPlatformNotification::class);
     }
 
-    /** @test */
+    #[Test]
     public function log_deployment_audit_dispatches_admin_notification(): void
     {
         Bus::fake([SendPlatformNotification::class]);
@@ -83,7 +84,7 @@ class CoreListenerTest extends TestCase
         Bus::assertDispatched(SendPlatformNotification::class);
     }
 
-    /** @test */
+    #[Test]
     public function log_deployment_audit_logs_error_on_failure(): void
     {
         Log::shouldReceive('error')->once()->with(
@@ -102,7 +103,7 @@ class CoreListenerTest extends TestCase
 
     // ── UpdateScorecardOnTaskComplete ─────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function update_scorecard_dispatches_generate_scorecard_job(): void
     {
         Bus::fake([GenerateAgentScorecard::class]);
@@ -119,7 +120,7 @@ class CoreListenerTest extends TestCase
         Bus::assertDispatched(GenerateAgentScorecard::class);
     }
 
-    /** @test */
+    #[Test]
     public function update_scorecard_logs_error_on_failure(): void
     {
         $task = AgentTask::factory()->create([
@@ -142,7 +143,7 @@ class CoreListenerTest extends TestCase
 
     // ── HandleAgentTaskFailed ─────────────────────────────────────────────────
 
-    /** @test */
+    #[Test]
     public function handle_agent_task_failed_logs_audit_and_dispatches_dis_after_three_failures(): void
     {
         Bus::fake([RunDigitalImmuneSystemCheck::class]);
@@ -167,7 +168,7 @@ class CoreListenerTest extends TestCase
         Bus::assertDispatched(RunDigitalImmuneSystemCheck::class);
     }
 
-    /** @test */
+    #[Test]
     public function handle_agent_task_failed_does_not_dispatch_dis_for_single_failure(): void
     {
         Bus::fake([RunDigitalImmuneSystemCheck::class]);
@@ -184,7 +185,7 @@ class CoreListenerTest extends TestCase
         Bus::assertNotDispatched(RunDigitalImmuneSystemCheck::class);
     }
 
-    /** @test */
+    #[Test]
     public function handle_agent_task_failed_uses_governance_queue(): void
     {
         $listener = new HandleAgentTaskFailed;

@@ -10,6 +10,7 @@ use App\Models\AgentSession;
 use App\Services\AI\AgentOrchestrationService;
 use App\Services\Governance\AuditService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -58,6 +59,15 @@ class AgentChat extends Component
     public function sendMessage(): void
     {
         $this->validate(['message' => 'required|string|max:10000']);
+
+        // Rate-limit: 20 messages/min per user, 200/min per org
+        $rateLimitKey = 'chat-user:'.(Auth::id() ?? request()->ip());
+        if (RateLimiter::tooManyAttempts('agent-chat:'.$rateLimitKey, 20)) {
+            $this->dispatch('security-alert', message: 'Too many messages. Please wait before sending again.');
+
+            return;
+        }
+        RateLimiter::hit('agent-chat:'.$rateLimitKey, 60);
 
         $deployment = $this->deployment;
         $session = $this->session;

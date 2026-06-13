@@ -76,6 +76,16 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Agent chat (Livewire): 20 messages/minute per user
+        RateLimiter::for('agent-chat', function (Request $request) {
+            $userId = optional($request->user())->id;
+
+            return [
+                Limit::perMinute(20)->by('chat-user:'.($userId ?: $request->ip())),
+                Limit::perMinute(200)->by('chat-org:'.session('current_organization_id', 'anon')),
+            ];
+        });
+
         // Strict write operations: 30 creates/minute per authenticated user
         RateLimiter::for('api-writes', function (Request $request) {
             $userId = optional($request->user('sanctum') ?? $request->user())->id;
