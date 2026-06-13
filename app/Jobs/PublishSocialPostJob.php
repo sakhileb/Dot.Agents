@@ -51,12 +51,11 @@ class PublishSocialPostJob implements ShouldQueue
 
             event(new SocialPostPublished($this->post));
 
-            $auditService->log(
-                organizationId: $this->post->organization_id,
-                actorId: 0,
-                action: 'social_post.published',
+            $auditService->logUserAction(
+                event: 'social_post.published',
+                description: 'Social post published via scheduled job',
                 subject: $this->post,
-                metadata: ['platform' => $this->post->socialPage->socialAccount->platform],
+                metadata: ['platform' => $this->post->socialPage?->socialAccount?->platform],
             );
         } catch (Throwable $e) {
             $this->post->update(['status' => 'failed']);

@@ -24,7 +24,7 @@ class RecordSkillScoreAction
         ?int $durationMs = null,
     ): void {
         // Domain integrity — prevent cross-org scorecard pollution.
-        $deployment = AgentDeployment::withoutOrganizationScope()
+        $deployment = AgentDeployment::withoutGlobalScope('organization')
             ->where('id', $deploymentId)
             ->where('organization_id', $organizationId)
             ->firstOrFail();

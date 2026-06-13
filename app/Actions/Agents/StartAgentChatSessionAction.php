@@ -10,6 +10,7 @@ use App\Models\AgentSession;
 use App\Services\Governance\AuditService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 class StartAgentChatSessionAction
 {
@@ -33,6 +34,7 @@ class StartAgentChatSessionAction
         Gate::authorize('chat', $deployment);
 
         $session = AgentSession::create([
+            'uuid' => (string) Str::uuid(),
             'agent_deployment_id' => $deployment->id,
             'organization_id' => $data->organizationId ?? $deployment->organization_id,
             'user_id' => $data->userId,
@@ -53,7 +55,9 @@ class StartAgentChatSessionAction
     public function storeUserMessage(AgentSession $session, string $content): AgentMessage
     {
         $message = AgentMessage::create([
+            'uuid' => (string) Str::uuid(),
             'session_id' => $session->id,
+            'organization_id' => $session->organization_id,
             'role' => 'user',
             'content' => $content,
         ]);

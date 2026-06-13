@@ -7,6 +7,7 @@ use App\Models\AgentSkillApproval;
 use App\Models\AgentSkillAudit;
 use App\Models\AgentSkillExecution;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 class ProcessSkillApprovalAction
 {
@@ -34,6 +35,7 @@ class ProcessSkillApprovalAction
 
         // Audit the decision
         AgentSkillAudit::create([
+            'uuid' => (string) Str::uuid(),
             'skill_id' => $approval->skill_id,
             'execution_id' => $approval->execution_id,
             'agent_deployment_id' => $approval->agent_deployment_id,
