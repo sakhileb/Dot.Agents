@@ -57,7 +57,8 @@ class StripeService
         SubscriptionPlan $plan,
         string $successUrl,
         string $cancelUrl,
-    ): Session {
+        /** @return Session */
+    ): object {
         $customerId = $this->ensureCustomer($organization);
         $priceId = $plan->stripe_price_id;
 
@@ -103,7 +104,8 @@ class StripeService
     /**
      * Retrieve a Stripe subscription.
      */
-    public function getSubscription(string $stripeSubscriptionId): Subscription
+    /** @return Subscription */
+    public function getSubscription(string $stripeSubscriptionId): object
     {
         return $this->stripe->subscriptions->retrieve($stripeSubscriptionId);
     }
@@ -111,7 +113,8 @@ class StripeService
     /**
      * Cancel a Stripe subscription at period end.
      */
-    public function cancelSubscription(string $stripeSubscriptionId): Subscription
+    /** @return Subscription */
+    public function cancelSubscription(string $stripeSubscriptionId): object
     {
         return $this->stripe->subscriptions->update($stripeSubscriptionId, [
             'cancel_at_period_end' => true,

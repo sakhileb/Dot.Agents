@@ -11,8 +11,6 @@ use App\Services\Billing\StripeService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Stripe\Checkout\Session;
-use Stripe\Subscription;
 
 class HandleStripeWebhookAction
 {
@@ -63,7 +61,7 @@ class HandleStripeWebhookAction
         };
     }
 
-    private function handleCheckoutCompleted(Session $session): void
+    private function handleCheckoutCompleted(object $session): void
     {
         $organizationId = $session->metadata->organization_id ?? null;
         $planId = $session->metadata->subscription_plan_id ?? null;
@@ -108,7 +106,7 @@ class HandleStripeWebhookAction
         ]);
     }
 
-    private function handleInvoicePaid(\Stripe\Invoice $stripeInvoice): void
+    private function handleInvoicePaid(object $stripeInvoice): void
     {
         $organizationId = $stripeInvoice->subscription_details?->metadata?->organization_id ?? null;
 
@@ -142,7 +140,7 @@ class HandleStripeWebhookAction
         $organization->owner?->notify(new BillingNotification('invoice_created', $organization, $invoice));
     }
 
-    private function handleInvoiceFailed(\Stripe\Invoice $stripeInvoice): void
+    private function handleInvoiceFailed(object $stripeInvoice): void
     {
         $organizationId = $stripeInvoice->subscription_details?->metadata?->organization_id ?? null;
 
@@ -163,7 +161,7 @@ class HandleStripeWebhookAction
         ]);
     }
 
-    private function handleSubscriptionUpdated(Subscription $stripeSubscription): void
+    private function handleSubscriptionUpdated(object $stripeSubscription): void
     {
         $organizationId = $stripeSubscription->metadata->organization_id ?? null;
 
@@ -179,7 +177,7 @@ class HandleStripeWebhookAction
             ]);
     }
 
-    private function handleSubscriptionDeleted(Subscription $stripeSubscription): void
+    private function handleSubscriptionDeleted(object $stripeSubscription): void
     {
         $organizationId = $stripeSubscription->metadata->organization_id ?? null;
 

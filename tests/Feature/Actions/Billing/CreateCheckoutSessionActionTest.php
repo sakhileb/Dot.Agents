@@ -10,7 +10,6 @@ use App\Services\Billing\StripeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Mockery;
-use Stripe\Checkout\Session;
 use Tests\TestCase;
 
 class CreateCheckoutSessionActionTest extends TestCase
@@ -35,7 +34,7 @@ class CreateCheckoutSessionActionTest extends TestCase
 
     public function test_creates_checkout_session_via_stripe_service(): void
     {
-        $mockSession = Mockery::mock(Session::class);
+        $mockSession = new \stdClass;
         $mockSession->id = 'cs_test_123';
         $mockSession->url = 'https://checkout.stripe.com/pay/cs_test_123';
 
@@ -64,7 +63,7 @@ class CreateCheckoutSessionActionTest extends TestCase
 
     public function test_passes_correct_urls_to_stripe_service(): void
     {
-        $mockSession = Mockery::mock(Session::class);
+        $mockSession = new \stdClass;
         $mockSession->id = 'cs_url_test';
 
         $stripe = Mockery::mock(StripeService::class);

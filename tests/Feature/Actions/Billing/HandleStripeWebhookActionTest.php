@@ -11,8 +11,6 @@ use App\Services\Billing\StripeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Mockery;
-use Stripe\Checkout\Session;
-use Stripe\Subscription;
 use Tests\TestCase;
 
 class HandleStripeWebhookActionTest extends TestCase
@@ -55,7 +53,7 @@ class HandleStripeWebhookActionTest extends TestCase
 
     public function test_checkout_session_completed_creates_subscription(): void
     {
-        $stripeSubscription = Mockery::mock(Subscription::class);
+        $stripeSubscription = new \stdClass;
         $stripeSubscription->id = 'sub_test_123';
         $stripeSubscription->current_period_start = now()->timestamp;
         $stripeSubscription->current_period_end = now()->addMonth()->timestamp;
@@ -64,7 +62,7 @@ class HandleStripeWebhookActionTest extends TestCase
         $stripe->shouldReceive('getSubscription')->once()->andReturn($stripeSubscription);
         $this->app->instance(StripeService::class, $stripe);
 
-        $session = Mockery::mock(Session::class);
+        $session = new \stdClass;
         $session->id = 'cs_test_'.str()->random(10);
         $session->subscription = 'sub_test_123';
         $session->metadata = (object) [
@@ -101,7 +99,7 @@ class HandleStripeWebhookActionTest extends TestCase
             'current_period_end' => now()->addMonth(),
         ]);
 
-        $stripeSubscription = Mockery::mock(Subscription::class);
+        $stripeSubscription = new \stdClass;
         $stripeSubscription->id = 'sub_to_cancel';
         $stripeSubscription->status = 'canceled';
         $stripeSubscription->metadata = (object) ['organization_id' => $this->organization->id];
@@ -137,7 +135,7 @@ class HandleStripeWebhookActionTest extends TestCase
 
         $newPeriodEnd = now()->addMonth();
 
-        $stripeSubscription = Mockery::mock(Subscription::class);
+        $stripeSubscription = new \stdClass;
         $stripeSubscription->id = 'sub_to_update';
         $stripeSubscription->status = 'active';
         $stripeSubscription->metadata = (object) ['organization_id' => $this->organization->id];

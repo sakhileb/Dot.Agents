@@ -14,12 +14,13 @@ class CreateCheckoutSessionAction
         private readonly StripeService $stripe,
     ) {}
 
+    /** @return Session */
     public function execute(
         Organization $organization,
         SubscriptionPlan $plan,
         string $successUrl,
         string $cancelUrl,
-    ): Session {
+    ): object {
         Gate::authorize('manage-billing', $organization);
 
         return $this->stripe->createCheckoutSession(
