@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\EcosystemAuthController;
+
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\SocialAccountController;
@@ -13,19 +15,24 @@ use Illuminate\Support\Facades\Route;
 
 // ── Health Checks ─────────────────────────────────────────────────────────────
 // Public ping — used by load balancers and uptime monitors
+Route::get('/auth/ecosystem', [EcosystemAuthController::class, 'handle'])->name('auth.ecosystem');
+
 Route::get('/health', [HealthCheckController::class, 'ping'])->name('health.ping');
 
 // Authenticated detailed health report — for internal monitoring dashboards
+
 Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(function () {
     Route::get('/health/detailed', [HealthCheckController::class, 'detailed'])->name('health.detailed');
 });
 
 // Landing page
+
 Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : view('welcome');
 });
 
 // Consent routes — accessible to authenticated users regardless of consent status
+
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
     ->prefix('consent')
     ->name('consent.')
@@ -46,6 +53,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                 ->with('success', 'Thank you for accepting the platform terms.');
         })->name('accept');
     });
+
 
 Route::middleware([
     'auth:sanctum',
@@ -143,4 +151,5 @@ Route::middleware([
 });
 
 // Stripe webhook — must be outside auth middleware + CSRF exempt (handled in VerifyCsrfToken)
+
 Route::post('/webhooks/stripe', [BillingController::class, 'webhook'])->name('stripe.webhook');
