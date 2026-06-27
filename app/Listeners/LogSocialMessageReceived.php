@@ -24,9 +24,14 @@ class LogSocialMessageReceived implements ShouldQueue
     public function handle(SocialMessageReceived $event): void
     {
         $message = $event->message;
+        $deployment = $message->agentDeployment;
+
+        if (! $deployment) {
+            return;
+        }
 
         $this->auditService->logAgentAction(
-            $message->deployment,
+            $deployment,
             'social.message_received',
             [
                 'message_id' => $message->id,

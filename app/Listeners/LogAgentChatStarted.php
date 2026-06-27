@@ -24,7 +24,7 @@ class LogAgentChatStarted implements ShouldQueue
     public function handle(AgentChatStarted $event): void
     {
         $session = $event->session;
-        $deployment = $session->agentDeployment;
+        $deployment = $session->deployment;
 
         $this->auditService->logAgentAction($deployment, 'agent_chat_started', [
             'session_id' => $session->id,
