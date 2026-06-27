@@ -52,7 +52,7 @@ class SendPlatformNotification implements ShouldQueue
             'organization_id' => $this->organizationId,
             'type' => $this->type,
             'title' => $this->title,
-            'message' => $this->message,
+            'body' => $this->message,
             'severity' => $this->severity,
             'data' => $this->data,
             'action_url' => $this->actionUrl,

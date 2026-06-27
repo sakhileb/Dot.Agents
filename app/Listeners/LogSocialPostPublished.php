@@ -24,9 +24,14 @@ class LogSocialPostPublished implements ShouldQueue
     public function handle(SocialPostPublished $event): void
     {
         $post = $event->post;
+        $deployment = $post->agentDeployment;
+
+        if (! $deployment) {
+            return;
+        }
 
         $this->auditService->logAgentAction(
-            $post->deployment,
+            $deployment,
             'social.post_published',
             [
                 'post_id' => $post->id,
