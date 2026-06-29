@@ -10,8 +10,21 @@
     <link rel="icon" href="/dot.logos3.png" type="image/png">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <style>
+        /* Dot OS tokens for Dot.Agents */
+        :root { --agents-accent: #10b981; --agents-accent-rgb: 16,185,129; }
+        body { background: #09090b !important; color: #f4f4f5 !important; }
+        aside.fixed { background: #0d0d10 !important; border-right: 1px solid rgba(255,255,255,0.06) !important; }
+        aside.fixed::before { content:''; position:absolute; top:-80px; left:-80px; width:320px; height:320px; background:radial-gradient(circle,rgba(16,185,129,0.09) 0%,transparent 65%); pointer-events:none; z-index:0; }
+        .flex-1.flex.flex-col > header { background: rgba(9,9,11,0.85) !important; backdrop-filter:blur(14px); border-bottom: 1px solid rgba(255,255,255,0.06) !important; }
+        .flex-1.flex.flex-col > header h1 { font-family: 'Syne', sans-serif !important; color: #f4f4f5 !important; }
+        .material-symbols-rounded { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    </style>
 </head>
-<body class="bg-[#f9f9f7] dark:bg-gray-950 text-[#111111] dark:text-gray-100 font-sans antialiased">
+<body class="bg-[#09090b] text-[#f4f4f5] font-sans antialiased" x-data="{ sidebarOpen: true }">
 
 <div class="flex h-screen overflow-hidden">
 
