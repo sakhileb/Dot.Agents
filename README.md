@@ -1,92 +1,79 @@
 <div align="center">
 
-<img src="public/dot.logos3.png" alt="Dot.Agents" width="300" />
+<img src="docs/logo.svg" alt="Dot.Agents" width="320" />
 
-<h1>Dot.Agents</h1>
+<br /><br />
 
-<p>Enterprise AI Workforce Platform — hire, deploy, manage, monitor, and govern specialised AI agents as digital workforce members.</p>
+**Hire, deploy, and govern AI agents as digital workforce members.**
 
-[![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php&logoColor=white)](https://php.net)
-[![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
-[![Livewire](https://img.shields.io/badge/Livewire-3.x-4E56A6?style=flat-square)](https://livewire.laravel.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Tests](https://img.shields.io/badge/tests-776%20passing-brightgreen?style=flat-square)](tests/)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+<br />
+
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel&logoColor=white) ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php&logoColor=white) ![Livewire](https://img.shields.io/badge/Livewire-3-FB70A9?style=flat-square) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)
+
+<br /><br />
+
+**Part of the [InfoDot Ecosystem](https://github.com/sakhileb/InfoDot)** &nbsp;·&nbsp; `agents.infodot.app`
 
 </div>
 
 ---
 
-## Overview
+## What is Dot.Agents?
 
-Dot.Agents is a **production-grade, multi-tenant AI Workforce Operating System**. Organisations hire specialised AI agents from a marketplace, configure their autonomy mode, equip them with skills, and govern every action through a structured approval and audit layer.
+Dot.Agents lets organisations build and manage a digital AI workforce. Define specialised agents with unique skill sets, assign them to teams, monitor their tasks in real time, and govern their outputs — all powered by Anthropic Claude through a structured workforce model.
 
-This is not a chatbot wrapper — it is a full AI workforce platform with agent memory, skill execution pipelines, multi-agent orchestration, a visual workflow builder, and a governed approval queue.
+## Core Features
 
----
+- Agent registry — define skills, personas, and capability boundaries
+- Team-based agent assignment with role hierarchy
+- Real-time task monitoring and audit log
+- Conversation history per agent with context retention
+- Cost and token usage tracking per agent
+- Governance rules — output filters and human-in-the-loop gates
+- Claude claude-sonnet-4-6 backbone with configurable system prompts
+- Ecosystem SSO from InfoDot hub
 
-## Core Capabilities
+## Domain Models
 
-### Agent Lifecycle Management
-Deploy agents with one action. Configure autonomy mode, confidence thresholds, custom instructions, and skills per deployment.
-
-| Mode | Behaviour |
-|---|---|
-| `advisory` | Agent suggests — human decides |
-| `semi-autonomous` | Agent acts on high-confidence tasks, escalates the rest |
-| `autonomous` | Agent executes independently within defined boundaries |
-| `executive_approval` | Every action requires explicit executive sign-off |
-
-### Agent Marketplace
-A curated catalogue of specialised agent types — installed via the plugin system without code changes.
-
-### Skill Execution Pipeline
-Composable skills registered in `SkillRegistry` and executed through `SkillExecutionPipeline`. Assigned per agent, scoped per organisation.
-
-### Visual Workflow Builder
-Node-based workflow graph builder for multi-agent workflows. Stored as directed graphs and executed by `GraphWorkflowEngineService`.
-
-### Multi-Agent Orchestration
-`AgentOrchestrationService` coordinates agent chains — routing context, managing token budgets, and propagating results while preserving tenant isolation.
-
-### AI Governance Layer
-Every agent action is subject to confidence scoring, delusion detection, and audit logging. A Digital Immune System flags anomalous behaviour for review.
-
----
+- **Agent** — AI persona with skills and system prompt
+- **AgentTask** — individual task execution record
+- **AgentConversation** — threaded conversation history
+- **AgentUsage** — token and cost tracking
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Laravel 12 + PHP 8.4 |
-| Frontend | Livewire 3 + Alpine.js + Tailwind CSS 4 |
-| Auth | Jetstream 5 + Sanctum (ecosystem SSO) |
-| Database | PostgreSQL 16 (shared infodot instance) |
-| AI | Anthropic Claude API |
-| WebSockets | Laravel Reverb |
-| Search | Laravel Scout |
-
----
+| Framework | Laravel 12 |
+| Language | PHP 8.4 |
+| Frontend | Livewire 3 · Alpine.js 3 · Tailwind CSS |
+| Database | PostgreSQL 16 (shared across ecosystem) |
+| Realtime | Laravel Reverb |
+| Auth | Laravel Sanctum (InfoDot SSO) |
+| AI | Anthropic Claude (`claude-sonnet-4-6`) |
+| Storage | AWS S3 / Local (Flysystem) |
+| Search | Laravel Scout · Meilisearch |
+| Queue | Redis · Laravel Horizon |
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/sakhileb/Dot.Agents.git && cd Dot.Agents
-composer install && npm install
-cp .env.example .env && php artisan key:generate
-php artisan migrate && npm run dev & php artisan serve
+git clone https://github.com/sakhileb/Dot.Agents.git
+cd Dot.Agents
+cp .env.example .env
+composer install
+npm install && npm run build
+php artisan key:generate
+php artisan migrate
+php artisan serve
 ```
 
-```bash
-bash bin/test.sh   # 776 tests passing
-```
+> **Ecosystem SSO:** Set `DB_*` env vars to the shared InfoDot PostgreSQL instance and `APP_URL=https://agents.infodot.app`. Users authenticated through InfoDot gain access automatically via Sanctum handoff tokens.
 
----
+## Ecosystem
 
-## Part of the Dot Ecosystem
+**Dot.Agents** is one of **21 platforms** in the InfoDot ecosystem, connected via shared PostgreSQL and Sanctum SSO. Visit [InfoDot](https://github.com/sakhileb/InfoDot) to explore the full platform map.
 
-Dot.Agents connects to [InfoDot](https://github.com/sakhileb/InfoDot) — the central hub. Log in to InfoDot once and navigate here without re-authenticating via `/auth/ecosystem`.
+## License
 
----
-
-MIT — © SK Digital / BluPin Incorporated
+MIT © [SK Digital / BluPin Incorporated](https://github.com/sakhileb)
